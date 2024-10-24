@@ -16,13 +16,13 @@ TODO
 | `ctrl+'`               | Reset head                      |
 | `ctrl+[`               | Reset left hand position        |
 | `ctrl+]`               | Reset right hand position       |
-| `[+``                  | Enable all fingers (left)       |
+| `[+\``                  | Enable all fingers (left)       |
 | `[+1`                  | Set finger 0 on left hand      |
 | `[+2`                  | Set finger 1 on left hand      |
 | `[+3`                  | Set finger 2 on left hand      |
 | `[+4`                  | Set finger 3 on left hand      |
 | `[+5`                  | Set finger 4 on left hand      |
-| `]+``                  | Enable all fingers (right)      |
+| `]+\``                  | Enable all fingers (right)      |
 | `]+1`                  | Set finger 0 on right hand     |
 | `]+2`                  | Set finger 1 on right hand     |
 | `]+3`                  | Set finger 2 on right hand     |
