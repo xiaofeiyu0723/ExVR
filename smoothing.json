@@ -1,0 +1,121 @@
+{
+    "Parameters": {
+        "OtherBlendShapes": {
+            "key": "BlendShapes",
+            "is_rotation": false,
+            "indices": [],
+            "shifting": 0,
+            "max_delta": null,
+            "deadzone": null,
+            "dt_multiplier": 20
+        },
+        "EyeBlink": {
+            "key": "BlendShapes",
+            "is_rotation": false,
+            "indices": [9, 10, 19, 20, 21, 22],
+            "shifting": 0,
+            "max_delta": 0.2,
+            "deadzone": 0.05,
+            "dt_multiplier": 50
+        },
+        "EyeLook": {
+            "key": "BlendShapes",
+            "is_rotation": false,
+            "indices": [56, 57, 58, 59, 60, 61],
+            "shifting": 0,
+            "max_delta": 0.3,
+            "deadzone": 0.1,
+            "dt_multiplier": 50
+        },
+        "TongueOut": {
+            "key": "BlendShapes",
+            "is_rotation": false,
+            "indices": [52],
+            "shifting": 0,
+            "max_delta": null,
+            "deadzone": null,
+            "dt_multiplier": 20
+        },
+        "TongueMove": {
+            "key": "BlendShapes",
+            "is_rotation": false,
+            "indices": [62, 63],
+            "shifting": 0,
+            "max_delta": 0.5,
+            "deadzone": 0.05,
+            "dt_multiplier": 50
+        },
+        "HeadPosition": {
+            "key": "Position",
+            "is_rotation": false,
+            "indices": [64, 65, 66],
+            "shifting": 64,
+            "max_delta": 15,
+            "deadzone": 1.0,
+            "dt_multiplier": 20
+        },
+        "HeadRotation": {
+            "key": "Rotation",
+            "is_rotation": true,
+            "indices": [67, 68, 69],
+            "shifting": 67,
+            "max_delta": 20,
+            "deadzone": 1.0,
+            "dt_multiplier": 20
+        },
+        "LeftHandRotation": {
+            "key": "LeftHandRotation",
+            "is_rotation": true,
+            "indices": [73, 74, 75],
+            "shifting": 73,
+            "max_delta": null,
+            "deadzone": null,
+            "dt_multiplier": 20
+        },
+        "RightHandRotation": {
+            "key": "RightHandRotation",
+            "is_rotation": true,
+            "indices": [79, 80, 81],
+            "shifting": 79,
+            "max_delta": null,
+            "deadzone": null,
+            "dt_multiplier": 20
+        },
+        "LeftHandPosition": {
+            "key": "LeftHandPosition",
+            "is_rotation": false,
+            "indices": [70, 71, 72],
+            "shifting": 70,
+            "max_delta": 0.1,
+            "deadzone": 0.01,
+            "dt_multiplier": 20
+        },
+        "RightHandPosition": {
+            "key": "RightHandPosition",
+            "is_rotation": false,
+            "indices": [76, 77, 78],
+            "shifting": 76,
+            "max_delta": 0.1,
+            "deadzone": 0.01,
+            "dt_multiplier": 20
+        },
+        "LeftHandFinger": {
+            "key": "LeftHandFinger",
+            "is_rotation": false,
+            "indices": [82, 83, 84, 85, 86],
+            "shifting": 82,
+            "max_delta": null,
+            "deadzone": null,
+            "dt_multiplier": 20
+        },
+        "RightHandFinger": {
+            "key": "RightHandFinger",
+            "is_rotation": false,
+            "indices": [87, 88, 89, 90, 91],
+            "shifting": 87,
+            "max_delta": null,
+            "deadzone": null,
+            "dt_multiplier": 20
+        }
+    }
+}

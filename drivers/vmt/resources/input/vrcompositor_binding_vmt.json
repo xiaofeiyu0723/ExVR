@@ -1,0 +1,58 @@
+{
+   "app_key" : "openvr.component.vrcompositor",
+   "bindings" : {
+      "/actions/lasermouse" : {
+         "sources" : [
+            {
+               "inputs" : {
+                  "single" : {
+                     "output" : "/actions/lasermouse/in/leftclick"
+                  }
+               },
+               "mode" : "button",
+               "path" : "/user/hand/left/input/button1"
+            },
+            {
+               "inputs" : {
+                  "single" : {
+                     "output" : "/actions/lasermouse/in/leftclick"
+                  }
+               },
+               "mode" : "button",
+               "path" : "/user/hand/right/input/button1"
+            }
+         ]
+      },
+      "/actions/system" : {
+         "sources" : [
+            {
+               "inputs" : {
+                  "single" : {
+                     "output" : "/actions/system/in/toggledashboard"
+                  }
+               },
+               "mode" : "button",
+               "parameters" : {
+                  "sub_mode" : "complex"
+               },
+               "path" : "/user/hand/left/input/button0"
+            },
+            {
+               "inputs" : {
+                  "single" : {
+                     "output" : "/actions/system/in/toggledashboard"
+                  }
+               },
+               "mode" : "button",
+               "parameters" : {
+                  "sub_mode" : "complex"
+               },
+               "path" : "/user/hand/right/input/button0"
+            }
+         ]
+      }
+   },
+   "controller_type" : "vmt",
+   "description" : "",
+   "name" : ""
+}

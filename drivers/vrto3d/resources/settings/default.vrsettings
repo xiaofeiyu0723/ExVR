@@ -1,0 +1,7 @@
+{
+    "driver_vrto3d": {
+        "enable": true,
+        "serial_number": "Stereo3D-1234",
+        "model_number": "Stereo3D-1"
+    }
+}

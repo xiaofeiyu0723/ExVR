@@ -1,0 +1,66 @@
+{
+    "Sending": {
+        "address": "127.0.0.1",
+        "flip": false
+    },
+    "Smoothing": {
+        "enable": true
+    },
+    "Tracking": {
+        "Head": {
+            "enable": true,
+            "x_scalar": 2.0,
+            "y_scalar": 3.0,
+            "z_scalar": 3.0,
+            "x_rotation_scalar": 1.0,
+            "y_rotation_scalar": 1.0,
+            "z_rotation_scalar": 1.0,
+            "yaw_calibration": 0.0,
+            "pitch_calibration": 0.0,
+            "roll_calibration": 0.0
+        },
+        "Face": {
+            "enable": true
+        },
+        "Tongue": {
+            "enable": true,
+            "tongue_confidence": 0.9,
+            "tongue_threshold": 6,
+            "tongue_x_scalar": 2.0,
+            "tongue_y_scalar": 3.0,
+            "mouth_close_threshold": 0.1
+        },
+        "Hand": {
+            "enable": true,
+            "x_scalar": 1.0,
+            "y_scalar": 1.0,
+            "z_scalar": 0.05,
+            "z_shifting": 5.073623441633451,
+            "hand_confidence": 0.5,
+            "hand_delta_threshold": 0.1,
+            "hand_shifting_threshold": 0.1,
+            "enable_hand_auto_reset": true,
+            "hand_detection_upper_threshold": 100,
+            "hand_detection_lower_threshold": 6,
+            "hand_count_threshold": 6,
+            "only_front": true
+        },
+        "Finger": {
+            "enable": true,
+            "finger_confidence": 0.7,
+            "finger_threshold": 3
+        }
+    },
+    "Model": {
+        "Face": {
+            "min_face_detection_confidence": 0.5,
+            "min_face_presence_confidence": 0.5,
+            "min_tracking_confidence": 0.5
+        },
+        "Hand": {
+            "min_hand_detection_confidence": 0.5,
+            "min_hand_presence_confidence": 0.5,
+            "min_tracking_confidence": 0.5
+        }
+    }
+}

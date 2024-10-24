@@ -1,0 +1,274 @@
+{
+  "jsonid" : "input_profile",
+  "controller_type": "vmt_waist",
+  "device_class" : "TrackedDeviceClass_Controller",
+  "resource_root" : "vmt",
+  "driver_name" : "vmt",
+  "legacy_binding" :  "{vmt}/input/legacy_bindings_vmt.json",
+  "legacy_profile" :  "none",
+  "input_bindingui_mode" : "single_device",
+  "should_show_binding_errors": true,
+  "input_bindingui_left" :
+  {
+    "image": "{vmt}/input/binding_image_light.png"
+  },
+  "input_bindingui_right" :
+  {
+    "image": "{vmt}/input/binding_image_light.png"
+  },
+  "input_source" :
+  {
+    "/input/Button0" : { 
+        "type" : "button",
+        "click" : true,
+        "touch" : true,
+        "binding_image_point" : [ 0, 0 ],
+        "order" : 1
+    },
+    "/input/Button1" : { 
+        "type" : "button",
+        "click" : true,
+        "touch" : true,
+        "binding_image_point" : [ 0, 0 ],
+        "order" : 2
+    },
+    "/input/Button2" : { 
+        "type" : "button",
+        "click" : true,
+        "touch" : true,
+        "binding_image_point" : [ 0, 0 ],
+        "order" : 3
+    },
+    "/input/Button3" : { 
+        "type" : "button",
+        "click" : true,
+        "touch" : true,
+        "binding_image_point" : [ 0, 0 ],
+        "order" : 4
+    },
+    "/input/Button4" : { 
+        "type" : "button",
+        "click" : true,
+        "touch" : true,
+        "binding_image_point" : [ 0, 0 ],
+        "order" : 5
+    },
+    "/input/Button5" : { 
+        "type" : "button",
+        "click" : true,
+        "touch" : true,
+        "binding_image_point" : [ 0, 0 ],
+        "order" : 6
+    },
+    "/input/Button6" : { 
+        "type" : "button",
+        "click" : true,
+        "touch" : true,
+        "binding_image_point" : [ 0, 0 ],
+        "order" : 7
+    },
+    "/input/Button7" : { 
+        "type" : "button",
+        "click" : true,
+        "touch" : true,
+        "binding_image_point" : [ 0, 0 ],
+        "order" : 8
+    },
+    "/input/Button8" : { 
+        "type" : "button",
+        "click" : true,
+        "touch" : true,
+        "binding_image_point" : [ 0, 0 ],
+        "order" : 9
+    },
+    "/input/Button9" : { 
+        "type" : "button",
+        "click" : true,
+        "touch" : true,
+        "binding_image_point" : [ 0, 0 ],
+        "order" : 10
+    },
+    "/input/Button10" : { 
+        "type" : "button",
+        "click" : true,
+        "touch" : true,
+        "binding_image_point" : [ 0, 0 ],
+        "order" : 11
+    },
+    "/input/Button11" : { 
+        "type" : "button",
+        "click" : true,
+        "touch" : true,
+        "binding_image_point" : [ 0, 0 ],
+        "order" : 12
+    },
+    "/input/Button12" : { 
+        "type" : "button",
+        "click" : true,
+        "touch" : true,
+        "binding_image_point" : [ 0, 0 ],
+        "order" : 13
+    },
+    "/input/Button13" : { 
+        "type" : "button",
+        "click" : true,
+        "touch" : true,
+        "binding_image_point" : [ 0, 0 ],
+        "order" : 14
+    },
+    "/input/Button14" : { 
+        "type" : "button",
+        "click" : true,
+        "touch" : true,
+        "binding_image_point" : [ 0, 0 ],
+        "order" : 15
+    },
+    "/input/Button15" : { 
+        "type" : "button",
+        "click" : true,
+        "touch" : true,
+        "binding_image_point" : [ 0, 0 ],
+        "order" : 16
+    },
+    "/input/Button16" : { 
+        "type" : "button",
+        "click" : true,
+        "touch" : true,
+        "binding_image_point" : [ 0, 0 ],
+        "order" : 17
+    },
+    "/input/Button17" : { 
+        "type" : "button",
+        "click" : true,
+        "touch" : true,
+        "binding_image_point" : [ 0, 0 ],
+        "order" : 18
+    },
+    "/input/Joystick0" : { 
+        "type" : "joystick",
+        "click" : true,
+        "touch" : true,
+        "binding_image_point" : [ 0, 0 ],
+        "order" : 1
+    },
+    "/input/Joystick1" : { 
+        "type" : "joystick",
+        "click" : true,
+        "touch" : true,
+        "binding_image_point" : [ 0, 0 ],
+        "order" : 1
+    },
+    "/input/Joystick2" : { 
+        "type" : "joystick",
+        "click" : true,
+        "touch" : true,
+        "binding_image_point" : [ 0, 0 ],
+        "order" : 1
+    },
+    "/input/Joystick3" : { 
+        "type" : "joystick",
+        "click" : true,
+        "touch" : true,
+        "binding_image_point" : [ 0, 0 ],
+        "order" : 1
+    },
+    "/input/Trigger0" : { 
+        "type" : "trigger",
+        "click" : true,
+        "touch" : true,
+        "value" : true,
+        "binding_image_point" : [ 0, 0 ],
+        "order" : 1
+    },
+    "/input/Trigger1" : { 
+        "type" : "trigger",
+        "click" : true,
+        "touch" : true,
+        "value" : true,
+        "binding_image_point" : [ 0, 0 ],
+        "order" : 1
+    },
+    "/input/Trigger2" : { 
+        "type" : "trigger",
+        "click" : true,
+        "touch" : true,
+        "value" : true,
+        "binding_image_point" : [ 0, 0 ],
+        "order" : 1
+    },
+    "/input/Trigger3" : { 
+        "type" : "trigger",
+        "click" : true,
+        "touch" : true,
+        "value" : true,
+        "binding_image_point" : [ 0, 0 ],
+        "order" : 1
+    },
+    "/input/Trigger4" : { 
+        "type" : "trigger",
+        "click" : true,
+        "touch" : true,
+        "value" : true,
+        "binding_image_point" : [ 0, 0 ],
+        "order" : 1
+    },
+    "/input/Trigger5" : { 
+        "type" : "trigger",
+        "click" : true,
+        "touch" : true,
+        "value" : true,
+        "binding_image_point" : [ 0, 0 ],
+        "order" : 1
+    },
+    "/input/Trigger6" : { 
+        "type" : "trigger",
+        "click" : true,
+        "touch" : true,
+        "value" : true,
+        "binding_image_point" : [ 0, 0 ],
+        "order" : 1
+    },
+    "/input/Trigger7" : { 
+        "type" : "trigger",
+        "click" : true,
+        "touch" : true,
+        "value" : true,
+        "binding_image_point" : [ 0, 0 ],
+        "order" : 1
+    },
+    "/input/Trigger8" : { 
+        "type" : "trigger",
+        "click" : true,
+        "touch" : true,
+        "value" : true,
+        "binding_image_point" : [ 0, 0 ],
+        "order" : 1
+    },
+    "/input/skeleton/left" : { 
+        "type" : "skeleton",
+        "skeleton" : "/skeleton/hand/left",
+        "side" : "left",
+        "binding_image_point" : [ 0, 0 ]
+    },
+    "/input/skeleton/right" : { 
+        "type" : "skeleton",
+        "skeleton" : "/skeleton/hand/right",
+        "side" : "right",
+        "binding_image_point" : [ 0, 0 ]
+    },
+    "/pose/raw" : {
+        "type" : "pose",
+        "binding_image_point" : [ 0, 0 ]
+    },
+    "/output/haptic" : {
+        "type" : "vibration",
+        "binding_image_point" : [ 0, 0 ]
+    }
+  },
+  "default_bindings": [
+    {
+      "app_key": "openvr.component.vrcompositor",
+      "binding_url": "vrcompositor_binding_vmt.json"
+    }
+  ]
+}

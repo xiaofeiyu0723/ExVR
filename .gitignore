@@ -1,0 +1,13 @@
+/build/
+/dist/
+
+/tracker/face/tongue_model/test_dataset/
+/tracker/face/tongue_model/train_dataset/
+
+__pycache__/
+
+/VRCFaceTracking_5.2.3.0_x64
+
+main.spec
+
+/.idea/

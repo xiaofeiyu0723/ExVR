@@ -1,0 +1,37 @@
+from threading import Event
+from utils.config import setup_config, save_config
+from utils.data import setup_data, save_data
+from utils.hotkeys import setup_hotkeys,apply_hotkeys
+from utils.smoothing import setup_smoothing
+from utils.hand_sender import setup_controller
+
+config=setup_config()
+data,default_data = setup_data()
+latest_data = [0.0] * (64 + 6 + 12 + 10)
+head_pos = [0, 0, 0]
+stop_event = Event()
+controller=setup_controller()
+hotkey_config = setup_hotkeys()
+smoothing_config = setup_smoothing()
+face_landmarks=None
+hand_landmarks=None
+handedness=None
+
+def update_configs(restart=False):
+    global config, data,default_data,latest_data,head_pos,controller,hotkey_config,smoothing_config
+    config_temp=setup_config()
+    if not restart:
+        config_temp["Smoothing"]["enable"] = config["Smoothing"]["enable"]
+    config = config_temp
+    data,default_data=setup_data()
+    latest_data = [0.0] * (64 + 6 + 12 + 10)
+    head_pos = [0, 0, 0]
+    controller=setup_controller()
+    hotkey_config=setup_hotkeys()
+    apply_hotkeys()
+    smoothing_config=setup_smoothing()
+
+def save_configs():
+    global config, data
+    save_config(config)
+    # save_data(data)

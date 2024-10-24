@@ -1,0 +1,114 @@
+{
+  "jsonid" : "input_profile",
+  "controller_type": "knuckles",
+  "device_class" : "TrackedDeviceClass_Controller",
+  "resource_root" : "vmt",
+  "driver_name" : "vmt",
+  "legacy_binding" :  "{indexcontroller}/input/legacy_bindings_index_controller.json",
+  "input_bindingui_mode" : "controller_handed",
+  "should_show_binding_errors": true,
+  "input_bindingui_left" :
+  {
+    "image": "{vmt}/input/binding_image_light.png"
+  },
+  "input_bindingui_right" :
+  {
+    "image": "{vmt}/input/binding_image_light.png"
+  },
+  "input_source" :
+  {
+    "/input/system" : { 
+        "type" : "button",
+        "click" : true,
+        "touch" : true,
+        "binding_image_point" : [ 0, 0 ],
+        "order" : 18
+    },
+    "/input/a" : { 
+        "type" : "button",
+        "click" : true,
+        "touch" : true,
+        "binding_image_point" : [ 0, 0 ],
+        "order" : 18
+    },
+    "/input/b" : { 
+        "type" : "button",
+        "click" : true,
+        "touch" : true,
+        "binding_image_point" : [ 0, 0 ],
+        "order" : 18
+    },
+    "/input/trackpad" : { 
+        "type" : "trackpad",
+        "force" : true,
+        "touch" : true,
+        "binding_image_point" : [ 0, 0 ],
+        "order" : 1
+    },
+    "/input/thumbstick" : { 
+        "type" : "joystick",
+        "click" : true,
+        "touch" : true,
+        "binding_image_point" : [ 0, 0 ],
+        "order" : 1
+    },
+    "/input/trigger" : { 
+        "type" : "trigger",
+        "click" : true,
+        "touch" : true,
+        "value" : true,
+        "binding_image_point" : [ 0, 0 ],
+        "order" : 1
+    },
+    "/input/grip" : { 
+        "type" : "trigger",
+        "force" : true,
+        "touch" : true,
+        "value" : true,
+        "input_activity_path" : "/input/grip/force",
+        "input_activity_threshold" : 0.1,
+        "binding_image_point" : [ 0, 0 ],
+        "order" : 1
+    },
+    "/input/finger/index" : { 
+        "type" : "trigger",
+        "binding_image_point" : [ 0, 0 ],
+        "order" : 1
+    },
+    "/input/finger/middle" : { 
+        "type" : "trigger",
+        "binding_image_point" : [ 0, 0 ],
+        "order" : 1
+    },
+    "/input/finger/ring" : { 
+        "type" : "trigger",
+        "binding_image_point" : [ 0, 0 ],
+        "order" : 1
+    },
+    "/input/finger/pinky" : { 
+        "type" : "trigger",
+        "binding_image_point" : [ 0, 0 ],
+        "order" : 1
+    },
+    "/input/skeleton/left" : { 
+        "type" : "skeleton",
+        "skeleton" : "/skeleton/hand/left",
+        "side" : "left",
+        "binding_image_point" : [ 0, 0 ]
+    },
+    "/input/skeleton/right" : { 
+        "type" : "skeleton",
+        "skeleton" : "/skeleton/hand/right",
+        "side" : "right",
+        "binding_image_point" : [ 0, 0 ]
+    },
+    "/pose/raw" : {
+        "type" : "pose",
+        "binding_image_point" : [ 0, 0 ]
+    },
+    "/output/haptic" : {
+        "type" : "vibration",
+        "binding_image_point" : [ 0, 0 ]
+    }
+  }
+}
