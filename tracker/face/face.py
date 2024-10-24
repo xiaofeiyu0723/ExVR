@@ -41,9 +41,31 @@ def draw_face_landmarks(rgb_image):
 
     return rgb_image
 
+def is_hand_in_face():
+    if not g.face_landmarks or not g.hand_landmarks:
+        return False, 0
+    # 获取面部landmarks的边界
+    face_x = [f.x for f in g.face_landmarks[0]]
+    face_y = [f.y for f in g.face_landmarks[0]]
+
+    min_x, max_x = min(face_x), max(face_x)
+    min_y, max_y = min(face_y), max(face_y)
+
+    block_point_count = 0
+    for hand in g.hand_landmarks:
+        for h in hand:
+            if min_x <= h.x <= max_x and min_y <= h.y <= max_y:
+                block_point_count +=1
+    if block_point_count !=0:
+        return True, block_point_count
+    return False, 0
 def pred_callback(detection_result, output_image, timestamp_ms, tongue_model):
     # For each face detected
     for idx in range(len(detection_result.face_landmarks)):
+        # Block handling
+        block_flag, block_num = is_hand_in_face()
+        if g.config["Tracking"]["Face"]["block"] and block_flag and block_num > g.config["Tracking"]["Face"]["block_threshold"]:
+            continue
         # Handle blendshapes
         for i in range(len(detection_result.face_blendshapes[0])):
             if g.config["Smoothing"]["enable"]:

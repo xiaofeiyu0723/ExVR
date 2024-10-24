@@ -112,7 +112,6 @@ def finger_handling(hand_name, index, value):
             finger_counts[hand_name][index] = 0
     return finger_status[hand_name][index]
 
-
 left_hand_wrong_counts = 0
 right_hand_wrong_counts = 0
 left_hand_detection_counts = 0
@@ -168,6 +167,7 @@ def pred_callback(detection_result, output_image, timestamp_ms):
         image_landmarks = detection_result.hand_landmarks[idx]
         image_hand_pose = get_hand_pose(image_landmarks, False)
         hand_position = g.head_pos - image_hand_pose[9]
+
         hand_position[0] = hand_position[0] * g.config["Tracking"]["Hand"]["x_scalar"]
         hand_position[1] = hand_position[1] * g.config["Tracking"]["Hand"]["y_scalar"]
         # distance = (

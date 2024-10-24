@@ -7,7 +7,7 @@
             "shifting": 0,
             "max_delta": null,
             "deadzone": null,
-            "dt_multiplier": 20
+            "dt_multiplier": 50
         },
         "EyeBlink": {
             "key": "BlendShapes",
@@ -23,9 +23,9 @@
             "is_rotation": false,
             "indices": [56, 57, 58, 59, 60, 61],
             "shifting": 0,
-            "max_delta": 0.3,
-            "deadzone": 0.1,
-            "dt_multiplier": 50
+            "max_delta": null,
+            "deadzone": null,
+            "dt_multiplier": 100
         },
         "TongueOut": {
             "key": "BlendShapes",

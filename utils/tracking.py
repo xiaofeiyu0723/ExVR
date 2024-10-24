@@ -1,4 +1,6 @@
 import threading
+import time
+
 import cv2
 import mediapipe as mp
 from tracker.face.tongue import initialize_tongue_model
@@ -54,7 +56,7 @@ class Tracker:
             self.face_detector.detect_async(mp_image, timestamp_ms=timestamp_ms)
         if g.config["Tracking"]["Hand"]["enable"]:
             self.hand_detector.detect_async(mp_image, timestamp_ms=timestamp_ms)
-        cv2.waitKey(10)
+        time.sleep(0.03)
         
     def stop(self):
         self.is_running = False

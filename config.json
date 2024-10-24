@@ -15,12 +15,14 @@
             "x_rotation_scalar": 1.0,
             "y_rotation_scalar": 1.0,
             "z_rotation_scalar": 1.0,
-            "yaw_calibration": 0.0,
-            "pitch_calibration": 0.0,
-            "roll_calibration": 0.0
+            "yaw_calibration": 2.048416606801014,
+            "pitch_calibration": 356.0013770706974,
+            "roll_calibration": 4.120206817526731
         },
         "Face": {
-            "enable": true
+            "enable": true,
+            "block": true,
+            "block_threshold": 2
         },
         "Tongue": {
             "enable": true,
@@ -35,7 +37,7 @@
             "x_scalar": 1.0,
             "y_scalar": 1.0,
             "z_scalar": 0.05,
-            "z_shifting": 5.073623441633451,
+            "z_shifting": 5.299992128221355,
             "hand_confidence": 0.5,
             "hand_delta_threshold": 0.1,
             "hand_shifting_threshold": 0.1,
