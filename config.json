@@ -1,7 +1,8 @@
 {
     "Sending": {
         "address": "127.0.0.1",
-        "flip": false
+        "flip_x": false,
+        "flip_y": false
     },
     "Smoothing": {
         "enable": true
@@ -22,7 +23,7 @@
         "Face": {
             "enable": true,
             "block": true,
-            "block_threshold": 2
+            "block_threshold": 0.05
         },
         "Tongue": {
             "enable": true,
@@ -62,7 +63,7 @@
         "Hand": {
             "min_hand_detection_confidence": 0.5,
             "min_hand_presence_confidence": 0.5,
-            "min_tracking_confidence": 0.5
+            "min_tracking_confidence": 0.1
         }
     }
 }

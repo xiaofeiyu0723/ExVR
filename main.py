@@ -46,8 +46,11 @@ class VideoCaptureThread(QThread):
             ret, frame = self.video_capture.read()
             if ret:
                 rgb_image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-                if g.config["Sending"]["flip"]:
+                if g.config["Sending"]["flip_x"]:
                     rgb_image = cv2.flip(rgb_image, 1)
+                if g.config["Sending"]["flip_y"]:
+                    rgb_image = cv2.flip(rgb_image, 0)
+
                 self.tracker.process_frames(rgb_image)
                 if self.show_image:
                     if g.config["Tracking"]["Head"]["enable"] or g.config["Tracking"]["Face"]["enable"]:
@@ -89,10 +92,17 @@ class VideoWindow(QMainWindow):
         self.image_label.resize(800, 500)
         layout.addWidget(self.image_label)
 
-        self.flip_frame_checkbox = QCheckBox("Flip Frame", self)
-        self.flip_frame_checkbox.clicked.connect(self.flip_frame)
-        self.flip_frame_checkbox.setChecked(g.config["Sending"]["flip"])
-        layout.addWidget(self.flip_frame_checkbox)
+        flip_layout = QHBoxLayout()  # Create a QHBoxLayout for new reset buttons
+        self.flip_x_checkbox = QCheckBox("Flip X", self)
+        self.flip_x_checkbox.clicked.connect(self.flip_x)
+        self.flip_x_checkbox.setChecked(g.config["Sending"]["flip_x"])
+        flip_layout.addWidget(self.flip_x_checkbox)
+
+        self.flip_y_checkbox = QCheckBox("Flip Y", self)
+        self.flip_y_checkbox.clicked.connect(self.flip_y)
+        self.flip_y_checkbox.setChecked(g.config["Sending"]["flip_y"])
+        flip_layout.addWidget(self.flip_y_checkbox)
+        layout.addLayout(flip_layout)
 
         self.ip_camera_url_input = QLineEdit(self)
         self.ip_camera_url_input.setPlaceholderText("Enter IP camera URL")
@@ -172,11 +182,20 @@ class VideoWindow(QMainWindow):
             lambda: self.update_config("Hand", self.checkbox4.isChecked())
         )
         checkbox_layout.addWidget(self.checkbox4)
-        self.only_front_checkbox = QCheckBox("Front", self)
+        layout.addLayout(checkbox_layout)
+
+        checkbox_layout_1 = QHBoxLayout()
+        self.block_face_checkbox = QCheckBox("Block Face", self)
+        self.block_face_checkbox.clicked.connect(self.set_face_block)
+        self.block_face_checkbox.setChecked(g.config["Tracking"]["Face"]["block"])
+        checkbox_layout_1.addWidget(self.block_face_checkbox)
+
+        self.only_front_checkbox = QCheckBox("Front Hand", self)
         self.only_front_checkbox.clicked.connect(self.set_hand_front)
         self.only_front_checkbox.setChecked(g.config["Tracking"]["Hand"]["only_front"])
-        checkbox_layout.addWidget(self.only_front_checkbox)
-        layout.addLayout(checkbox_layout)
+        checkbox_layout_1.addWidget(self.only_front_checkbox)
+        layout.addLayout(checkbox_layout_1)
+
 
         self.update_checkboxes()
 
@@ -226,17 +245,26 @@ class VideoWindow(QMainWindow):
 
         self.video_thread = None
 
-    def flip_frame(self, value):
-        g.config["Sending"]["flip"] = value
+    def flip_x(self, value):
+        g.config["Sending"]["flip_x"] = value
+
+    def flip_y(self, value):
+        g.config["Sending"]["flip_y"] = value
 
     def set_hand_front(self, value):
         g.config["Tracking"]["Hand"]["only_front"] = value
 
+    def set_face_block(self, value):
+        g.config["Tracking"]["Face"]["block"] = value
+
     def update_checkboxes(self):
+        self.flip_x_checkbox.setChecked(g.config["Sending"]["flip_x"])
+        self.flip_y_checkbox.setChecked(g.config["Sending"]["flip_y"])
         self.checkbox1.setChecked(g.config["Tracking"]["Head"]["enable"])
         self.checkbox2.setChecked(g.config["Tracking"]["Face"]["enable"])
         self.checkbox3.setChecked(g.config["Tracking"]["Tongue"]["enable"])
         self.checkbox4.setChecked(g.config["Tracking"]["Hand"]["enable"])
+        self.block_face_checkbox.setChecked(g.config["Tracking"]["Face"]["block"])
         self.only_front_checkbox.setChecked(g.config["Tracking"]["Hand"]["only_front"])
 
     def set_scalar(self, value, axis):

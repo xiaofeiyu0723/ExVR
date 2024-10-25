@@ -67,9 +67,9 @@
         {"k": "TongueX", "v": 0.0, "s": 0.0,"e":true},
         {"k": "TongueY", "v": 0.0, "s": 0.0,"e":true}
     ],
-    "LeftHandPosition": [{"k": "x", "v": -0.1, "s": 0.0,"e":true}, {"k": "y", "v": -0.4, "s": 0.15,"e":true}, {"k": "z", "v": -0.2, "s": 0.0,"e":true}],
+    "LeftHandPosition": [{"k": "x", "v": -0.2, "s": 0.07,"e":true}, {"k": "y", "v": -0.4, "s": 0.15,"e":true}, {"k": "z", "v": -0.2, "s": 0.0,"e":true}],
     "LeftHandRotation": [{"k": "x", "v": 0.0, "s": 45.0,"e":true}, {"k": "y", "v": 0.0, "s": 0.0,"e":true}, {"k": "z", "v": 0.0, "s": -15.0,"e":true}],
-    "RightHandPosition": [{"k": "x", "v": 0.1, "s": 0.0,"e":true}, {"k": "y", "v": -0.4, "s": 0.15,"e":true}, {"k": "z", "v": -0.2, "s": 0.0,"e":true}],
+    "RightHandPosition": [{"k": "x", "v": 0.2, "s": -0.07,"e":true}, {"k": "y", "v": -0.4, "s": 0.15,"e":true}, {"k": "z", "v": -0.2, "s": 0.0,"e":true}],
     "RightHandRotation": [{"k": "x", "v": 0.0, "s": 45.0,"e":true}, {"k": "y", "v": 0.0, "s": 0.0,"e":true}, {"k": "z", "v": 0.0, "s": 15.0,"e":true}],
     "LeftHandFinger": [{"k": "0", "v": 1.0, "s": 0.0,"e":true}, {"k": "1", "v": 1.0, "s": 0.0,"e":true}, {"k": "2", "v": 1.0, "s": 0.0,"e":true}, {"k": "3", "v": 1.0, "s": 0.0,"e":true}, {"k": "4", "v": 1.0, "s": 0.0,"e":true}],
     "RightHandFinger": [{"k": "0", "v": 1.0, "s": 0.0,"e":true}, {"k": "1", "v": 1.0, "s": 0.0,"e":true}, {"k": "2", "v": 1.0, "s": 0.0,"e":true}, {"k": "3", "v": 1.0, "s": 0.0,"e":true}, {"k": "4", "v": 1.0, "s": 0.0,"e":true}]

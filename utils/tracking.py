@@ -50,14 +50,13 @@ class Tracker:
 
     def process_frames(self, image_rgb):
         mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=image_rgb)
-
         timestamp_ms = int((cv2.getTickCount() - self.start_time) * 1000 / cv2.getTickFrequency())
         if g.config["Tracking"]["Head"]["enable"] or g.config["Tracking"]["Face"]["enable"]:
             self.face_detector.detect_async(mp_image, timestamp_ms=timestamp_ms)
         if g.config["Tracking"]["Hand"]["enable"]:
             self.hand_detector.detect_async(mp_image, timestamp_ms=timestamp_ms)
-        time.sleep(0.03)
-        
+        cv2.waitKey(10)
+
     def stop(self):
         self.is_running = False
         g.stop_event.set()

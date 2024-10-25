@@ -60,7 +60,7 @@
             "indices": [67, 68, 69],
             "shifting": 67,
             "max_delta": 20,
-            "deadzone": 1.0,
+            "deadzone": 2.0,
             "dt_multiplier": 20
         },
         "LeftHandRotation": {

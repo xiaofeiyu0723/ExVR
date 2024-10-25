@@ -166,7 +166,7 @@ def pred_callback(detection_result, output_image, timestamp_ms):
         hand_pose = get_hand_pose(world_landmarks)
         image_landmarks = detection_result.hand_landmarks[idx]
         image_hand_pose = get_hand_pose(image_landmarks, False)
-        hand_position = g.head_pos - image_hand_pose[9]
+        hand_position = g.head_pos - image_hand_pose[5]
 
         hand_position[0] = hand_position[0] * g.config["Tracking"]["Hand"]["x_scalar"]
         hand_position[1] = hand_position[1] * g.config["Tracking"]["Hand"]["y_scalar"]
@@ -184,14 +184,14 @@ def pred_callback(detection_result, output_image, timestamp_ms):
                 distance = 0
 
         # position calibration
-        rotation_matrix = create_rotation_matrix(g.config["Tracking"]["Head"]["yaw_calibration"],
-                                                 g.config["Tracking"]["Head"]["pitch_calibration"],
-                                                 g.config["Tracking"]["Head"]["roll_calibration"])
-        new_hand_position = np.array([hand_position[0], hand_position[1], distance])
-        hand_global_position = transform_hand_position(new_hand_position, np.array([0, 0, 0]), rotation_matrix)
-        hand_position[0]=hand_global_position[0]
-        hand_position[1]=hand_global_position[1]
-        distance=hand_global_position[2]
+        # rotation_matrix = create_rotation_matrix(g.config["Tracking"]["Head"]["yaw_calibration"],
+        #                                          g.config["Tracking"]["Head"]["pitch_calibration"],
+        #                                          g.config["Tracking"]["Head"]["roll_calibration"])
+        # new_hand_position = np.array([hand_position[0], hand_position[1], distance])
+        # hand_global_position = transform_hand_position(new_hand_position, np.array([0, 0, 0]), rotation_matrix)
+        # hand_position[0]=hand_global_position[0]
+        # hand_position[1]=hand_global_position[1]
+        # distance=hand_global_position[2]
 
         hand_f = hand_pose[17]
         hand_b = hand_pose[0]

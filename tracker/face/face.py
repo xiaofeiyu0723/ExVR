@@ -5,9 +5,9 @@ from tracker.face.tongue import mouth_roi_on_image, detect_tongue
 import utils.globals as g
 from mediapipe.framework.formats import landmark_pb2
 from mediapipe import solutions
-
+import cv2
 def draw_face_landmarks(rgb_image):
-    face_landmarks_list = g.face_landmarks    
+    face_landmarks_list = g.face_landmarks
 
     if face_landmarks_list is None:
         return rgb_image
@@ -42,49 +42,64 @@ def draw_face_landmarks(rgb_image):
     return rgb_image
 
 def is_hand_in_face():
-    if not g.face_landmarks or not g.hand_landmarks:
-        return False, 0
-    # 获取面部landmarks的边界
+    if not g.config["Tracking"]["Face"]["block"] or not g.face_landmarks or not g.hand_landmarks:
+        return False, 0.0
+
     face_x = [f.x for f in g.face_landmarks[0]]
     face_y = [f.y for f in g.face_landmarks[0]]
 
     min_x, max_x = min(face_x), max(face_x)
     min_y, max_y = min(face_y), max(face_y)
+    face_area = (max_x - min_x) * (max_y - min_y)
 
-    block_point_count = 0
+    blocked_area = 0.0
+
+    target_indices = [0, 1, 2, 5, 9, 13, 17, 6, 10, 14, 18]
+
     for hand in g.hand_landmarks:
-        for h in hand:
-            if min_x <= h.x <= max_x and min_y <= h.y <= max_y:
-                block_point_count +=1
-    if block_point_count !=0:
-        return True, block_point_count
-    return False, 0
+        hand_points = [(h.x, h.y) for i, h in enumerate(hand) if
+                       i in target_indices and min_x <= h.x <= max_x and min_y <= h.y <= max_y]
+
+        if hand_points:
+            hand_min_x = min([p[0] for p in hand_points])
+            hand_max_x = max([p[0] for p in hand_points])
+            hand_min_y = min([p[1] for p in hand_points])
+            hand_max_y = max([p[1] for p in hand_points])
+            blocked_area += (hand_max_x - hand_min_x) * (hand_max_y - hand_min_y)
+
+    if blocked_area > 0:
+        normalized_area = blocked_area / face_area
+        return True, normalized_area
+    return False, 0.0
+
+
 def pred_callback(detection_result, output_image, timestamp_ms, tongue_model):
     # For each face detected
     for idx in range(len(detection_result.face_landmarks)):
-        # Block handling
-        block_flag, block_num = is_hand_in_face()
-        if g.config["Tracking"]["Face"]["block"] and block_flag and block_num > g.config["Tracking"]["Face"]["block_threshold"]:
-            continue
-        # Handle blendshapes
-        for i in range(len(detection_result.face_blendshapes[0])):
-            if g.config["Smoothing"]["enable"]:
-                g.latest_data[i] = detection_result.face_blendshapes[0][i].score
-            else:
-                g.data["BlendShapes"][i]["v"] = detection_result.face_blendshapes[0][i].score
-
         g.face_landmarks = detection_result.face_landmarks
+
+        # Block handling
+        block_flag, coverage_ratio = is_hand_in_face()
+        if block_flag and coverage_ratio > g.config["Tracking"]["Face"]["block_threshold"]:
+            print(block_flag, coverage_ratio)
+            continue
+
         # Head Image Position
         g.head_pos[0] = detection_result.face_landmarks[0][4].x
         g.head_pos[1] = detection_result.face_landmarks[0][4].y
         g.head_pos[2] = detection_result.face_landmarks[0][4].z
 
+        for i in range(len(detection_result.face_blendshapes[0])):
+            if g.config["Smoothing"]["enable"]:
+                g.latest_data[i] = detection_result.face_blendshapes[0][i].score
+            else:
+                g.data["BlendShapes"][i]["v"] = detection_result.face_blendshapes[0][i].score
         # Eye with shifting
         EyeYawLeft = -g.data["BlendShapes"][15]["v"] + g.data["BlendShapes"][13]["v"]
         EyeYawRight = -g.data["BlendShapes"][14]["v"] + g.data["BlendShapes"][16]["v"]
         EyePitchLeft = (g.data["BlendShapes"][11]["v"] - 0.5) * 2
         EyePitchRight = (g.data["BlendShapes"][12]["v"] - 0.5) * 2
-        
+
         # Tongue detection
         if g.config["Tracking"]["Tongue"]["enable"]:
             mouth_image = mouth_roi_on_image(
@@ -126,7 +141,6 @@ def pred_callback(detection_result, output_image, timestamp_ms, tongue_model):
 
         # Update g.latest_data or data directly
         if g.config["Smoothing"]["enable"]:
-            # Update g.latest_data
             # Head Blendshape
             g.latest_data[53] = 0.0
             g.latest_data[54] = 0.0
@@ -156,7 +170,6 @@ def pred_callback(detection_result, output_image, timestamp_ms, tongue_model):
             g.latest_data[68] = rotation_z
             g.latest_data[69] = rotation_y
         else:
-            # Update data directly
             # Head Blendshape
             g.data["BlendShapes"][53]["v"] = 0.0
             g.data["BlendShapes"][54]["v"] = 0.0
