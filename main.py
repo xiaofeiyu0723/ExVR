@@ -24,7 +24,12 @@ import utils.globals as g
 from tracker.face.face import draw_face_landmarks
 from tracker.face.tongue import draw_tongue_position
 from tracker.hand.hand import draw_hand_landmarks
+import win32api
+import win32process
+import win32con
 
+handle = win32api.GetCurrentProcess()
+win32process.SetPriorityClass(handle, win32con.REALTIME_PRIORITY_CLASS)
 os.environ["OPENCV_VIDEOIO_PRIORITY_MSMF"] = "0"
 
 class VideoCaptureThread(QThread):

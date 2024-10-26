@@ -81,7 +81,6 @@ def pred_callback(detection_result, output_image, timestamp_ms, tongue_model):
         # Block handling
         block_flag, coverage_ratio = is_hand_in_face()
         if block_flag and coverage_ratio > g.config["Tracking"]["Face"]["block_threshold"]:
-            print(block_flag, coverage_ratio)
             continue
 
         # Head Image Position

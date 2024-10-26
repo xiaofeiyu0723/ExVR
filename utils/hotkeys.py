@@ -16,6 +16,8 @@ actions = {
     "right": right,
     "head_pitch_up": lambda: head_pitch(True),
     "head_pitch_down": lambda: head_pitch(False),
+    "head_yaw_left": lambda: head_yaw(False),
+    "head_yaw_right": lambda: head_yaw(True),
     "grab_left": lambda: grab(True, 2),
     "grab_right": lambda: grab(False, 2),
     "trigger_left": (
@@ -29,6 +31,7 @@ actions = {
     "joystick_up_right": lambda: joystick_up(False, 1),
     "joystick_down_right": lambda: joystick_down(False, 1),
     "joystick_middle_right": lambda: joystick_middle(False, 1),
+    "joystick_middle_right_delay": lambda: joystick_middle_delay(False, 1),
     "enable_fingers_left": lambda: enable_fingers(True),
     "enable_fingers_right": lambda: enable_fingers(False),
     "set_finger_0_left": lambda: set_finger(True, 0),

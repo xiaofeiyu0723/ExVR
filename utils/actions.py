@@ -57,6 +57,13 @@ def head_pitch(flag=True):
         g.data["Rotation"][1]["s"] -= 5
 
 
+def head_yaw(flag=True):
+    if flag:
+        g.data["Rotation"][0]["s"] += 5
+    else:
+        g.data["Rotation"][0]["s"] -= 5
+
+
 grab_status = {True: False, False: False}
 def grab(value, index):
     grab_status[value] = not grab_status[value]
@@ -76,20 +83,11 @@ def trigger_release(value, index):
     print(0)
     g.controller.send_trigger(value, index, 0.0)
 
-joystick_reset_timer = None
 joystick_status = (0.0, 0.7)
 joystick_step = 0.2
 
-def reset_joystick(value, index):
-    global joystick_reset_timer
-    g.controller.send_joystick(value, index, 0.0, 0.0)
-    if joystick_reset_timer is not None:
-        joystick_reset_timer.cancel()
-        joystick_reset_timer = None
-
-    
 def joystick_up(value, index):
-    global joystick_status, joystick_step, joystick_reset_timer
+    global joystick_status, joystick_step
     x, y = joystick_status
     if x > -0.7 and y == 0.7:
         x = max(x - joystick_step, -0.7)
@@ -102,14 +100,9 @@ def joystick_up(value, index):
     joystick_status = (round(x, 1), round(y, 1))
     print(joystick_status)
     g.controller.send_joystick(value, index, joystick_status[0], joystick_status[1])
-    if joystick_reset_timer is not None:
-        joystick_reset_timer.cancel()
-    joystick_reset_timer = Timer(1.5, lambda: reset_joystick(value, index))
-    joystick_reset_timer.start()
-
 
 def joystick_down(value, index):
-    global joystick_status, joystick_step, joystick_reset_timer
+    global joystick_status, joystick_step
     x, y = joystick_status
     if x < 0.7 and y == 0.7:
         x = min(x + joystick_step, 0.7)
@@ -122,11 +115,6 @@ def joystick_down(value, index):
     joystick_status = (round(x, 1), round(y, 1))
     print(joystick_status)
     g.controller.send_joystick(value, index, joystick_status[0], joystick_status[1])
-    if joystick_reset_timer is not None:
-        joystick_reset_timer.cancel()
-    joystick_reset_timer = Timer(1.5, lambda: reset_joystick(value, index))
-    joystick_reset_timer.start()
-
 
 
 def joystick_middle(value, index):
@@ -134,6 +122,25 @@ def joystick_middle(value, index):
     g.controller.send_joystick(value, index, 0.0, 0.0)
     joystick_status = (0.0, 0.7)
     print(joystick_status)
+
+
+joystick_middle_timer = None
+
+def joystick_middle_delay(value, index):
+    global joystick_middle_timer, joystick_status
+
+    def joystick_middle():
+        global joystick_middle_timer, joystick_status
+        g.controller.send_joystick(value, index, 0.0, 0.0)
+        joystick_status = (0.0, 0.7)
+        print(joystick_status)
+        if joystick_middle_timer is not None:
+            joystick_middle_timer.cancel()
+            joystick_middle_timer = None
+
+    if joystick_middle_timer is None:
+        hand_reset_timer = Timer(0.5, joystick_middle)
+        hand_reset_timer.start()
 
 
 fingers_enbale_status = {True: False, False: False}
