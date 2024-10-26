@@ -57,11 +57,11 @@ def head_pitch(flag=True):
         g.data["Rotation"][1]["s"] -= 5
 
 
-def head_yaw(flag=True):
-    if flag:
-        g.data["Rotation"][0]["s"] += 5
-    else:
-        g.data["Rotation"][0]["s"] -= 5
+# def head_yaw(flag=True):
+#     if flag:
+#         g.data["Rotation"][0]["s"] += 5
+#     else:
+#         g.data["Rotation"][0]["s"] -= 5
 
 
 grab_status = {True: False, False: False}

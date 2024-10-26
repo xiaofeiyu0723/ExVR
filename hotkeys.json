@@ -28,8 +28,6 @@
     {"key": "ctrl+right", "action": "right"},
     {"key": "up", "action": "head_pitch_up"},
     {"key": "down", "action": "head_pitch_down"},
-    {"key": "left", "action": "head_yaw_left"},
-    {"key": "right", "action": "head_yaw_right"},
     {"key": "-", "action": "grab_left"},
     {"key": "=", "action": "grab_right"},
     {"key": "[", "action": "trigger_left"},

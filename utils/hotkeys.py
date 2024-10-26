@@ -16,8 +16,6 @@ actions = {
     "right": right,
     "head_pitch_up": lambda: head_pitch(True),
     "head_pitch_down": lambda: head_pitch(False),
-    "head_yaw_left": lambda: head_yaw(False),
-    "head_yaw_right": lambda: head_yaw(True),
     "grab_left": lambda: grab(True, 2),
     "grab_right": lambda: grab(False, 2),
     "trigger_left": (

@@ -34,8 +34,8 @@ TODO
 | `ctrl+right`     | Move right                     |
 | `up`             | Head pitch up                  |
 | `down`           | Head pitch down                |
-| `left`           | Head yaw left                  |
-| `right`          | Head yaw right                 |
+| `,` (<)          | Head yaw left                  |
+| `.` (>)          | Head yaw right                 |
 | `=`              | Grasp with left hand           |
 | `-`              | Grasp with right hand          |
 | `[`              | Trigger with left hand         |

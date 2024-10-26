@@ -16,9 +16,9 @@
             "x_rotation_scalar": 1.0,
             "y_rotation_scalar": 1.0,
             "z_rotation_scalar": 1.0,
-            "yaw_calibration": 2.048416606801014,
-            "pitch_calibration": 356.0013770706974,
-            "roll_calibration": 4.120206817526731
+            "yaw_calibration": 4.2710160984110015,
+            "pitch_calibration": 5.759464844224408,
+            "roll_calibration": 359.8285352373267
         },
         "Face": {
             "enable": true,
@@ -38,7 +38,7 @@
             "x_scalar": 1.0,
             "y_scalar": 1.0,
             "z_scalar": 0.05,
-            "z_shifting": 5.299992128221355,
+            "z_shifting": 6.550301796711368,
             "hand_confidence": 0.5,
             "hand_delta_threshold": 0.1,
             "hand_shifting_threshold": 0.1,
