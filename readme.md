@@ -4,7 +4,7 @@ This is a project for PC users who want to experience VR without a headset.
 
 ## Usage
 
-TODO
+If using uv: `uv sync` and `uv run main.py`
 
 ## Hotkeys
 
@@ -55,7 +55,7 @@ TODO
 
 The `config.json` file, located in the root (`./`) directory, allows users to configure various components, including camera, IP settings, smoothing, and tracking parameters.
 
-#### General Settings  
+#### General Settings
 
 | Key        | Description                                      |
 |------------|--------------------------------------------------|
@@ -63,7 +63,7 @@ The `config.json` file, located in the root (`./`) directory, allows users to co
 | IP         | Defines the IP address for connection settings.   |
 | Smoothing  | Enables or disables smoothing for movements.      |
 
-#### Tracking Settings  
+#### Tracking Settings
 
 | **Component**  | **Parameter**                     | **Description**                                    |
 |----------------|------------------------------------|----------------------------------------------------|
@@ -90,7 +90,7 @@ The `config.json` file, located in the root (`./`) directory, allows users to co
 |                | finger_confidence                 | Minimum confidence for finger detection.          |
 |                | finger_threshold                  | Sensitivity threshold for finger movements.       |
 
-#### Model Settings  
+#### Model Settings
 
 | **Model**      | **Parameter**                      | **Description**                                    |
 |----------------|------------------------------------|----------------------------------------------------|
@@ -122,15 +122,15 @@ Each entry contains the following:
 
 The `smoothing.json` file, located in the root (`./`) directory, contains parameters for smoothing various movements and blend shapes.
 
-- **OtherBlendShapes**: Controls smoothing for general facial blend shapes.  
-- **EyeBlink**: Adjusts the responsiveness of eye blinking.  
-- **EyeLook**: Smooths eye movement, including gaze direction.  
-- **TongueOut**: Controls the tongue-out animation smoothing.  
-- **TongueMove**: Smooths left and right tongue movements.  
-- **HeadPosition**: Manages smoothing for head position adjustments.  
-- **HeadRotation**: Smooths head rotation movements.  
-- **LeftHandPosition** / **RightHandPosition**: Adjusts hand position smoothing.  
-- **LeftHandRotation** / **RightHandRotation**: Manages the smoothness of hand rotations.  
+- **OtherBlendShapes**: Controls smoothing for general facial blend shapes.
+- **EyeBlink**: Adjusts the responsiveness of eye blinking.
+- **EyeLook**: Smooths eye movement, including gaze direction.
+- **TongueOut**: Controls the tongue-out animation smoothing.
+- **TongueMove**: Smooths left and right tongue movements.
+- **HeadPosition**: Manages smoothing for head position adjustments.
+- **HeadRotation**: Smooths head rotation movements.
+- **LeftHandPosition** / **RightHandPosition**: Adjusts hand position smoothing.
+- **LeftHandRotation** / **RightHandRotation**: Manages the smoothness of hand rotations.
 - **LeftHandFinger** / **RightHandFinger**: Controls smoothing for individual finger movements.
 
 If you are not developing the application, avoid modifying the following fields:
@@ -139,7 +139,7 @@ If you are not developing the application, avoid modifying the following fields:
 - **indices**: Specifies the relevant data indices.
 - **shifting**: Indices shifting.
 
-You **can modify** the following settings to fine-tune the experience:  
+You **can modify** the following settings to fine-tune the experience:
 - **max_delta**: Maximum allowed change in value. Higher values make movements more sensitive but can introduce jitter.
 - **deadzone**: The range within which small movements are ignored. A larger dead zone reduces jitter but may make movements feel less smooth.
 - **dt_multiplier**: Smoothing factor. Smaller values produce smoother movements but may slow down responsiveness.
