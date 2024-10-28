@@ -1,0 +1,10 @@
+opencv-python>=4.10.0.84
+pygrabber>=0.2
+pyqt5>=5.15.11
+pyqt5-qt5==5.15.2
+pywin32>=308
+torch>=2.5.0
+mediapipe==0.10.13
+keyboard>=0.13.5
+pynput>=1.7.7
+python-osc>=1.9.0

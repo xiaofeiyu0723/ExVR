@@ -85,7 +85,7 @@ def trigger_release(value, index):
 
 import math
 
-joystick_value = 0.75
+joystick_value = 1.0
 joystick_status = (0.0, joystick_value)
 joystick_step = 0.2
 angle = math.atan2(joystick_status[1], joystick_status[0])
