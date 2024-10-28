@@ -83,56 +83,48 @@ def trigger_release(value, index):
     print(0)
     g.controller.send_trigger(value, index, 0.0)
 
-joystick_status = (0.0, 0.7)
+import math
+
+joystick_value = 0.75
+joystick_status = (0.0, joystick_value)
 joystick_step = 0.2
+angle = math.atan2(joystick_status[1], joystick_status[0])
 
 def joystick_up(value, index):
-    global joystick_status, joystick_step
-    x, y = joystick_status
-    if x > -0.7 and y == 0.7:
-        x = max(x - joystick_step, -0.7)
-    elif x <= -0.7 and y > -0.7:
-        y = max(y - joystick_step, -0.7)
-    elif y <= -0.7 and x < 0.7:
-        x = min(x + joystick_step, 0.7)
-    elif x >= 0.7 and y < 0.7:
-        y = min(y + joystick_step, 0.7)
-    joystick_status = (round(x, 1), round(y, 1))
+    global joystick_status, joystick_step, angle, joystick_value
+    angle += joystick_step  # 顺时针旋转
+    x = round(joystick_value * math.cos(angle), 1)
+    y = round(joystick_value * math.sin(angle), 1)
+    joystick_status = (x, y)
     print(joystick_status)
     g.controller.send_joystick(value, index, joystick_status[0], joystick_status[1])
 
 def joystick_down(value, index):
-    global joystick_status, joystick_step
-    x, y = joystick_status
-    if x < 0.7 and y == 0.7:
-        x = min(x + joystick_step, 0.7)
-    elif x >= 0.7 and y > -0.7:
-        y = max(y - joystick_step, -0.7)
-    elif y <= -0.7 and x > -0.7:
-        x = max(x - joystick_step, -0.7)
-    elif x <= -0.7 and y < 0.7:
-        y = min(y + joystick_step, 0.7)
-    joystick_status = (round(x, 1), round(y, 1))
+    global joystick_status, joystick_step, angle, joystick_value
+    angle -= joystick_step  # 逆时针旋转
+    x = round(joystick_value * math.cos(angle), 1)
+    y = round(joystick_value * math.sin(angle), 1)
+    joystick_status = (x, y)
     print(joystick_status)
     g.controller.send_joystick(value, index, joystick_status[0], joystick_status[1])
 
 
 def joystick_middle(value, index):
-    global joystick_status
+    global joystick_status,joystick_value
     g.controller.send_joystick(value, index, 0.0, 0.0)
-    joystick_status = (0.0, 0.7)
+    joystick_status = (0.0, joystick_value)
     print(joystick_status)
 
 
 joystick_middle_timer = None
 
 def joystick_middle_delay(value, index):
-    global joystick_middle_timer, joystick_status
+    global joystick_middle_timer, joystick_status, joystick_value
 
     def joystick_middle():
         global joystick_middle_timer, joystick_status
         g.controller.send_joystick(value, index, 0.0, 0.0)
-        joystick_status = (0.0, 0.7)
+        joystick_status = (0.0, joystick_value)
         print(joystick_status)
         if joystick_middle_timer is not None:
             joystick_middle_timer.cancel()

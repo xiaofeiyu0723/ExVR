@@ -4,6 +4,7 @@ from utils.data import setup_data, save_data
 from utils.hotkeys import setup_hotkeys,apply_hotkeys
 from utils.smoothing import setup_smoothing
 from utils.hand_sender import setup_controller
+import cv2
 
 config=setup_config()
 data,default_data = setup_data()
@@ -16,6 +17,12 @@ smoothing_config = setup_smoothing()
 face_landmarks=None
 hand_landmarks=None
 handedness=None
+
+# TODO: I hate the new version mediapipe
+tongue_model=None
+face_detector=None
+hand_detector=None
+start_time=cv2.getTickCount()
 
 def update_configs(restart=False):
     global config, data,default_data,latest_data,head_pos,controller,hotkey_config,smoothing_config

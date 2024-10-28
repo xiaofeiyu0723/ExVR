@@ -1,30 +1,29 @@
 import threading
-import time
-
 import cv2
 import mediapipe as mp
 from tracker.face.tongue import initialize_tongue_model
-from tracker.face.face import initialize_face
-from tracker.hand.hand import initialize_hand
+from tracker.face.face import initialize_face,face_pred_handling
+from tracker.hand.hand import initialize_hand,hand_pred_handling
 from utils.sender import data_send_thread
 from utils.hotkeys import stop_hotkeys,apply_hotkeys
 from utils.smoothing import apply_smoothing
 import utils.globals as g
 
+
 class Tracker:
     def __init__(self):
         self.is_running = True
         self.image = None
-        self.start_time = cv2.getTickCount()
-        
+
         g.update_configs(True)
 
-        print("Initializing tongue model")
-        self.tongue_model = initialize_tongue_model()
-
-        print("Initializing MediaPipe")
-        self.face_detector = initialize_face(self.tongue_model)
-        self.hand_detector = initialize_hand()
+        # TODO: I hate the new version mediapipe
+        if g.face_detector is None or g.hand_detector is None or g.tongue_model is None:
+            print("Initializing tongue model")
+            g.tongue_model = initialize_tongue_model()
+            print("Initializing MediaPipe")
+            g.face_detector = initialize_face(g.tongue_model)
+            g.hand_detector = initialize_hand()
 
         # Start data send thread
         self.data_thread = threading.Thread(
@@ -50,12 +49,12 @@ class Tracker:
 
     def process_frames(self, image_rgb):
         mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=image_rgb)
-        timestamp_ms = int((cv2.getTickCount() - self.start_time) * 1000 / cv2.getTickFrequency())
+        timestamp_ms = int((cv2.getTickCount() - g.start_time) * 1000 / cv2.getTickFrequency())
         if g.config["Tracking"]["Head"]["enable"] or g.config["Tracking"]["Face"]["enable"]:
-            self.face_detector.detect_async(mp_image, timestamp_ms=timestamp_ms)
+            g.face_detector.detect_async(mp_image,timestamp_ms=timestamp_ms)
         if g.config["Tracking"]["Hand"]["enable"]:
-            self.hand_detector.detect_async(mp_image, timestamp_ms=timestamp_ms)
-        cv2.waitKey(10)
+            hand_result=g.hand_detector.process(image_rgb)
+            hand_pred_handling(hand_result)
 
     def stop(self):
         self.is_running = False

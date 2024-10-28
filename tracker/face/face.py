@@ -42,6 +42,7 @@ def draw_face_landmarks(rgb_image):
     return rgb_image
 
 def is_hand_in_face():
+
     if not g.config["Tracking"]["Face"]["block"] or not g.face_landmarks or not g.hand_landmarks:
         return False, 0.0
 
@@ -57,9 +58,8 @@ def is_hand_in_face():
     target_indices = [0, 1, 2, 5, 9, 13, 17, 6, 10, 14, 18]
 
     for hand in g.hand_landmarks:
-        hand_points = [(h.x, h.y) for i, h in enumerate(hand) if
+        hand_points = [(h.x, h.y) for i, h in enumerate(hand.landmark) if
                        i in target_indices and min_x <= h.x <= max_x and min_y <= h.y <= max_y]
-
         if hand_points:
             hand_min_x = min([p[0] for p in hand_points])
             hand_max_x = max([p[0] for p in hand_points])
@@ -73,7 +73,7 @@ def is_hand_in_face():
     return False, 0.0
 
 
-def pred_callback(detection_result, output_image, timestamp_ms, tongue_model):
+def face_pred_handling(detection_result, output_image, timestamp_ms, tongue_model):
     # For each face detected
     for idx in range(len(detection_result.face_landmarks)):
         g.face_landmarks = detection_result.face_landmarks
@@ -214,8 +214,9 @@ def initialize_face(tongue_model):
         min_face_presence_confidence=g.config["Model"]["Face"]["min_face_presence_confidence"],
         min_tracking_confidence=g.config["Model"]["Face"]["min_tracking_confidence"],
         num_faces=1,
+        # running_mode=VisionRunningMode.IMAGE,
         running_mode=VisionRunningMode.LIVE_STREAM,
-        result_callback=lambda detection_result, output_image, timestamp_ms: pred_callback(
+        result_callback=lambda detection_result, output_image, timestamp_ms: face_pred_handling(
             detection_result, output_image, timestamp_ms, tongue_model),
     )
     return FaceLandmarker.create_from_options(options)

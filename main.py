@@ -18,18 +18,14 @@ from PyQt5.QtGui import QImage, QPixmap
 import cv2
 from pygrabber.dshow_graph import FilterGraph
 import sys, os, winreg, shutil
-from utils.tracking import Tracker
+# from utils.tracking import Tracker
+import utils.tracking
 from utils.actions import *
 import utils.globals as g
 from tracker.face.face import draw_face_landmarks
 from tracker.face.tongue import draw_tongue_position
 from tracker.hand.hand import draw_hand_landmarks
-import win32api
-import win32process
-import win32con
 
-handle = win32api.GetCurrentProcess()
-win32process.SetPriorityClass(handle, win32con.REALTIME_PRIORITY_CLASS)
 os.environ["OPENCV_VIDEOIO_PRIORITY_MSMF"] = "0"
 
 class VideoCaptureThread(QThread):
@@ -42,7 +38,7 @@ class VideoCaptureThread(QThread):
         self.video_capture = None
         self.is_running = True
         self.show_image = False
-        self.tracker = Tracker()
+        self.tracker = utils.tracking.Tracker()
 
     def run(self):
         self.video_capture = cv2.VideoCapture(self.source)

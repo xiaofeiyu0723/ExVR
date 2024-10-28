@@ -61,9 +61,9 @@
             "min_tracking_confidence": 0.5
         },
         "Hand": {
+            "model_complexity": 1,
             "min_hand_detection_confidence": 0.5,
-            "min_hand_presence_confidence": 0.4,
-            "min_tracking_confidence": 0.1
+            "min_tracking_confidence": 0.5
         }
     }
 }
