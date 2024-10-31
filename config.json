@@ -1,8 +1,14 @@
 {
-    "Sending": {
-        "address": "127.0.0.1",
+    "Setting": {
+        "priority": "NORMAL_PRIORITY_CLASS",
         "flip_x": false,
         "flip_y": false
+    },
+    "Hotkey":{
+        "enable": true
+    },
+    "Sending": {
+        "address": "127.0.0.1"
     },
     "Smoothing": {
         "enable": true

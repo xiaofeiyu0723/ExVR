@@ -1,5 +1,7 @@
 {
   "Hotkeys": [
+    {"key": "\\+`", "action": "toggle_hotkeys"},
+
     {"key": "ctrl+'", "action": "reset_head"},
     {"key": "ctrl+;", "action": "reset_eye"},
     {"key": "ctrl+;+1", "action": "disable_eye_yaw"},

@@ -10,23 +10,28 @@ from PyQt5.QtWidgets import (
     QHBoxLayout,
     QFrame,
     QCheckBox,
-    QSlider
+    QSlider,
+    QMessageBox,
+    QDialog,
+    QScrollArea,
+    QGridLayout
 )
 from PyQt5.QtCore import QThread, pyqtSignal, Qt
-from PyQt5.QtGui import QImage, QPixmap
+from PyQt5.QtGui import QImage, QPixmap, QDoubleValidator
 
 import cv2
 from pygrabber.dshow_graph import FilterGraph
 import sys, os, winreg, shutil
-# from utils.tracking import Tracker
 import utils.tracking
 from utils.actions import *
 import utils.globals as g
+from utils.data import setup_data,save_data
+from utils.hotkeys import stop_hotkeys, apply_hotkeys
 from tracker.face.face import draw_face_landmarks
 from tracker.face.tongue import draw_tongue_position
 from tracker.hand.hand import draw_hand_landmarks
+from ctypes import windll
 
-os.environ["OPENCV_VIDEOIO_PRIORITY_MSMF"] = "0"
 
 class VideoCaptureThread(QThread):
     frame_ready = pyqtSignal(QImage)
@@ -47,9 +52,9 @@ class VideoCaptureThread(QThread):
             ret, frame = self.video_capture.read()
             if ret:
                 rgb_image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-                if g.config["Sending"]["flip_x"]:
+                if g.config["Setting"]["flip_x"]:
                     rgb_image = cv2.flip(rgb_image, 1)
-                if g.config["Sending"]["flip_y"]:
+                if g.config["Setting"]["flip_y"]:
                     rgb_image = cv2.flip(rgb_image, 0)
 
                 self.tracker.process_frames(rgb_image)
@@ -80,28 +85,36 @@ class VideoCaptureThread(QThread):
 class VideoWindow(QMainWindow):
     def __init__(self):
         super().__init__()
+
+        screen = QApplication.screens()[0]
+        screen_size = screen.size()
+        self.width = int(screen_size.width() * 0.3)
+        self.height = int(screen_size.height() * 0.65)
+        self.half_height = int(self.height / 2)
+
         self.setWindowTitle(
             "ExVR - Experience Virtual Reality"
         )
-        self.setFixedSize(800, 1000)
+        # self.setFixedSize(width, height)
+        self.resize(self.width, self.height)
 
         central_widget = QWidget(self)
         self.setCentralWidget(central_widget)
         layout = QVBoxLayout(central_widget)
 
         self.image_label = QLabel(self)
-        self.image_label.resize(800, 500)
+        self.image_label.resize(self.width, self.half_height)
         layout.addWidget(self.image_label)
 
         flip_layout = QHBoxLayout()  # Create a QHBoxLayout for new reset buttons
         self.flip_x_checkbox = QCheckBox("Flip X", self)
         self.flip_x_checkbox.clicked.connect(self.flip_x)
-        self.flip_x_checkbox.setChecked(g.config["Sending"]["flip_x"])
+        self.flip_x_checkbox.setChecked(g.config["Setting"]["flip_x"])
         flip_layout.addWidget(self.flip_x_checkbox)
 
         self.flip_y_checkbox = QCheckBox("Flip Y", self)
         self.flip_y_checkbox.clicked.connect(self.flip_y)
-        self.flip_y_checkbox.setChecked(g.config["Sending"]["flip_y"])
+        self.flip_y_checkbox.setChecked(g.config["Setting"]["flip_y"])
         flip_layout.addWidget(self.flip_y_checkbox)
         layout.addLayout(flip_layout)
 
@@ -112,6 +125,12 @@ class VideoWindow(QMainWindow):
         self.camera_selection = QComboBox(self)
         self.populate_camera_list()
         layout.addWidget(self.camera_selection)
+
+        self.priority_selection = QComboBox(self)
+        self.priority_selection.addItems(["IDLE_PRIORITY_CLASS", "BELOW_NORMAL_PRIORITY_CLASS", "NORMAL_PRIORITY_CLASS", "ABOVE_NORMAL_PRIORITY_CLASS", "HIGH_PRIORITY_CLASS", "REALTIME_PRIORITY_CLASS"])
+        self.priority_selection.currentIndexChanged.connect(self.set_process_priority)
+        layout.addWidget(self.priority_selection)
+        self.priority_selection.setCurrentIndex(self.priority_selection.findText(g.config["Setting"]["priority"]))
 
         self.install_state, steamvr_driver_path, vrcfacetracking_path = self.install_checking()
         if steamvr_driver_path is None or vrcfacetracking_path is None:
@@ -236,6 +255,15 @@ class VideoWindow(QMainWindow):
         layout.addWidget(separator_1)
 
         config_layout = QHBoxLayout()
+        self.reset_hotkey_button = QPushButton("Reset Hotkey", self)
+        self.reset_hotkey_button.clicked.connect(self.reset_hotkeys)
+        config_layout.addWidget(self.reset_hotkey_button)
+        self.stop_hotkey_button = QPushButton("Stop Hotkey", self)
+        self.stop_hotkey_button.clicked.connect(stop_hotkeys)
+        config_layout.addWidget(self.stop_hotkey_button)
+        self.set_face_button = QPushButton("Set Face", self)
+        self.set_face_button.clicked.connect(self.face_dialog)
+        config_layout.addWidget(self.set_face_button)
         self.update_config_button = QPushButton("Update Config", self)
         self.update_config_button.clicked.connect(lambda:(g.update_configs(),self.update_checkboxes(), self.update_sliders()))
         config_layout.addWidget(self.update_config_button)
@@ -246,11 +274,93 @@ class VideoWindow(QMainWindow):
 
         self.video_thread = None
 
+    def save_data(self):
+        for i, (key, edits) in enumerate(self.lineEdits.items()):
+            idx=i+1
+            v = float(edits[0].text())
+            s = float(edits[1].text())
+            w = float(edits[2].text())
+            max_value = float(edits[3].text())
+            e = self.checkBoxes[key].isChecked()
+            g.data["BlendShapes"][idx]["v"] = v
+            g.data["BlendShapes"][idx]["s"] = s
+            g.data["BlendShapes"][idx]["w"] = w
+            g.data["BlendShapes"][idx]["max"] = max_value
+            g.data["BlendShapes"][idx]["e"] = e
+        save_data(g.data)
+        self.dialog.close()
+
+    def face_dialog(self):
+        self.dialog = QDialog(self)
+        self.dialog.setWindowTitle("Face Setting")
+        self.dialog.resize(self.width, self.height)  # Set a fixed size for the dialog
+
+        layout = QVBoxLayout(self.dialog)
+
+        # Create a scroll area
+        scroll_area = QScrollArea()
+        scroll_area.setWidgetResizable(True)
+
+        # Create a widget to hold the form layout
+        form_widget = QWidget()
+        form_layout = QGridLayout(form_widget)  # Use a grid layout for better alignment
+
+        # Add header labels for the form
+        form_layout.addWidget(QLabel("BlendShape"), 0, 0)
+        form_layout.addWidget(QLabel("Value"), 0, 1)
+        form_layout.addWidget(QLabel("Shifting"), 0, 2)
+        form_layout.addWidget(QLabel("Weight"), 0, 3)
+        form_layout.addWidget(QLabel("Max"), 0, 4)
+        form_layout.addWidget(QLabel("Enabled"), 0, 5)
+
+        # Store QLineEdit and QCheckBox references
+        self.lineEdits = {}
+        self.checkBoxes = {}
+
+        # Create input fields for each blend shape
+        double_validator = QDoubleValidator()
+        blendshape_data,_=setup_data()
+        for i, blendshape in enumerate(blendshape_data["BlendShapes"][1:], start=1):  # Start from row 1
+            key = blendshape["k"]
+            v_edit = QLineEdit(str(round(blendshape["v"],2)))
+            v_edit.setValidator(double_validator)
+            s_edit = QLineEdit(str(round(blendshape["s"],2)))
+            s_edit.setValidator(double_validator)
+            w_edit = QLineEdit(str(round(blendshape["w"],2)))
+            w_edit.setValidator(double_validator)
+            max_edit = QLineEdit(str(round(blendshape["max"],2)))
+            max_edit.setValidator(double_validator)
+            e_check = QCheckBox()
+            e_check.setChecked(blendshape["e"])
+
+            # Save references to the QLineEdit and QCheckBox
+            self.lineEdits[key] = (v_edit, s_edit, w_edit, max_edit)
+            self.checkBoxes[key] = e_check
+
+            # Add widgets to the grid layout
+            form_layout.addWidget(QLabel(key), i, 0)  # Blend shape key in column 0
+            form_layout.addWidget(v_edit, i, 1)  # v_edit in column 1
+            form_layout.addWidget(s_edit, i, 2)  # s_edit in column 2
+            form_layout.addWidget(w_edit, i, 3)  # w_edit in column 3
+            form_layout.addWidget(max_edit, i, 4)  # max_edit in column 4
+            form_layout.addWidget(e_check, i, 5)  # e_check in column 5
+
+        # Add the form layout to the scroll area
+        scroll_area.setWidget(form_widget)
+        layout.addWidget(scroll_area)  # Add the scroll area to the dialog layout
+
+        # Add a Save Config button
+        self.save_config_button = QPushButton("Save Config", self.dialog)
+        self.save_config_button.clicked.connect(self.save_data)
+        layout.addWidget(self.save_config_button)
+
+        self.dialog.exec_()
+
     def flip_x(self, value):
-        g.config["Sending"]["flip_x"] = value
+        g.config["Setting"]["flip_x"] = value
 
     def flip_y(self, value):
-        g.config["Sending"]["flip_y"] = value
+        g.config["Setting"]["flip_y"] = value
 
     def set_hand_front(self, value):
         g.config["Tracking"]["Hand"]["only_front"] = value
@@ -259,8 +369,8 @@ class VideoWindow(QMainWindow):
         g.config["Tracking"]["Face"]["block"] = value
 
     def update_checkboxes(self):
-        self.flip_x_checkbox.setChecked(g.config["Sending"]["flip_x"])
-        self.flip_y_checkbox.setChecked(g.config["Sending"]["flip_y"])
+        self.flip_x_checkbox.setChecked(g.config["Setting"]["flip_x"])
+        self.flip_y_checkbox.setChecked(g.config["Setting"]["flip_y"])
         self.checkbox1.setChecked(g.config["Tracking"]["Head"]["enable"])
         self.checkbox2.setChecked(g.config["Tracking"]["Face"]["enable"])
         self.checkbox3.setChecked(g.config["Tracking"]["Tongue"]["enable"])
@@ -290,6 +400,12 @@ class VideoWindow(QMainWindow):
         self.label1.setText(f"x {x_scalar:.2f}")
         self.label2.setText(f"y {y_scalar:.2f}")
         self.label3.setText(f"z {z_scalar:.2f}")
+
+    def reset_hotkeys(self):
+        stop_hotkeys()
+        apply_hotkeys()
+        if self.video_thread is None:
+            stop_hotkeys()
 
     def update_config(self, key, value):
         if key in g.config["Tracking"]:
@@ -328,6 +444,38 @@ class VideoWindow(QMainWindow):
             print(f"Error accessing registry or file system: {e}")
             return False, None, None
 
+    def set_process_priority(self):
+        priority_key = self.priority_selection.currentText()
+        print(priority_key)
+        # Define a mapping of priority indexes to their corresponding priority classes
+        priority_classes = {
+            "IDLE_PRIORITY_CLASS": 0x00000040,
+            "BELOW_NORMAL_PRIORITY_CLASS": 0x00004000,
+            "NORMAL_PRIORITY_CLASS": 0x00000020,  # NORMAL_PRIORITY_CLASS
+            "ABOVE_NORMAL_PRIORITY_CLASS": 0x00008000,
+            "HIGH_PRIORITY_CLASS": 0x00000080,
+            "REALTIME_PRIORITY_CLASS": 0x00000100
+        }
+        # Check if the index is valid
+        if priority_key not in priority_classes:
+            self.display_message("Error","Invalid priority index")
+            return False
+        priority_class = priority_classes[priority_key]
+        current_pid = os.getpid()  # Get the current process ID
+        handle = windll.kernel32.OpenProcess(0x0200 | 0x0400, False, current_pid)  # Open the current process
+        success = windll.kernel32.SetPriorityClass(handle, priority_class)
+        windll.kernel32.CloseHandle(handle)
+        print("Finished setting priority")
+
+    def display_message(self,title,message,style=""):
+        msg_box = QMessageBox()
+        msg_box.setIcon(QMessageBox.Critical)
+        msg_box.setText(message)
+        msg_box.setWindowTitle(title)
+        msg_box.setStyleSheet(style)
+        msg_box.exec_()
+        return
+
     def install_function(self):
         self.install_state, steamvr_driver_path, vrcfacetracking_path = (
             self.install_checking()
@@ -338,15 +486,16 @@ class VideoWindow(QMainWindow):
                 "QPushButton { background-color: red; color: white; }")
         elif self.install_state:
             # Uninstall process
+            dll_path = os.path.join(vrcfacetracking_path, "VRCFT-MediapipePro.dll")
+            try:
+                os.remove(dll_path)
+            except PermissionError:
+                self.display_message("Error", "VRCFT is running, please close VRCFT and try again.")
+                return
             shutil.rmtree(os.path.join(steamvr_driver_path, "vmt"), ignore_errors=True)
-            shutil.rmtree(
-                os.path.join(steamvr_driver_path, "vrto3d"), ignore_errors=True
-            )
-            os.remove(os.path.join(vrcfacetracking_path, "VRCFT-MediapipePro.dll"))
+            shutil.rmtree(os.path.join(steamvr_driver_path, "vrto3d"), ignore_errors=True)
             self.install_button.setText("Install Drivers")
-            self.install_button.setStyleSheet(
-                "QPushButton { background-color: blue; color: white; }"
-            )
+            self.install_button.setStyleSheet("QPushButton { background-color: blue; color: white; }")
         else:
             # Install process
             for driver in ["vmt", "vrto3d"]:

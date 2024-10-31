@@ -5,7 +5,16 @@ from utils.json_manager import load_json
 
 mouse_listener = None
 
+def toggle_hotkeys():
+    g.config["Hotkey"]["enable"] = not g.config["Hotkey"]["enable"]
+    print("Hotkey:",g.config["Hotkey"]["enable"])
+    if g.config["Hotkey"]["enable"]:
+        apply_hotkeys()
+    else:
+        stop_hotkeys()
+
 actions = {
+    "toggle_hotkeys": toggle_hotkeys,
     "reset_eye": reset_eye,
     "disable_eye_yaw": disable_eye_yaw,
     "disable_eye": disable_eye,
@@ -137,6 +146,7 @@ def apply_hotkeys():
     if mouse_actions:
         mouse_listener = mouse.Listener(on_click=on_click, on_scroll=on_scroll)
         mouse_listener.start()
+    print("Start Hotkey")
 
 def stop_hotkeys():
     global mouse_listener
@@ -144,3 +154,7 @@ def stop_hotkeys():
         mouse_listener.stop()
         mouse_listener = None
     keyboard.unhook_all()
+    for item in g.hotkey_config["Hotkeys"]:
+        if item["action"] == "toggle_hotkeys":
+            keyboard.add_hotkey(item["key"], toggle_hotkeys)
+    print("Stop Hotkey")

@@ -8,8 +8,4 @@ def setup_data():
 
 def save_data(data):
     data=deepcopy(data)
-    for key in data:
-        # data[key]
-        for d in data[key]:
-            d["v"] = -d["s"]
     save_json(data, "./data.json")

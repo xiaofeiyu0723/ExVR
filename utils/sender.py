@@ -3,6 +3,7 @@ import struct
 import time
 import utils.globals as g
 from scipy.spatial.transform import Rotation as R
+import numpy as np
 
 def get_value(value, value_d):
     if value["e"]:
@@ -14,8 +15,11 @@ def get_value(value, value_d):
 def pack_data(data, default_data):
     packed_data = b""
     for value, value_d in zip(data["BlendShapes"][1:], default_data["BlendShapes"][1:]):
+        v = get_value(value, value_d) * value["w"]
+        if np.abs(v) > value["max"]:
+            v = np.sign(v) * value["max"]
         packed_data += struct.pack(
-            ">f", get_value(value, value_d)
+            ">f",  v
         )
     return packed_data
 

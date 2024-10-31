@@ -1,7 +1,6 @@
 import utils.globals as g
 from threading import Timer
 
-
 def reset_eye():
     for i in [9, 10]:
         g.data["BlendShapes"][i]["e"] = True

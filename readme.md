@@ -8,45 +8,46 @@ TODO
 
 ## Hotkeys
 
-| **Key**          | **Action**                     |
-|------------------|--------------------------------|
-| `ctrl+'`         | Reset head (important)         |
-| `ctrl+;`         | Reset eyes                     |
-| `ctrl+;+1`       | Disable eye yaw                |
-| `ctrl+;+2`       | Disable all eye movements      |
-| `ctrl+[`         | calibrate hand position (left) |
-| `ctrl+]`         | calibrate hand position (right) |
-| [+`              | Enable all fingers (left)      |
-| `[+1`            | Set finger 0 on left hand      |
-| `[+2`            | Set finger 1 on left hand      |
-| `[+3`            | Set finger 2 on left hand      |
-| `[+4`            | Set finger 3 on left hand      |
-| `[+5`            | Set finger 4 on left hand      |
-| ]+`              | Enable all fingers (right)     |
-| `]+1`            | Set finger 0 on right hand     |
-| `]+2`            | Set finger 1 on right hand     |
-| `]+3`            | Set finger 2 on right hand     |
-| `]+4`            | Set finger 3 on right hand     |
-| `]+5`            | Set finger 4 on right hand     |
-| `ctrl+up`        | Move up                        |
-| `ctrl+down`      | Move down                      |
-| `ctrl+left`      | Move left                      |
-| `ctrl+right`     | Move right                     |
-| `up`             | Head pitch up                  |
-| `down`           | Head pitch down                |
-| `,` (<)          | Head yaw left                  |
-| `.` (>)          | Head yaw right                 |
-| `=`              | Grasp with left hand           |
-| `-`              | Grasp with right hand          |
-| `[`              | Trigger with left hand         |
-| `]`              | Trigger with right hand        |
-| `left` (mouse)   | Trigger with left hand         |
-| `right` (mouse)  | Trigger with right hand        |
-| `left` (mouse)   | Grasp with left hand           |
-| `right` (mouse)  | Grasp with right hand          |
-| `scroll_up`      | Move joystick up               |
-| `scroll_down`    | Move joystick down             |
-| `middle` (mouse) | Activate joystick middle right |
+| **Key**         | **Action**                      |
+|-----------------|---------------------------------|
+| \+`             | Toggle hotkeys                  |
+| `ctrl+'`        | Reset head                      |
+| `ctrl+;`        | Reset eyes                      |
+| `ctrl+;+1`      | Disable eye yaw                 |
+| `ctrl+;+2`      | Disable all eye movements       |
+| `ctrl+[`        | calibrate hand position (left)  |
+| `ctrl+]`        | calibrate hand position (right) |
+| [+`             | Enable all fingers (left)       |
+| `[+1`           | Set finger 0 on left hand       |
+| `[+2`           | Set finger 1 on left hand       |
+| `[+3`           | Set finger 2 on left hand       |
+| `[+4`           | Set finger 3 on left hand       |
+| `[+5`           | Set finger 4 on left hand       |
+| ]+`             | Enable all fingers (right)      |
+| `]+1`           | Set finger 0 on right hand      |
+| `]+2`           | Set finger 1 on right hand      |
+| `]+3`           | Set finger 2 on right hand      |
+| `]+4`           | Set finger 3 on right hand      |
+| `]+5`           | Set finger 4 on right hand      |
+| `ctrl+up`       | Move up                         |
+| `ctrl+down`     | Move down                       |
+| `ctrl+left`     | Move left                       |
+| `ctrl+right`    | Move right                      |
+| `up`            | Head pitch up                   |
+| `down`          | Head pitch down                 |
+| `,` (<)         | Head yaw left                   |
+| `.` (>)         | Head yaw right                  |
+| `=`             | Grasp with left hand            |
+| `-`             | Grasp with right hand           |
+| `[`             | Trigger with left hand          |
+| `]`             | Trigger with right hand         |
+| `left` (mouse)  | Trigger with left hand          |
+| `right` (mouse) | Trigger with right hand         |
+| `left` (mouse)  | Grasp with left hand            |
+| `right` (mouse) | Grasp with right hand           |
+| `scroll_up`     | Move joystick up                |
+| `scroll_down`   | Move joystick down              |
+| `middle` (mouse) | Activate joystick middle right  |
 
 
 ## Configuration
