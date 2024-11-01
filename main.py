@@ -32,6 +32,7 @@ from tracker.face.tongue import draw_tongue_position
 from tracker.hand.hand import draw_hand_landmarks
 from ctypes import windll
 
+os.environ["OPENCV_VIDEOIO_PRIORITY_MSMF"] = "0"
 
 class VideoCaptureThread(QThread):
     frame_ready = pyqtSignal(QImage)
