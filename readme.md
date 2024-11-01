@@ -10,7 +10,7 @@ TODO
 
 | **Key**         | **Action**                      |
 |-----------------|---------------------------------|
-| \+`             | Toggle hotkeys                  |
+| \\+`             | Toggle hotkeys                  |
 | `ctrl+'`        | Reset head                      |
 | `ctrl+;`        | Reset eyes                      |
 | `ctrl+;+1`      | Disable eye yaw                 |
