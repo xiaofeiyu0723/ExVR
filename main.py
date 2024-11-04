@@ -31,8 +31,9 @@ from tracker.face.face import draw_face_landmarks
 from tracker.face.tongue import draw_tongue_position
 from tracker.hand.hand import draw_hand_landmarks
 from ctypes import windll
+from cv2_enumerate_cameras import enumerate_cameras
 
-os.environ["OPENCV_VIDEOIO_PRIORITY_MSMF"] = "0"
+# os.environ["OPENCV_VIDEOIO_PRIORITY_MSMF"] = "0"
 
 class VideoCaptureThread(QThread):
     frame_ready = pyqtSignal(QImage)
@@ -47,7 +48,7 @@ class VideoCaptureThread(QThread):
         self.tracker = utils.tracking.Tracker()
 
     def run(self):
-        self.video_capture = cv2.VideoCapture(self.source)
+        self.video_capture = cv2.VideoCapture(self.source,cv2.CAP_ANY)
         self.video_capture.set(cv2.CAP_PROP_BUFFERSIZE, 1)
         while self.is_running:
             ret, frame = self.video_capture.read()
@@ -552,13 +553,18 @@ class VideoWindow(QMainWindow):
         self.image_label.setPixmap(QPixmap())
 
     def get_camera_source(self, selected_camera_name):
-        graph = FilterGraph()
-        devices = graph.get_input_devices()
-        return (
-            devices.index(selected_camera_name)
-            if selected_camera_name in devices
-            else 0
-        )
+        # graph = FilterGraph()
+        devices = enumerate_cameras(cv2.CAP_ANY)
+        # print(dev)
+        for device in devices:
+            if device.index > 1000:
+                device.name += " (MSMF)"
+            else:
+                device.name += " (DSHOW)"
+        for device in devices:
+            if device.name == selected_camera_name:
+                return device.index
+        return 0
 
     def update_frame(self, image):
         if self.video_thread:
@@ -572,10 +578,17 @@ class VideoWindow(QMainWindow):
                 self.image_label.setAlignment(Qt.AlignCenter)
 
     def populate_camera_list(self):
-        graph = FilterGraph()
-        devices = graph.get_input_devices()
+        # graph = FilterGraph()
+        # devices = graph.get_input_devices()
+        devices = enumerate_cameras(cv2.CAP_ANY)
+        # print(dev)
         for device in devices:
-            self.camera_selection.addItem(device)
+            if device.index > 1000:
+                device.name += " (MSMF)"
+            else:
+                device.name += " (DSHOW)"
+        for device in devices:
+            self.camera_selection.addItem(device.name)
 
     def thread_stopped(self):
         if self.video_thread:
