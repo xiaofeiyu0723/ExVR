@@ -1,4 +1,4 @@
-import keyboard
+@import keyboard
 from pynput import mouse
 from utils.actions import *
 from utils.json_manager import load_json
@@ -83,7 +83,7 @@ def apply_hotkeys():
                 else:
                     keyboard.add_hotkey(key, actions[action])
             elif "left_fingers" in action or "right_fingers" in action:
-                keyboard.add_hotkey(key, lambda: set_fingers(action))
+                keyboard.add_hotkey(key, lambda a=action: set_fingers(a))
         if mouse_button and action:
             if action in actions:
                 if mouse_button not in mouse_actions:
