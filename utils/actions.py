@@ -157,6 +157,23 @@ def set_finger(value=None, index=None):
     print(g.default_data[finger_side])
 
 
+def set_fingers(index_str=None): # five set_finger！
+    print(index_str)
+    if "left_fingers" in index_str:
+        finger_side = "LeftHandFinger"
+    elif "right_fingers" in index_str:
+        finger_side = "RightHandFinger"
+    else:
+        return False
+    handlist = [float(i) for i in index_str.split("_")[2:]]
+    for d in g.data[finger_side]:
+        d["e"] = False
+    for idx, value in enumerate(handlist, start=1):  
+        if 0 <= idx - 1 < len(g.default_data[finger_side]):  
+            g.default_data[finger_side][idx - 1]["v"] = value
+            print(g.default_data[finger_side])
+
+
 def enable_hand():
     g.config["Tracking"]["Hand"]["enable"] = not g.config["Tracking"]["Hand"]["enable"]
     if not g.config["Tracking"]["Hand"]["enable"]:
