@@ -353,6 +353,7 @@ def hand_pred_handling(detection_result):
         <= g.config["Tracking"]["Hand"]["hand_detection_lower_threshold"]
         and g.config["Tracking"]["Hand"]["enable_hand_auto_reset"]
     ):
+        g.controller.left_hand.default=True
         if g.config["Smoothing"]["enable"]:
             g.latest_data[73] = g.default_data["LeftHandRotation"][0]["v"]
             g.latest_data[74] = g.default_data["LeftHandRotation"][1]["v"]
@@ -371,11 +372,15 @@ def hand_pred_handling(detection_result):
             g.data["LeftHandPosition"] = deepcopy(g.default_data["LeftHandPosition"])
             g.data["LeftHandRotation"] = deepcopy(g.default_data["LeftHandRotation"])
             g.data["LeftHandFinger"] = deepcopy(g.default_data["LeftHandFinger"])
+    else:
+        g.controller.left_hand.default=False
+
     if (
         right_hand_detection_counts
         <= g.config["Tracking"]["Hand"]["hand_detection_lower_threshold"]
         and g.config["Tracking"]["Hand"]["enable_hand_auto_reset"]
     ):
+        g.controller.right_hand.default=True
         if g.config["Smoothing"]["enable"]:
             g.latest_data[79] = g.default_data["RightHandRotation"][0]["v"]
             g.latest_data[80] = g.default_data["RightHandRotation"][1]["v"]
@@ -394,6 +399,8 @@ def hand_pred_handling(detection_result):
             g.data["RightHandPosition"] = deepcopy(g.default_data["RightHandPosition"])
             g.data["RightHandRotation"] = deepcopy(g.default_data["RightHandRotation"])
             g.data["RightHandFinger"] = deepcopy(g.default_data["RightHandFinger"])
+    else:
+        g.controller.right_hand.default=False
 
 
 def initialize_hand():

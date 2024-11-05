@@ -12,7 +12,7 @@ class Transform:
     position: tuple  # (x, y, z)
     rotation: tuple  # (x, y, z, w)
     finger: tuple  # (0,1,2,3,4)
-
+    default: bool
 
 # GloveControllerSender equivalent in Python
 class GloveControllerSender:
@@ -20,8 +20,8 @@ class GloveControllerSender:
         # Initialize OSC client
         self.client = udp_client.SimpleUDPClient(osc_ip, osc_port)
 
-        self.left_hand = Transform((0, 0, 0), (0, 0, 0, 1), (1.0, 1.0, 1.0, 1.0, 1.0))
-        self.right_hand = Transform((0, 0, 0), (0, 0, 0, 1), (1.0, 1.0, 1.0, 1.0, 1.0))
+        self.left_hand = Transform((0, 0, 0), (0, 0, 0, 1), (1.0, 1.0, 1.0, 1.0, 1.0),True)
+        self.right_hand = Transform((0, 0, 0), (0, 0, 0, 1), (1.0, 1.0, 1.0, 1.0, 1.0),True)
         self.vmt_init()
 
     def send_hand(self, is_left_hand, target: Transform):
@@ -38,7 +38,12 @@ class GloveControllerSender:
             target.rotation[3],
             "HMD",  # serial
         ]
-        self.client.send_message("/VMT/Follow/Driver", message)
+        if not target.default:
+            self.client.send_message("/VMT/Follow/Driver", message)
+        else:
+            self.client.send_message("/VMT/Joint/Driver", message)
+
+
 
     def send_finger(self, is_left_hand, target: Transform):
         for i, value in enumerate(target.finger):
