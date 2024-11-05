@@ -35,29 +35,6 @@ from cv2_enumerate_cameras import enumerate_cameras
 
 # os.environ["OPENCV_VIDEOIO_PRIORITY_MSMF"] = "0"
 
-import pygetwindow as gw
-import win32gui
-import win32con
-import win32process
-
-def set_current_app_foreground():
-    current_pid = os.getpid()
-    current_window = None
-
-    for window in gw.getAllWindows():
-        if window._hWnd and window.title and window.visible:
-            _, pid = win32process.GetWindowThreadProcessId(window._hWnd)
-            if pid == current_pid:
-                current_window = window
-                break
-    print(current_pid,current_window)
-    if current_window:
-        hwnd = current_window._hWnd
-        win32gui.ShowWindow(hwnd, win32con.SW_SHOWNOACTIVATE)
-        win32gui.SetForegroundWindow(hwnd)
-    else:
-        print("Can not get the ExVR window")
-
 class VideoCaptureThread(QThread):
     frame_ready = pyqtSignal(QImage)
     stopped = pyqtSignal()
@@ -71,7 +48,6 @@ class VideoCaptureThread(QThread):
         self.tracker = utils.tracking.Tracker()
 
     def run(self):
-        set_current_app_foreground()
         self.video_capture = cv2.VideoCapture(self.source,cv2.CAP_ANY)
         self.video_capture.set(cv2.CAP_PROP_BUFFERSIZE, 1)
         while self.is_running:
