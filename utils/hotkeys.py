@@ -1,4 +1,4 @@
-@import keyboard
+import keyboard
 from pynput import mouse
 from utils.actions import *
 from utils.json_manager import load_json
