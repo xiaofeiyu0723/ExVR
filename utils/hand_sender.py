@@ -38,6 +38,7 @@ class GloveControllerSender:
             target.rotation[3],
             "HMD",  # serial
         ]
+        target.default = g.config["Tracking"]["Hand"]["hand_link_head"]
         if not target.default:
             self.client.send_message("/VMT/Follow/Driver", message)
         else:

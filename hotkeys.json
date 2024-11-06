@@ -39,6 +39,8 @@
     {"key": "]+f6", "action": "right_fingers_0.0_1.0_0.0_0.0_1.0"},
     {"key": "]+f7", "action": "right_fingers_1.0_1.0_0.0_0.0_0.0"},
     {"key": "]+f8", "action": "right_fingers_1.0_0.0_0.0_0.0_0.0"},
+    {"key": "ctrl+z", "action": "set_hand_track"},
+
     
     {"key": "ctrl+up", "action": "up"},
     {"key": "ctrl+down", "action": "down"},

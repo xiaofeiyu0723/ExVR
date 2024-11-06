@@ -51,6 +51,7 @@ actions = {
     "set_finger_2_right": lambda: set_finger(False, 2),
     "set_finger_3_right": lambda: set_finger(False, 3),
     "set_finger_4_right": lambda: set_finger(False, 4),
+    "set_hand_track": lambda: set_hand_track(),
     "enable_hand": enable_hand,
     "reset_hand_left": lambda: reset_hand(True),
     "reset_hand_right": lambda: reset_hand(False),
@@ -58,6 +59,11 @@ actions = {
     "set_tongue": set_tongue
 }
 
+def set_hand_track():   # toggle modde
+    if not g.config["Tracking"]["Hand"]["hand_link_head"]:
+        g.config["Tracking"]["Hand"]["hand_link_head"] = True
+    else:
+        g.config["Tracking"]["Hand"]["hand_link_head"] = False
 
 def setup_hotkeys():
     hotkey_config = load_json("./hotkeys.json")
