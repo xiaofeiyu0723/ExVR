@@ -43,7 +43,7 @@
             "enable": true,
             "x_scalar": 1.0,
             "y_scalar": 1.0,
-            "z_scalar": 0.1,
+            "z_scalar": 0.05,
             "z_shifting": 6.550301796711368,
             "hand_confidence": 0.5,
             "hand_delta_threshold": 0.1,
@@ -52,7 +52,7 @@
             "hand_detection_upper_threshold": 100,
             "hand_detection_lower_threshold": 6,
             "hand_count_threshold": 6,
-            "only_front": false,
+            "only_front": true,
             "hand_link_head": true
         },
         "Finger": {
