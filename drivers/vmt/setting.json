@@ -1,5 +1,5 @@
 {
-   "AddCompatibleControllerOnStartup": false,
+   "AddCompatibleControllerOnStartup": true,
    "AddControllerOnStartup": false,
    "AlwaysCompatible": false,
    "AutoPoseUpdateOnStartup": true,
