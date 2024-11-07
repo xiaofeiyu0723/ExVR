@@ -78,6 +78,7 @@ class GloveControllerSender:
         ]
         self.client.send_message("/VMT/Input/Joystick", message)
 
+
     def vmt_init(self):
         # 设置房间矩阵
         self.client.send_message(

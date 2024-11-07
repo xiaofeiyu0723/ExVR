@@ -59,15 +59,13 @@ actions = {
     "set_tongue": set_tongue
 }
 
-def set_hand_track():   # toggle modde
-    if not g.config["Tracking"]["Hand"]["hand_link_head"]:
-        g.config["Tracking"]["Hand"]["hand_link_head"] = True
-    else:
-        g.config["Tracking"]["Hand"]["hand_link_head"] = False
 
 def setup_hotkeys():
     hotkey_config = load_json("./hotkeys.json")
     return hotkey_config
+
+def set_hand_track():  # toggle modde
+    g.config["Tracking"]["Hand"]["hand_link_head"] = not g.config["Tracking"]["Hand"]["hand_link_head"]
 
 def apply_hotkeys():
     global mouse_listener
