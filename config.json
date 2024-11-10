@@ -53,7 +53,7 @@
             "hand_detection_lower_threshold": 6,
             "hand_count_threshold": 6,
             "only_front": true,
-            "hand_link_head": true
+            "is_joint": true
         },
         "Finger": {
             "enable": true,

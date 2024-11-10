@@ -38,13 +38,11 @@ class GloveControllerSender:
             target.rotation[3],
             "HMD",  # serial
         ]
-        target.default = g.config["Tracking"]["Hand"]["hand_link_head"]
+        target.default = g.config["Tracking"]["Hand"]["is_joint"]
         if not target.default:
             self.client.send_message("/VMT/Follow/Driver", message)
         else:
             self.client.send_message("/VMT/Joint/Driver", message)
-
-
 
     def send_finger(self, is_left_hand, target: Transform):
         for i, value in enumerate(target.finger):

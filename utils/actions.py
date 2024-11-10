@@ -212,6 +212,10 @@ def reset_hand(value=None):
         else:
             update_z_shifting()
 
+def toggle_hand_tracking_mode():
+    g.config["Tracking"]["Hand"]["is_joint"] = not g.config["Tracking"]["Hand"]["is_joint"]
+    print(g.config["Tracking"]["Hand"]["is_joint"])
+
 def enable_tongue():
     g.config["Tracking"]["Tongue"]["enable"] = not g.config["Tracking"]["Tongue"]["enable"]
 

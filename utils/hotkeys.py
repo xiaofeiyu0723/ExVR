@@ -51,7 +51,7 @@ actions = {
     "set_finger_2_right": lambda: set_finger(False, 2),
     "set_finger_3_right": lambda: set_finger(False, 3),
     "set_finger_4_right": lambda: set_finger(False, 4),
-    "set_hand_track": lambda: set_hand_track(),
+    "toggle_hand_tracking_mode": lambda: toggle_hand_tracking_mode(),
     "enable_hand": enable_hand,
     "reset_hand_left": lambda: reset_hand(True),
     "reset_hand_right": lambda: reset_hand(False),
@@ -63,9 +63,6 @@ actions = {
 def setup_hotkeys():
     hotkey_config = load_json("./hotkeys.json")
     return hotkey_config
-
-def set_hand_track():  # toggle modde
-    g.config["Tracking"]["Hand"]["hand_link_head"] = not g.config["Tracking"]["Hand"]["hand_link_head"]
 
 def apply_hotkeys():
     global mouse_listener
