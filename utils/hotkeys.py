@@ -61,7 +61,7 @@ actions = {
 
 
 def setup_hotkeys():
-    hotkey_config = load_json("./hotkeys.json")
+    hotkey_config = load_json("./settings/hotkeys.json")
     return hotkey_config
 
 def apply_hotkeys():

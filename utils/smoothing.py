@@ -5,7 +5,7 @@ from utils.json_manager import load_json
 import utils.globals as g
 
 def setup_smoothing():
-    smoothing_config = load_json("./smoothing.json")
+    smoothing_config = load_json("./settings/smoothing.json")
     return smoothing_config
 
 def update_target_value(target, smoothed_delta, is_rotation):
