@@ -58,7 +58,7 @@ TODO
 
 ### config.json
 
-The `config.json` file, located in the root (`./`) directory, allows users to configure various components, including camera, IP settings, smoothing, and tracking parameters.
+The `config.json` file, located in the root (`./settings`) directory, allows users to configure various components, including camera, IP settings, smoothing, and tracking parameters.
 
 #### General Settings  
 
@@ -109,7 +109,7 @@ The `config.json` file, located in the root (`./`) directory, allows users to co
 
 ### data.json
 
-The `data.json` file, located in the root (`./`) directory, contains the initial settings for the virtual experience, including position, rotation, and blend shapes.
+The `data.json` file, located in the root (`./settings`) directory, contains the initial settings for the virtual experience, including position, rotation, and blend shapes.
 
 - **Position**: Defines the 3D coordinates for the head position.
 - **Rotation**: Specifies the head rotation around the axes.
@@ -126,7 +126,7 @@ Each entry contains the following:
 
 ### smoothing.json
 
-The `smoothing.json` file, located in the root (`./`) directory, contains parameters for smoothing various movements and blend shapes.
+The `smoothing.json` file, located in the root (`./settings`) directory, contains parameters for smoothing various movements and blend shapes.
 
 - **OtherBlendShapes**: Controls smoothing for general facial blend shapes.  
 - **EyeBlink**: Adjusts the responsiveness of eye blinking.  
@@ -152,7 +152,7 @@ You **can modify** the following settings to fine-tune the experience:
 
 ### hotkeys.json
 
-The `hotkeys.json` file, located in the root (`./`) directory, defines all the available keyboard and mouse shortcuts for interacting. You can modify this file to customize.
+The `hotkeys.json` file, located in the root (`./settings`) directory, defines all the available keyboard and mouse shortcuts for interacting. You can modify this file to customize.
 
 ## Credits
 
