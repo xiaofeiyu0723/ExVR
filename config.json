@@ -4,7 +4,7 @@
         "flip_x": false,
         "flip_y": false
     },
-    "Hotkey":{
+    "Hotkey": {
         "enable": true
     },
     "Sending": {
@@ -52,7 +52,8 @@
             "hand_detection_upper_threshold": 100,
             "hand_detection_lower_threshold": 6,
             "hand_count_threshold": 6,
-            "only_front": true
+            "only_front": true,
+            "hand_link_head": true
         },
         "Finger": {
             "enable": true,

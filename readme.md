@@ -8,46 +8,50 @@ TODO
 
 ## Hotkeys
 
-| **Key**         | **Action**                      |
-|-----------------|---------------------------------|
-| \\+`             | Toggle hotkeys                  |
-| `ctrl+'`        | Reset head                      |
-| `ctrl+;`        | Reset eyes                      |
-| `ctrl+;+1`      | Disable eye yaw                 |
-| `ctrl+;+2`      | Disable all eye movements       |
-| `ctrl+[`        | calibrate hand position (left)  |
-| `ctrl+]`        | calibrate hand position (right) |
-| [+`             | Enable all fingers (left)       |
-| `[+1`           | Set finger 0 on left hand       |
-| `[+2`           | Set finger 1 on left hand       |
-| `[+3`           | Set finger 2 on left hand       |
-| `[+4`           | Set finger 3 on left hand       |
-| `[+5`           | Set finger 4 on left hand       |
-| ]+`             | Enable all fingers (right)      |
-| `]+1`           | Set finger 0 on right hand      |
-| `]+2`           | Set finger 1 on right hand      |
-| `]+3`           | Set finger 2 on right hand      |
-| `]+4`           | Set finger 3 on right hand      |
-| `]+5`           | Set finger 4 on right hand      |
-| `ctrl+up`       | Move up                         |
-| `ctrl+down`     | Move down                       |
-| `ctrl+left`     | Move left                       |
-| `ctrl+right`    | Move right                      |
-| `up`            | Head pitch up                   |
-| `down`          | Head pitch down                 |
-| `,` (<)         | Head yaw left                   |
-| `.` (>)         | Head yaw right                  |
-| `=`             | Grasp with left hand            |
-| `-`             | Grasp with right hand           |
-| `[`             | Trigger with left hand          |
-| `]`             | Trigger with right hand         |
-| `left` (mouse)  | Trigger with left hand          |
-| `right` (mouse) | Trigger with right hand         |
-| `left` (mouse)  | Grasp with left hand            |
-| `right` (mouse) | Grasp with right hand           |
-| `scroll_up`     | Move joystick up                |
-| `scroll_down`   | Move joystick down              |
-| `middle` (mouse) | Activate joystick middle right  |
+| **Key**        | **Action**                     |
+|----------------|--------------------------------|
+| \\+`           | Toggle hotkeys                 |
+| `ctrl+'`       | Reset head                     |
+| `ctrl+;`       | Reset eyes                     |
+| `ctrl+;+1`     | Disable eye yaw                |
+| `ctrl+;+2`     | Disable all eye movements      |
+| `ctrl+[`       | calibrate hand position (left) |
+| `ctrl+]`       | calibrate hand position (right) |
+| [+`            | Enable all fingers (left)      |
+| `[+1`          | Set finger 0 on left hand      |
+| `[+2`          | Set finger 1 on left hand      |
+| `[+3`          | Set finger 2 on left hand      |
+| `[+4`          | Set finger 3 on left hand      |
+| `[+5`          | Set finger 4 on left hand      |
+| ]+`            | Enable all fingers (right)     |
+| `]+1`          | Set finger 0 on right hand     |
+| `]+2`          | Set finger 1 on right hand     |
+| `]+3`          | Set finger 2 on right hand     |
+| `]+4`          | Set finger 3 on right hand     |
+| `]+5`          | Set finger 4 on right hand     |
+| `[+(F1-F8)`    | Left hand emoji                |
+| `]+(F1-F8)`    | Right hand emoji               |
+| `ctrl+up`      | Move up                        |
+| `ctrl+down`    | Move down                      |
+| `ctrl+left`    | Move left                      |
+| `ctrl+right`   | Move right                     |
+| `ctrl+z`       | Toggle hand mode               |
+| `up`           | Head pitch up                  |
+| `down`         | Head pitch down                |
+| `,` (<)        | Head yaw left                  |
+| `.` (>)        | Head yaw right                 |
+| `=`            | Grasp with left hand           |
+| `-`            | Grasp with right hand          |
+| `[`            | Trigger with left hand         |
+| `]`            | Trigger with right hand        |
+| `left` (mouse) | Trigger with left hand         |
+| `right` (mouse) | Trigger with right hand        |
+| `left` (mouse) | Grasp with left hand           |
+| `right` (mouse) | Grasp with right hand          |
+| `scroll_up`    | Move joystick up               |
+| `scroll_down`  | Move joystick down             |
+| `middle` (mouse) | Activate joystick middle right |
+
 
 
 ## Configuration
@@ -66,30 +70,31 @@ The `config.json` file, located in the root (`./`) directory, allows users to co
 
 #### Tracking Settings  
 
-| **Component**  | **Parameter**                     | **Description**                                    |
-|----------------|------------------------------------|----------------------------------------------------|
-| **Head**       | enable                            | Activates head tracking (`true` or `false`).       |
-|                | x_scalar, y_scalar, z_scalar       | Adjust sensitivity for head position in each axis. |
-|                | x_rotation_scalar, y_rotation_scalar, z_rotation_scalar | Adjust sensitivity for head rotation. |
-| **Face**       | enable                            | Activates face tracking.                          |
-| **Tongue**     | enable                            | Activates tongue tracking.                        |
-|                | tongue_confidence                 | Minimum confidence for tongue detection.          |
-|                | tongue_threshold                  | Threshold to recognize tongue movements.          |
-|                | tongue_x_scalar, tongue_y_scalar  | Adjust sensitivity for tongue movements.          |
-|                | mouth_close_threshold             | Threshold to detect a closed mouth.               |
-| **Hand**       | enable                            | Activates hand tracking.                          |
-|                | x_scalar, y_scalar, z_scalar       | Adjust sensitivity for hand position in each axis. |
-|                | hand_confidence                   | Minimum confidence for hand detection.            |
-|                | hand_delta_threshold              | Minimum movement required for detection.          |
-|                | hand_shifting_threshold           | Minimum shifting required for detection.          |
-|                | enable_hand_auto_reset            | Automatically resets hand position (`true`/`false`). |
-|                | hand_detection_upper_threshold    | Upper threshold for hand detection.               |
-|                | hand_detection_lower_threshold    | Lower threshold for hand detection.               |
-|                | hand_count_threshold              | Minimum number of hands required for detection.   |
-|                | only_front                        | Limits tracking to front-facing hands.            |
-| **Finger**     | enable                            | Activates finger tracking.                        |
-|                | finger_confidence                 | Minimum confidence for finger detection.          |
-|                | finger_threshold                  | Sensitivity threshold for finger movements.       |
+| **Component**  | **Parameter**                                           | **Description**                                      |
+|----------------|---------------------------------------------------------|------------------------------------------------------|
+| **Head**       | enable                                                  | Activates head tracking (`true` or `false`).         |
+|                | x_scalar, y_scalar, z_scalar                            | Adjust sensitivity for head position in each axis.   |
+|                | x_rotation_scalar, y_rotation_scalar, z_rotation_scalar | Adjust sensitivity for head rotation.                |
+| **Face**       | enable                                                  | Activates face tracking.                             |
+| **Tongue**     | enable                                                  | Activates tongue tracking.                           |
+|                | tongue_confidence                                       | Minimum confidence for tongue detection.             |
+|                | tongue_threshold                                        | Threshold to recognize tongue movements.             |
+|                | tongue_x_scalar, tongue_y_scalar                        | Adjust sensitivity for tongue movements.             |
+|                | mouth_close_threshold                                   | Threshold to detect a closed mouth.                  |
+| **Hand**       | enable                                                  | Activates hand tracking.                             |
+|                | x_scalar, y_scalar, z_scalar                            | Adjust sensitivity for hand position in each axis.   |
+|                | hand_confidence                                         | Minimum confidence for hand detection.               |
+|                | hand_delta_threshold                                    | Minimum movement required for detection.             |
+|                | hand_shifting_threshold                                 | Minimum shifting required for detection.             |
+|                | enable_hand_auto_reset                                  | Automatically resets hand position (`true`/`false`). |
+|                | hand_detection_upper_threshold                          | Upper threshold for hand detection.                  |
+|                | hand_detection_lower_threshold                          | Lower threshold for hand detection.                  |
+|                | hand_count_threshold                                    | Minimum number of hands required for detection.      |
+|                | only_front                                              | Limits tracking to front-facing hands.               |
+|                | hand_link_head                                          | Hand mode default.                                   |
+| **Finger**     | enable                                                  | Activates finger tracking.                           |
+|                | finger_confidence                                       | Minimum confidence for finger detection.             |
+|                | finger_threshold                                        | Sensitivity threshold for finger movements.          |
 
 #### Model Settings  
 
