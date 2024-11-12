@@ -7,6 +7,7 @@
 ## 用法
 
 TODO
+
 ## 按键设置
 ### 快捷键
 
@@ -69,7 +70,7 @@ TODO
 |------------|-------------------------------------------|
 | Camera     | 指定输入的摄像机索引                        |
 | IP         | 定义连接设置的IP地址                        |
-| Smoothing  | 启用 / 禁用 平滑移动                        |
+| Smoothing  | `启用` / `禁用` 平滑移动                        |
 
 #### Tracking设置  
 
@@ -81,42 +82,42 @@ TODO
 | **Face**       | enable                            | 启用面捕                                           |
 | **Tongue**     | enable                            | 启用舌头动态捕捉                        |
 |                | tougue_confidence                 | 舌头动态捕捉的置信度阈值 |
-|                | tongue_threshold                  | 舌头动态捕捉的移动阈值 |
+|                | tongue_threshold                  | 识别舌头运动的阈值 |
 |                | tongue_x_scalar, tongue_y_scalar  | 调整舌头动态捕捉的灵敏度 |
 | **Mouth**      | enable                            | 启用嘴部动态捕捉                        |
 |                | mouth_close_threshold             | 嘴部闭合阈值 |
 | **Hand**       | enable                            | 启用手部追踪 (`true` / `false`)                              |
 |                | x_scalar, y_scalar, z_scalar       | 调整各个轴上手部位置的灵敏度                                 |
 |                | hand_confidence                   | 手部追踪的置信度阈值 |
-|                | hand_delta_threshold              | 手部追踪的移动阈值 |
-|                | hand_shifting_threshold           | 手部追踪的位移阈值 |
+|                | hand_delta_threshold              | 检测所需的最小移动量 |
+|                | hand_shifting_threshold           | 检测所需的最小位移量 |
 |                | enable_hand_auto_reset            | 自动重置手部位置 (`true` / `false`) |
 |                | hand_detection_upper_threshold    | 手部检测的上限阈值 |
 |                | hand_detection_lower_threshold    | 手部检测的下限阈值 |
 |                | hand_count_threshold              | 手部检测的最小手数 |
-|                | only_front                        | 仅跟踪前方手 (`true` / `false`) |
+|                | only_front                        | 限制跟踪至面向前方的手  |
 | **Finger**     | enable                            | 启用手指追踪 (`true` / `false`)                              |
-|                | finger_confidence                 | 手指追踪的置信度阈值 |
-|                | finger_threshold                  | 手指追踪的移动阈值 |
+|                | finger_confidence                 | 手指检测的最低置信度 |
+|                | finger_threshold                  | 手指运动的灵敏度阈值 |
 
 
 
 #### 模型设置 
 
-| **模型** | **参数**                     | **描述**              |                                                          
+| **模块** | **参数**                     | **描述**              |                                                          
 |-----------|-------------------------------|----------|
-| **Face Modle** | min_face_detection_confidence | 最小面部检测置信度 |
-|             | min_face_presence_confidence  | 最小面部存在置信度 |
-|             | min_tracking_confidence       | 最小面部跟踪置信度 |
-| **Hand Model** | min_hand_detection_confidence | 最小手部检测置信度 |
-|             | min_hand_presence_confidence  | 最小手部存在置信度 |
-|             | min_tracking_confidence       | 最小手部跟踪置信度 |  
+| **Face Modle** | min_face_detection_confidence | 面部检测所需的最低置信度 |
+|             | min_face_presence_confidence  | 检测面部存在的最低置信度 |
+|             | min_tracking_confidence       | 维持面部跟踪的最低置信度 |
+| **Hand Model** | min_hand_detection_confidence | 手部检测所需的最低置信度 |
+|             | min_hand_presence_confidence  | 检测手部存在的最低置信度 |
+|             | min_tracking_confidence       | 维持手部跟踪的最低置信度 |  
 
 
 
 ### data.json
 
-文件`data.json`位于根目录（`./settings`）中，用于配置VRChat中的各个组件，包括摄像头、IP设置、平滑、跟踪参数等
+文件`data.json`位于根目录（`./settings`）中，包含虚拟体验的初始设置，包括位置、旋转和形态键
 
 - **Position**：定义头部的3D坐标
 - **Rotation**：定义头部绕各个轴的旋转
@@ -134,34 +135,34 @@ TODO
 
 ### smoothing.json
 
-文件`smoothing.json`位于根目录（`./settings`）中，用于设置平滑各种运动和混合形态
+文件`smoothing.json`位于根目录（`./settings`）中，用于设置平滑各种运动和形态键
 
-- **OtherBlendShapes**：控制平滑的一般面部混合形态
+- **OtherBlendShapes**：控制一般面部形态键的平滑度
 - **EyeBlink**：调整眼睛眨眼的响应速度
 - **EyeLook**：平滑眼睛的运动，包括视线方向
-- **TongueOut**：控制舌头张开动画的平滑度
-- **TongueMove**：平滑左右舌头的运动
+- **TongueOut**：控制舌头伸出动画的平滑度
+- **TongueMove**：平滑舌头的左右运动
 - **HeadPosition**：管理头部位置调整的平滑度
 - **HeadRotation**：平滑头部旋转运动
 - **LeftHandPosition** / **RightHandPosition**：调整手部位置的平滑度
 - **LeftHandRotation** / **RightHandRotation**：管理手部旋转的平滑度
 - **LeftHandFinger** / **RightHandFinger**：控制单个手指运动的平滑度
 
-如果您不是开发应用程序，请避免修改以下字段：
+如果您不是对该应用程序进行二次开发，请避免修改以下参数：
 - **key**：标识目标属性
 - **is_rotation**：指示属性是否为旋转
 - **indices**：指定相关数据索引
 - **shifting**：索引偏移
 
-你**可以修改**以下设置来微调体验：  
-- **max_delta**：允许的最大变化值较高的值使运动更敏感，但可能引入抖动
-- **deadzone**：小幅移动范围较大的死区减少抖动，但可能使运动感觉不够平滑
-- **dt_multiplier**：平滑因子较小的值产生平滑运动，但可能减慢响应速度
+你**可以修改**以下参数以获得对自身更好的体验：  
+- **max_delta**：允许的最大值变化。较高的值使动作更敏感，但可能引入抖动
+- **deadzone**：忽略小幅运动的范围。较大的死区减少抖动，但可能使动作感觉不够流畅
+- **dt_multiplier**：平滑因子。较小的值产生更平滑的运动，但可能降低响应速度
 
 
 ### hotkeys.json
 
-文件`hotkeys.json`被存放在根目录(`./settings`)中，定义了所有可用的键盘和鼠标快捷键你可以修改这个文件来自定义
+文件`hotkeys.json`被存放在根目录(`./settings`)中，定义了所有可用的键盘和鼠标快捷键,你可以修改这个文件来自定义
 
 ## 支持
 
