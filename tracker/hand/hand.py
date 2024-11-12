@@ -33,7 +33,7 @@ def draw_hand_landmarks(rgb_image):
 
     # Loop through each detected hand using zip
     for idx, (hand, hand_landmarks) in enumerate(
-        zip(g.handedness, g.hand_landmarks)
+        zip(handedness_list, hand_landmarks_list)
     ):
         # Draw the hand landmarks.
         hand_landmarks_proto = landmark_pb2.NormalizedLandmarkList()
@@ -61,9 +61,10 @@ def draw_hand_landmarks(rgb_image):
         text_y = int(min(y_coordinates) * height) - MARGIN
 
         # Draw handedness (left or right hand) on the image.
+        handedness_label = "Right" if hand.classification[0].label == "Left" else "Left"
         cv2.putText(
             rgb_image,
-            f"{"Right" if hand.classification[0].label == "Left" else "Left"}",  # Handedness label
+            handedness_label,
             (text_x, text_y),
             cv2.FONT_HERSHEY_DUPLEX,
             FONT_SIZE,
