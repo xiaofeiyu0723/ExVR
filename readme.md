@@ -2,6 +2,9 @@
 
 This is a project for PC users who want to experience VR without a headset.
 
+## Language
+[简体中文](https://github.com/xiaofeiyu0723/ExVR/blob/main/readme_zh.md) / [English](https://github.com/xiaofeiyu0723/ExVR/blob/main/readme.md)
+
 ## Usage
 
 TODO

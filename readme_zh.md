@@ -1,9 +1,13 @@
 # ExVR: 体验虚拟现实
-为无VR玩家提供更好的体验。
+为无VR玩家提供更好的体验
+
+## 语言
+[简体中文](https://github.com/WavesMan/ExVR/blob/main/readme_zh.md) / [English](https://github.com/WavesMan/ExVR/blob/main/readme.md)
 
 ## 用法
 
 TODO
+
 ## 按键设置
 ### 快捷键
 
@@ -58,7 +62,7 @@ TODO
 
 ### config.json
 
-`config.json` 文件, 被存放在本地root根目录 (`./settings`) 中， 修改用户配置的参数，这些参数包括有摄像机、IP设置、平滑和跟踪参数。
+`config.json` 文件, 被存放在本地root根目录 (`./settings`) 中， 修改用户配置的参数，这些参数包括有摄像机、IP设置、平滑和跟踪参数
 
 #### 常规设置  
 
@@ -66,94 +70,101 @@ TODO
 |------------|-------------------------------------------|
 | Camera     | 指定输入的摄像机索引                        |
 | IP         | 定义连接设置的IP地址                        |
-| Smoothing  | 启用 / 禁用 平滑移动                        |
+| Smoothing  | `启用` / `禁用` 平滑移动                        |
 
-#### Tracking Settings  
+#### Tracking设置  
 
-| **Component**  | **Parameter**                     | **Description**                                    |
-|----------------|------------------------------------|----------------------------------------------------|
-| **Head**       | enable                            | Activates head tracking (`true` or `false`).       |
-|                | x_scalar, y_scalar, z_scalar       | Adjust sensitivity for head position in each axis. |
-|                | x_rotation_scalar, y_rotation_scalar, z_rotation_scalar | Adjust sensitivity for head rotation. |
-| **Face**       | enable                            | Activates face tracking.                          |
-| **Tongue**     | enable                            | Activates tongue tracking.                        |
-|                | tongue_confidence                 | Minimum confidence for tongue detection.          |
-|                | tongue_threshold                  | Threshold to recognize tongue movements.          |
-|                | tongue_x_scalar, tongue_y_scalar  | Adjust sensitivity for tongue movements.          |
-|                | mouth_close_threshold             | Threshold to detect a closed mouth.               |
-| **Hand**       | enable                            | Activates hand tracking.                          |
-|                | x_scalar, y_scalar, z_scalar       | Adjust sensitivity for hand position in each axis. |
-|                | hand_confidence                   | Minimum confidence for hand detection.            |
-|                | hand_delta_threshold              | Minimum movement required for detection.          |
-|                | hand_shifting_threshold           | Minimum shifting required for detection.          |
-|                | enable_hand_auto_reset            | Automatically resets hand position (`true`/`false`). |
-|                | hand_detection_upper_threshold    | Upper threshold for hand detection.               |
-|                | hand_detection_lower_threshold    | Lower threshold for hand detection.               |
-|                | hand_count_threshold              | Minimum number of hands required for detection.   |
-|                | only_front                        | Limits tracking to front-facing hands.            |
-| **Finger**     | enable                            | Activates finger tracking.                        |
-|                | finger_confidence                 | Minimum confidence for finger detection.          |
-|                | finger_threshold                  | Sensitivity threshold for finger movements.       |
+| **项目**  | **参数**                     | **描述**              |                                                                
+|----------------|------------------------------------|------------------------------------------------------------|
+| **Head**       | enable                            | 激活头部追踪 (`true` / `false`)                              |
+|                | x_scalar, y_scalar, z_scalar       | 调整各个轴上头部位置的灵敏度                                 |         
+|                | x_rotation_scalar, y_rotation_scalar, z_rotation_scalar | 调整头部的旋转灵敏度 |
+| **Face**       | enable                            | 启用面捕                                           |
+| **Tongue**     | enable                            | 启用舌头动态捕捉                        |
+|                | tougue_confidence                 | 舌头动态捕捉的置信度阈值 |
+|                | tongue_threshold                  | 识别舌头运动的阈值 |
+|                | tongue_x_scalar, tongue_y_scalar  | 调整舌头动态捕捉的灵敏度 |
+| **Mouth**      | enable                            | 启用嘴部动态捕捉                        |
+|                | mouth_close_threshold             | 嘴部闭合阈值 |
+| **Hand**       | enable                            | 启用手部追踪 (`true` / `false`)                              |
+|                | x_scalar, y_scalar, z_scalar       | 调整各个轴上手部位置的灵敏度                                 |
+|                | hand_confidence                   | 手部追踪的置信度阈值 |
+|                | hand_delta_threshold              | 误识别检测的变化量阈值 |
+|                | hand_shifting_threshold           | 误识别检测的偏移阈值 |
+|                | enable_hand_auto_reset            | 自动重置手部位置 (`true` / `false`) |
+|                | hand_detection_upper_threshold    | 手部检测的上限阈值 |
+|                | hand_detection_lower_threshold    | 手部检测的下限阈值 |
+|                | hand_count_threshold              | 手部的计数阈值 |
+|                | only_front                        | 仅允许手在前方移动  |
+| **Finger**     | enable                            | 启用手指追踪 (`true` / `false`)                              |
+|                | finger_confidence                 | 手指检测的最低置信度 |
+|                | finger_threshold                  | 手指状态（张开/收紧）的阈值 |
 
-#### Model Settings  
 
-| **Model**      | **Parameter**                      | **Description**                                    |
-|----------------|------------------------------------|----------------------------------------------------|
-| **Face Model** | min_face_detection_confidence      | Minimum confidence required for face detection.    |
-|                | min_face_presence_confidence       | Minimum confidence for detecting face presence.    |
-|                | min_tracking_confidence            | Minimum confidence for maintaining face tracking. |
-| **Hand Model** | min_hand_detection_confidence      | Minimum confidence required for hand detection.    |
-|                | min_hand_presence_confidence       | Minimum confidence for detecting hand presence.    |
-|                | min_tracking_confidence            | Minimum confidence for maintaining hand tracking. |
+
+#### 模型设置 
+
+| **模块** | **参数**                     | **描述**              |                                                          
+|-----------|-------------------------------|----------|
+| **Face Modle** | min_face_detection_confidence | 面部检测所需的最低置信度 |
+|             | min_face_presence_confidence  | 检测面部存在的最低置信度 |
+|             | min_tracking_confidence       | 维持面部跟踪的最低置信度 |
+| **Hand Model** | min_hand_detection_confidence | 手部检测所需的最低置信度 |
+|             | min_hand_presence_confidence  | 检测手部存在的最低置信度 |
+|             | min_tracking_confidence       | 维持手部跟踪的最低置信度 |  
+
+
 
 ### data.json
 
-The `data.json` file, located in the root (`./settings`) directory, contains the initial settings for the virtual experience, including position, rotation, and blend shapes.
+文件`data.json`位于根目录（`./settings`）中，包含虚拟体验的初始设置，包括位置、旋转和形态键
 
-- **Position**: Defines the 3D coordinates for the head position.
-- **Rotation**: Specifies the head rotation around the axes.
-- **BlendShapes**: Contains various facial expressions.
-- **LeftHandPosition** / **RightHandPosition**: Specifies the positions of the hands.
-- **LeftHandRotation** / **RightHandRotation**: Defines the rotation of the hands.
-- **LeftHandFinger** / **RightHandFinger**: Controls the movement of each finger.
+- **Position**：定义头部的3D坐标
+- **Rotation**：定义头部绕各个轴的旋转
+- **BlendShapes**：包含各种面部表情
+- **LeftHandPosition** / **RightHandPosition**：定义左右手的位置
+- **LeftHandRotation** / **RightHandRotation**：定义左右手的旋转
+- **LeftHandFinger** / **RightHandFinger**：控制每个手指的运动
 
-Each entry contains the following:
-- **k**: Key (the name of the property).
-- **v**: Default value for the property.
-- **s**: Offset value used for adjustment.
-- **e**: Enable flag (`true` or `false`) to activate or deactivate the setting.
+每个条目包含以下内容：
+- **k**：键（属性的名称）
+- **v**：属性的默认值
+- **s**：调整值的偏移量
+- **e**：启用标志（`true` / `false`）以激活或禁用设置
+
 
 ### smoothing.json
 
-The `smoothing.json` file, located in the root (`./settings`) directory, contains parameters for smoothing various movements and blend shapes.
+文件`smoothing.json`位于根目录（`./settings`）中，用于设置平滑各种运动和形态键
 
-- **OtherBlendShapes**: Controls smoothing for general facial blend shapes.  
-- **EyeBlink**: Adjusts the responsiveness of eye blinking.  
-- **EyeLook**: Smooths eye movement, including gaze direction.  
-- **TongueOut**: Controls the tongue-out animation smoothing.  
-- **TongueMove**: Smooths left and right tongue movements.  
-- **HeadPosition**: Manages smoothing for head position adjustments.  
-- **HeadRotation**: Smooths head rotation movements.  
-- **LeftHandPosition** / **RightHandPosition**: Adjusts hand position smoothing.  
-- **LeftHandRotation** / **RightHandRotation**: Manages the smoothness of hand rotations.  
-- **LeftHandFinger** / **RightHandFinger**: Controls smoothing for individual finger movements.
+- **OtherBlendShapes**：控制一般面部形态键的平滑度
+- **EyeBlink**：平滑眼皮移动
+- **EyeLook**：平滑眼睛移动
+- **TongueOut**：平滑舌头伸出移动
+- **TongueMove**：平滑舌头的左右移动
+- **HeadPosition**：平滑头部位置移动
+- **HeadRotation**：平滑头部旋转移动
+- **LeftHandPosition** / **RightHandPosition**：平滑手部位置
+- **LeftHandRotation** / **RightHandRotation**：平滑手部旋转
+- **LeftHandFinger** / **RightHandFinger**：平滑手指运动
 
-If you are not developing the application, avoid modifying the following fields:
-- **key**: Identifies the target property.
-- **is_rotation**: Indicates if the property is a rotation.
-- **indices**: Specifies the relevant data indices.
-- **shifting**: Indices shifting.
+如果您不是对该应用程序进行二次开发，请避免修改以下参数：
+- **key**：键
+- **is_rotation**：属性是否为旋转
+- **indices**：数据索引
+- **shifting**：索引的偏移量
 
-You **can modify** the following settings to fine-tune the experience:  
-- **max_delta**: Maximum allowed change in value. Higher values make movements more sensitive but can introduce jitter.
-- **deadzone**: The range within which small movements are ignored. A larger dead zone reduces jitter but may make movements feel less smooth.
-- **dt_multiplier**: Smoothing factor. Smaller values produce smoother movements but may slow down responsiveness.
+你**可以修改**以下参数以获得对自身更好的体验：  
+- **max_delta**：允许的最大变化量。较高的值使动作更敏感，但可能引入抖动
+- **deadzone**：忽略小幅运动的范围。较大的死区减少抖动，但可能使动作感觉不够流畅
+- **dt_multiplier**：平滑因子。较小的值产生更平滑的运动，但可能降低响应速度
+
 
 ### hotkeys.json
 
-The `hotkeys.json` file, located in the root (`./settings`) directory, defines all the available keyboard and mouse shortcuts for interacting. You can modify this file to customize.
+文件`hotkeys.json`被存放在根目录(`./settings`)中，定义了所有可用的键盘和鼠标快捷键,你可以修改这个文件来自定义
 
-## Credits
+## 参考项目
 
 - **Tracking Module**
   - [mediapipe-vt](https://github.com/nuekaze/mediapipe-vt)
