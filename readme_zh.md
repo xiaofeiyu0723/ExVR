@@ -89,16 +89,16 @@ TODO
 | **Hand**       | enable                            | 启用手部追踪 (`true` / `false`)                              |
 |                | x_scalar, y_scalar, z_scalar       | 调整各个轴上手部位置的灵敏度                                 |
 |                | hand_confidence                   | 手部追踪的置信度阈值 |
-|                | hand_delta_threshold              | 检测所需的最小移动量 |
-|                | hand_shifting_threshold           | 检测所需的最小位移量 |
+|                | hand_delta_threshold              | 误识别检测的变化量阈值 |
+|                | hand_shifting_threshold           | 误识别检测的偏移阈值 |
 |                | enable_hand_auto_reset            | 自动重置手部位置 (`true` / `false`) |
 |                | hand_detection_upper_threshold    | 手部检测的上限阈值 |
 |                | hand_detection_lower_threshold    | 手部检测的下限阈值 |
-|                | hand_count_threshold              | 手部检测的最小手数 |
-|                | only_front                        | 限制跟踪至面向前方的手  |
+|                | hand_count_threshold              | 手部的计数阈值 |
+|                | only_front                        | 仅允许手在前方移动  |
 | **Finger**     | enable                            | 启用手指追踪 (`true` / `false`)                              |
 |                | finger_confidence                 | 手指检测的最低置信度 |
-|                | finger_threshold                  | 手指运动的灵敏度阈值 |
+|                | finger_threshold                  | 手指状态（张开/收紧）的阈值 |
 
 
 
@@ -138,24 +138,24 @@ TODO
 文件`smoothing.json`位于根目录（`./settings`）中，用于设置平滑各种运动和形态键
 
 - **OtherBlendShapes**：控制一般面部形态键的平滑度
-- **EyeBlink**：调整眼睛眨眼的响应速度
-- **EyeLook**：平滑眼睛的运动，包括视线方向
-- **TongueOut**：控制舌头伸出动画的平滑度
-- **TongueMove**：平滑舌头的左右运动
-- **HeadPosition**：管理头部位置调整的平滑度
-- **HeadRotation**：平滑头部旋转运动
-- **LeftHandPosition** / **RightHandPosition**：调整手部位置的平滑度
-- **LeftHandRotation** / **RightHandRotation**：管理手部旋转的平滑度
-- **LeftHandFinger** / **RightHandFinger**：控制单个手指运动的平滑度
+- **EyeBlink**：平滑眼皮移动
+- **EyeLook**：平滑眼睛移动
+- **TongueOut**：平滑舌头伸出移动
+- **TongueMove**：平滑舌头的左右移动
+- **HeadPosition**：平滑头部位置移动
+- **HeadRotation**：平滑头部旋转移动
+- **LeftHandPosition** / **RightHandPosition**：平滑手部位置
+- **LeftHandRotation** / **RightHandRotation**：平滑手部旋转
+- **LeftHandFinger** / **RightHandFinger**：平滑手指运动
 
 如果您不是对该应用程序进行二次开发，请避免修改以下参数：
-- **key**：标识目标属性
-- **is_rotation**：指示属性是否为旋转
-- **indices**：指定相关数据索引
-- **shifting**：索引偏移
+- **key**：键
+- **is_rotation**：属性是否为旋转
+- **indices**：数据索引
+- **shifting**：索引的偏移量
 
 你**可以修改**以下参数以获得对自身更好的体验：  
-- **max_delta**：允许的最大值变化。较高的值使动作更敏感，但可能引入抖动
+- **max_delta**：允许的最大变化量。较高的值使动作更敏感，但可能引入抖动
 - **deadzone**：忽略小幅运动的范围。较大的死区减少抖动，但可能使动作感觉不够流畅
 - **dt_multiplier**：平滑因子。较小的值产生更平滑的运动，但可能降低响应速度
 
@@ -164,7 +164,7 @@ TODO
 
 文件`hotkeys.json`被存放在根目录(`./settings`)中，定义了所有可用的键盘和鼠标快捷键,你可以修改这个文件来自定义
 
-## 支持
+## 参考项目
 
 - **Tracking Module**
   - [mediapipe-vt](https://github.com/nuekaze/mediapipe-vt)
