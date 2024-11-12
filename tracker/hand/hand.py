@@ -33,7 +33,7 @@ def draw_hand_landmarks(rgb_image):
 
     # Loop through each detected hand using zip
     for idx, (hand, hand_landmarks) in enumerate(
-        zip(g.handedness, g.hand_landmarks)
+        zip(handedness_list, hand_landmarks_list)
     ):
         # Draw the hand landmarks.
         hand_landmarks_proto = landmark_pb2.NormalizedLandmarkList()
@@ -60,24 +60,18 @@ def draw_hand_landmarks(rgb_image):
         text_x = int(min(x_coordinates) * width)
         text_y = int(min(y_coordinates) * height) - MARGIN
 
-        # 确保hand.classification非空
-        if hand.classification and hand.classification[0].label:
-            handedness_label = "Right" if hand.classification[0].label == "Left" else "Left"
-
-            # 在图像上绘制手部的判断（左手或右手）标签
-            cv2.putText(
-                rgb_image,
-                handedness_label,  # 手部判断标签
-                (text_x, text_y),
-                cv2.FONT_HERSHEY_DUPLEX,
-                FONT_SIZE,
-                HANDEDNESS_TEXT_COLOR,
-                FONT_THICKNESS,
-                cv2.LINE_AA,
-            )
-        else:
-            print("警告：未能识别手部判断信息")
-
+        # Draw handedness (left or right hand) on the image.
+        handedness_label = "Right" if hand.classification[0].label == "Left" else "Left"
+        cv2.putText(
+            rgb_image,
+            handedness_label,
+            (text_x, text_y),
+            cv2.FONT_HERSHEY_DUPLEX,
+            FONT_SIZE,
+            HANDEDNESS_TEXT_COLOR,
+            FONT_THICKNESS,
+            cv2.LINE_AA,
+        )
 
     return rgb_image
 
