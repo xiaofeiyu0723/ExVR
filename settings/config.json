@@ -14,6 +14,10 @@
         "enable": true
     },
     "Tracking": {
+        "NeedTurnHead": {
+            "enable": true,
+            "speed": 20
+        },
         "Head": {
             "enable": true,
             "x_scalar": 2.0,
@@ -25,6 +29,8 @@
             "yaw_calibration": 4.2710160984110015,
             "pitch_calibration": 5.759464844224408,
             "roll_calibration": 359.8285352373267
+            "up_limit_x": 40,
+            "low_limit_x": -40
         },
         "Face": {
             "enable": true,
