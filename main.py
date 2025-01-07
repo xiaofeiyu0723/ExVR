@@ -204,6 +204,11 @@ class  VideoWindow(QMainWindow):
             lambda: self.update_config("Hand", self.checkbox4.isChecked())
         )
         checkbox_layout.addWidget(self.checkbox4)
+        self.checkbox5 = QCheckBox("NeedTurnHead", self)
+        self.checkbox5.clicked.connect(
+            lambda: self.update_config("NeedTurnHead", self.checkbox5.isChecked())
+        )
+        checkbox_layout.addWidget(self.checkbox5)
         layout.addLayout(checkbox_layout)
 
         checkbox_layout_1 = QHBoxLayout()
