@@ -27,7 +27,9 @@ def apply_smoothing():
     while not g.stop_event.is_set() and g.config["Smoothing"]["enable"]:
         current_time = time.time()
         dt_base = current_time - last_time
-
+        
+        if g.config["Tracking"]["NeedTurnHead"]["enable"]:
+            check_head_turn(dt_base)
         for i, current_data in enumerate(g.latest_data):
             action = index_to_action.get(i, "OtherBlendShapes")
             config_params = g.smoothing_config["Parameters"][action]
@@ -59,3 +61,9 @@ def apply_smoothing():
 
         last_time = current_time
         time.sleep(frame_duration)
+def check_head_turn(dt_base):
+    # CheckLimit
+    if g.latest_data[67] > g.config["Tracking"]["Head"]["up_limit_x"]:
+        g.data["Rotation"][0]["s"] += g.config["Tracking"]["NeedTurnHead"]["speed"] * dt_base
+    if g.latest_data[67] < g.config["Tracking"]["Head"]["low_limit_x"]:
+        g.data["Rotation"][0]["s"] -= g.config["Tracking"]["NeedTurnHead"]["speed"] * dt_base
