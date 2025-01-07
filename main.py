@@ -382,6 +382,7 @@ class  VideoWindow(QMainWindow):
         self.checkbox2.setChecked(g.config["Tracking"]["Face"]["enable"])
         self.checkbox3.setChecked(g.config["Tracking"]["Tongue"]["enable"])
         self.checkbox4.setChecked(g.config["Tracking"]["Hand"]["enable"])
+        self.checkbox5.setChecked(g.config["Tracking"]["NeedTurnHead"]["enable"])
         self.block_face_checkbox.setChecked(g.config["Tracking"]["Face"]["block"])
         self.only_front_checkbox.setChecked(g.config["Tracking"]["Hand"]["only_front"])
 
