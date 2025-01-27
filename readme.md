@@ -3,7 +3,7 @@
 This is a project for PC users who want to experience VR without a headset.
 
 ## Language
-[简体中文](https://github.com/WavesMan/ExVR/blob/main/readme_zh.md) / [English](https://github.com/WavesMan/ExVR/blob/main/readme.md)
+[简体中文](readme_zh.md) / [English](readme.md)
 
 ## Usage
 
@@ -61,7 +61,7 @@ TODO
 
 ### config.json
 
-The `config.json` file, located in the root (`./settings`) directory, allows users to configure various components, including camera, IP settings, smoothing, and tracking parameters.
+该 `config.json` file, located in the root (`./settings`) directory, allows users to configure various components, including camera, IP settings, smoothing, and tracking parameters.
 
 #### General Settings  
 
