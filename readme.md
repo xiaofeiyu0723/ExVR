@@ -61,7 +61,7 @@ TODO
 
 ### config.json
 
-该 `config.json` file, located in the root (`./settings`) directory, allows users to configure various components, including camera, IP settings, smoothing, and tracking parameters.
+The `config.json` file, located in the root (`./settings`) directory, allows users to configure various components, including camera, IP settings, smoothing, and tracking parameters.
 
 #### General Settings  
 
