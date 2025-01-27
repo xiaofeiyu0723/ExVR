@@ -47,46 +47,64 @@ def draw_tongue_position(rgb_image):
         print(f"Error: {e}")
         return rgb_image
 
+# Define the LightDoubleConv block
+class LightDoubleConv(nn.Module):
+    """(Convolution => [BN] => ReLU) * 2"""
+
+    def __init__(self, in_channels, out_channels):
+        super(LightDoubleConv, self).__init__()
+        self.double_conv = nn.Sequential(
+            nn.Conv2d(in_channels, out_channels, kernel_size=3, padding=1),
+            nn.BatchNorm2d(out_channels),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(out_channels, out_channels, kernel_size=3, padding=1),
+            nn.BatchNorm2d(out_channels),
+            nn.ReLU(inplace=True)
+        )
+
+    def forward(self, x):
+        return self.double_conv(x)
+
+
 class KeypointCNN(nn.Module):
     def __init__(self, num_keypoints=1):
         super(KeypointCNN, self).__init__()
-        self.conv1 = nn.Conv2d(1, 16, kernel_size=3, padding=1)
-        self.bn1 = nn.BatchNorm2d(16)
-        self.pool = nn.MaxPool2d(2, 2)
-        self.conv2 = nn.Conv2d(16, 32, kernel_size=3, padding=1)
-        self.bn2 = nn.BatchNorm2d(32)
-        self.conv3 = nn.Conv2d(32, 64, kernel_size=3, padding=1)
-        self.bn3 = nn.BatchNorm2d(64)
-        self.fc1 = nn.Linear(
-            64 * 8 * 8, 256
-        )  # Adjust the input size according to pooling and input dimensions
+        self.inc = LightDoubleConv(1, 32)
+        self.down1 = nn.Sequential(
+            nn.MaxPool2d(2),
+            LightDoubleConv(32, 64)
+        )
+        self.down2 = nn.Sequential(
+            nn.MaxPool2d(2),
+            LightDoubleConv(64, 128)
+        )
+        self.keypoint_features = nn.Conv2d(128, 128, kernel_size=3, padding=1)
+        self.classification_features = nn.Conv2d(128, 128, kernel_size=3, padding=1)
+        self.heatmap_conv = nn.Conv2d(128, num_keypoints, kernel_size=1)
 
-        # Keypoint heatmaps output layer: Outputs heatmaps instead of direct coordinates
-        # Assuming the output size to be 32x32, which should be adjusted according to your needs
-        self.heatmap_conv = nn.Conv2d(64, num_keypoints, kernel_size=3, padding=1)
-        self.upsample = nn.Upsample(size=(32, 32), mode="bilinear", align_corners=False)
-
-        self.fc_classifier = nn.Linear(256, 1)  # Classification layer
+        self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
+        self.fc_classifier = nn.Linear(128, 1)
 
     def forward(self, x):
-        x1 = self.pool(F.relu(self.bn1(self.conv1(x))))
-        x2 = self.pool(F.relu(self.bn2(self.conv2(x1))))
-        x3 = F.relu(self.bn3(self.conv3(x2)))
-
-        # Keypoint heatmap output
-        keypoints_heatmap = self.upsample(self.heatmap_conv(x3))
-
-        x_flat = x3.view(x3.size(0), -1)
-        features = F.relu(self.fc1(x_flat))
-
-        classification = torch.sigmoid(self.fc_classifier(features))
+        x1 = self.inc(x)
+        x2 = self.down1(x1)
+        x3 = self.down2(x2)
+        keypoint_features = F.relu(self.keypoint_features(x3))
+        keypoints_heatmap = self.heatmap_conv(keypoint_features)
+        keypoints_heatmap = F.interpolate(
+            keypoints_heatmap, size=x.size()[2:], mode='bilinear', align_corners=False
+        )
+        classification_features = F.relu(self.classification_features(x3))
+        x_flat = self.avgpool(classification_features)
+        x_flat = torch.flatten(x_flat, 1)
+        classification = torch.sigmoid(self.fc_classifier(x_flat))
         return keypoints_heatmap, classification
 
 
 def initialize_tongue_model():
     tongue_model = KeypointCNN()
     tongue_model.load_state_dict(
-        torch.load("./model/model_epoch_199.pth", weights_only=True)
+        torch.load("./model/model_epoch_196.pth", weights_only=True)
     )
     tongue_model.eval()
     return tongue_model
@@ -152,7 +170,7 @@ def detect_tongue(mouth_image, tongue_model, data):
             input_tensor = torch.from_numpy(mouth_image).view(1, 1, 32, 32).float()
             input_tensor = input_tensor / 255.0
             out_keypoints, out_classification = tongue_model(input_tensor)
-            out_keypoints = out_keypoints * out_classification
+            # out_keypoints = out_keypoints * out_classification
             _, _, y, x = max_average_point(out_keypoints.numpy(), 5)
         out_classification_value = out_classification.item()
     else:
@@ -173,10 +191,14 @@ def detect_tongue(mouth_image, tongue_model, data):
             tongue_out = 0.0
             tongue_x = 0.0
             tongue_y = 0.0
-
+        else:
+            print(tongue_count)
+            tongue_out = g.data["BlendShapes"][52]["v"]
+            tongue_x = g.data["BlendShapes"][62]["v"]
+            tongue_y = g.data["BlendShapes"][63]["v"]
     # Reset tongue if mouth is closed
     if data["BlendShapes"][25]["v"] < g.config["Tracking"]["Tongue"]["mouth_close_threshold"]:
-        tongue_count = 0
+        # tongue_count = 0
         tongue_out = 0.0
         tongue_x = 0.0
         tongue_y = 0.0
