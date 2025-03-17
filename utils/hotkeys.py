@@ -112,7 +112,7 @@ def apply_hotkeys():
             button_str = "right"
         elif button == mouse.Button.middle:
             button_str = "middle"
-        print(button_str,pressed)
+        # print(button_str,pressed)
         if not pressed:
             pressed_buttons.discard(button)
         if button_str in mouse_actions:

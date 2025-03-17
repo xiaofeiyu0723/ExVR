@@ -12,7 +12,7 @@ class Transform:
     position: tuple  # (x, y, z)
     rotation: tuple  # (x, y, z, w)
     finger: tuple  # (0,1,2,3,4)
-    default: bool
+    follow: bool
 
 # GloveControllerSender equivalent in Python
 class GloveControllerSender:
@@ -38,8 +38,8 @@ class GloveControllerSender:
             target.rotation[3],
             "HMD",  # serial
         ]
-        target.default = g.config["Tracking"]["Hand"]["is_joint"]
-        if not target.default:
+
+        if target.follow:
             self.client.send_message("/VMT/Follow/Driver", message)
         else:
             self.client.send_message("/VMT/Joint/Driver", message)
@@ -57,10 +57,6 @@ class GloveControllerSender:
             self.client.send_message("/VMT/Skeleton/Scalar", message_0)
         message_1 = [1 if is_left_hand else 2, 0.0]  # lefthand ? 1 : 2
         self.client.send_message("/VMT/Skeleton/Apply", message_1)
-        # if sum(target.finger)==0:
-        # self.send_trigger(is_left_hand,1.0)
-        # else:
-        #     self.send_trigger(is_left_hand,0.0)
 
     def send_trigger(self, is_left_hand, index, status=0.0):
         message = [1 if is_left_hand else 2, index, 0.0, status]  # lefthand ? 1 : 2
@@ -78,7 +74,6 @@ class GloveControllerSender:
 
 
     def vmt_init(self):
-        # 设置房间矩阵
         self.client.send_message(
             "/VMT/SetRoomMatrix",
             [1.0, 0.0, 0.0, 1.0, 0.0, 1.0, 0.0, -0.76, 0.0, 0.0, 1.0, 1.0],

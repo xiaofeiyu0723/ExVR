@@ -89,8 +89,6 @@ TODO
 | **Hand**       | enable                            | 启用手部追踪 (`true` / `false`)                              |
 |                | x_scalar, y_scalar, z_scalar       | 调整各个轴上手部位置的灵敏度                                 |
 |                | hand_confidence                   | 手部追踪的置信度阈值 |
-|                | hand_delta_threshold              | 误识别检测的变化量阈值 |
-|                | hand_shifting_threshold           | 误识别检测的偏移阈值 |
 |                | enable_hand_auto_reset            | 自动重置手部位置 (`true` / `false`) |
 |                | hand_detection_upper_threshold    | 手部检测的上限阈值 |
 |                | hand_detection_lower_threshold    | 手部检测的下限阈值 |

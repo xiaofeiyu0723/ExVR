@@ -34,32 +34,53 @@ def pack_hmd_data(data, default_data):
     packed_hmd_data = struct.pack("6d", x, y, z, yaw, pitch, roll)
     return packed_hmd_data
 
+def calculate_endpoint(start_point, length, euler_angles):
+    rotation = R.from_euler('xyz', euler_angles, degrees=True)
+    direction_vector = np.array([0, 0, -length])
+    rotated_vector = rotation.apply(direction_vector)
+    endpoint = np.array(start_point) + rotated_vector
+    return endpoint
 
 def handling_hand_data(data, default_data):
+    if g.config["Tracking"]["LeftController"]["enable"]:
+        left_hand_type="Controller"
+    else:
+        left_hand_type = "Hand"
+    if g.config["Tracking"]["RightController"]["enable"]:
+        right_hand_type="Controller"
+    else:
+        right_hand_type="Hand"
+
     # Process left hand data
-    yaw_l = get_value(data["LeftHandRotation"][0], default_data["LeftHandRotation"][0])
+    yaw_l = get_value(data[f"Left{left_hand_type}Rotation"][0], default_data[f"Left{left_hand_type}Rotation"][0])
     pitch_l = get_value(
-        data["LeftHandRotation"][1], default_data["LeftHandRotation"][1]
+        data[f"Left{left_hand_type}Rotation"][1], default_data[f"Left{left_hand_type}Rotation"][1]
     )
-    roll_l = get_value(data["LeftHandRotation"][2], default_data["LeftHandRotation"][2])
-    x_l = get_value(data["LeftHandPosition"][0], default_data["LeftHandPosition"][0])
-    y_l = get_value(data["LeftHandPosition"][1], default_data["LeftHandPosition"][1])
-    z_l = get_value(data["LeftHandPosition"][2], default_data["LeftHandPosition"][2])
+    roll_l = get_value(data[f"Left{left_hand_type}Rotation"][2], default_data[f"Left{left_hand_type}Rotation"][2])
+    if g.config["Tracking"]["LeftController"]["enable"]:
+        data[f"Left{left_hand_type}Position"][0]["v"],data[f"Left{left_hand_type}Position"][1]["v"],data[f"Left{left_hand_type}Position"][2]["v"] = calculate_endpoint([-0.15, -0.4, -0.2], 0.4, [yaw_l,pitch_l,roll_l])
+
+    x_l = get_value(data[f"Left{left_hand_type}Position"][0], default_data[f"Left{left_hand_type}Position"][0])
+    y_l = get_value(data[f"Left{left_hand_type}Position"][1], default_data[f"Left{left_hand_type}Position"][1])
+    z_l = get_value(data[f"Left{left_hand_type}Position"][2], default_data[f"Left{left_hand_type}Position"][2])
     quat_l = R.from_euler("xyz", [yaw_l, pitch_l, roll_l], degrees=True).as_quat()
 
     # Process right hand data
     yaw_r = get_value(
-        data["RightHandRotation"][0], default_data["RightHandRotation"][0]
+        data[f"Right{right_hand_type}Rotation"][0], default_data[f"Right{right_hand_type}Rotation"][0]
     )
     pitch_r = get_value(
-        data["RightHandRotation"][1], default_data["RightHandRotation"][1]
+        data[f"Right{right_hand_type}Rotation"][1], default_data[f"Right{right_hand_type}Rotation"][1]
     )
     roll_r = get_value(
-        data["RightHandRotation"][2], default_data["RightHandRotation"][2]
+        data[f"Right{right_hand_type}Rotation"][2], default_data[f"Right{right_hand_type}Rotation"][2]
     )
-    x_r = get_value(data["RightHandPosition"][0], default_data["RightHandPosition"][0])
-    y_r = get_value(data["RightHandPosition"][1], default_data["RightHandPosition"][1])
-    z_r = get_value(data["RightHandPosition"][2], default_data["RightHandPosition"][2])
+    if g.config["Tracking"]["RightController"]["enable"]:
+        data[f"Right{right_hand_type}Position"][0]["v"],data[f"Right{right_hand_type}Position"][1]["v"],data[f"Right{right_hand_type}Position"][2]["v"] = calculate_endpoint([0.15, -0.4, -0.2], 0.4, [yaw_r,pitch_r,roll_r])
+
+    x_r = get_value(data[f"Right{right_hand_type}Position"][0], default_data[f"Right{right_hand_type}Position"][0])
+    y_r = get_value(data[f"Right{right_hand_type}Position"][1], default_data[f"Right{right_hand_type}Position"][1])
+    z_r = get_value(data[f"Right{right_hand_type}Position"][2], default_data[f"Right{right_hand_type}Position"][2])
     quat_r = R.from_euler("xyz", [yaw_r, pitch_r, roll_r], degrees=True).as_quat()
 
     wrist_position_l = (x_l, y_l, z_l)
@@ -71,11 +92,11 @@ def handling_hand_data(data, default_data):
     g.controller.right_hand.rotation = quat_r
     finger_l = tuple(
         get_value(v, v_d)
-        for v, v_d in zip(data["LeftHandFinger"], default_data["LeftHandFinger"])
+        for v, v_d in zip(data[f"Left{left_hand_type}Finger"], default_data[f"Left{left_hand_type}Finger"])
     )
     finger_r = tuple(
         get_value(v, v_d)
-        for v, v_d in zip(data["RightHandFinger"], default_data["RightHandFinger"])
+        for v, v_d in zip(data[f"Right{right_hand_type}Finger"], default_data[f"Right{right_hand_type}Finger"])
     )
     g.controller.left_hand.finger = finger_l
     g.controller.right_hand.finger = finger_r
@@ -91,7 +112,7 @@ def data_send_thread(target_ip):
         if g.config["Tracking"]["Face"]["enable"]:
             packed_data = pack_data(g.data, g.default_data)
             sock.sendto(packed_data, (target_ip, 11111))
-        if g.config["Tracking"]["Hand"]["enable"]:
+        if g.config["Tracking"]["Hand"]["enable"] or g.config["Tracking"]["LeftController"]["enable"] or g.config["Tracking"]["RightController"]["enable"]:
             handling_hand_data(g.data, g.default_data)
             g.controller.update()
         time.sleep(frame_duration)

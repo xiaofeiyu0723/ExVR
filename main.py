@@ -33,11 +33,10 @@ from tracker.hand.hand import draw_hand_landmarks
 from ctypes import windll
 from cv2_enumerate_cameras import enumerate_cameras
 
-# os.environ["OPENCV_VIDEOIO_PRIORITY_MSMF"] = "0"
+from tracker.controller.controller import *
 
 class VideoCaptureThread(QThread):
     frame_ready = pyqtSignal(QImage)
-    stopped = pyqtSignal()
 
     def __init__(self, source):
         super().__init__()
@@ -48,7 +47,7 @@ class VideoCaptureThread(QThread):
         self.tracker = utils.tracking.Tracker()
 
     def run(self):
-        self.video_capture = cv2.VideoCapture(self.source,cv2.CAP_ANY)
+        self.video_capture = cv2.VideoCapture(self.source, cv2.CAP_ANY)
         self.video_capture.set(cv2.CAP_PROP_BUFFERSIZE, 1)
         while self.is_running:
             ret, frame = self.video_capture.read()
@@ -65,7 +64,7 @@ class VideoCaptureThread(QThread):
                         rgb_image = draw_face_landmarks(rgb_image)
                     if g.config["Tracking"]["Tongue"]["enable"]:
                         rgb_image = draw_tongue_position(rgb_image)
-                    if g.config["Tracking"]["Hand"]["enable"]:                 
+                    if g.config["Tracking"]["Hand"]["enable"]:
                         rgb_image = draw_hand_landmarks(rgb_image)
                     h, w, ch = rgb_image.shape
                     bytes_per_line = ch * w
@@ -82,9 +81,8 @@ class VideoCaptureThread(QThread):
     def cleanup(self):
         if self.video_capture:
             self.video_capture.release()
-        self.stopped.emit()
 
-class  VideoWindow(QMainWindow):
+class VideoWindow(QMainWindow):
     def __init__(self):
         super().__init__()
 
@@ -186,37 +184,37 @@ class  VideoWindow(QMainWindow):
         checkbox_layout = QHBoxLayout()
         self.checkbox1 = QCheckBox("Head", self)
         self.checkbox1.clicked.connect(
-            lambda: self.update_config("Head", self.checkbox1.isChecked())
+            lambda: self.update_tracking_config("Head", self.checkbox1.isChecked())
         )
         checkbox_layout.addWidget(self.checkbox1)
         self.checkbox2 = QCheckBox("Face", self)
         self.checkbox2.clicked.connect(
-            lambda: self.update_config("Face", self.checkbox2.isChecked())
+            lambda: self.update_tracking_config("Face", self.checkbox2.isChecked())
         )
         checkbox_layout.addWidget(self.checkbox2)
         self.checkbox3 = QCheckBox("Tongue", self)
         self.checkbox3.clicked.connect(
-            lambda: self.update_config("Tongue", self.checkbox3.isChecked())
+            lambda: self.update_tracking_config("Tongue", self.checkbox3.isChecked())
         )
         checkbox_layout.addWidget(self.checkbox3)
         self.checkbox4 = QCheckBox("Hand", self)
         self.checkbox4.clicked.connect(
-            lambda: self.update_config("Hand", self.checkbox4.isChecked())
+            lambda: self.update_tracking_config("Hand", self.checkbox4.isChecked())
         )
         checkbox_layout.addWidget(self.checkbox4)
         layout.addLayout(checkbox_layout)
 
-        checkbox_layout_1 = QHBoxLayout()
-        self.block_face_checkbox = QCheckBox("Block Face", self)
-        self.block_face_checkbox.clicked.connect(self.set_face_block)
-        self.block_face_checkbox.setChecked(g.config["Tracking"]["Face"]["block"])
-        checkbox_layout_1.addWidget(self.block_face_checkbox)
+        # checkbox_layout_1 = QHBoxLayout()
+        # self.block_face_checkbox = QCheckBox("Block Face", self)
+        # self.block_face_checkbox.clicked.connect(self.set_face_block)
+        # self.block_face_checkbox.setChecked(g.config["Tracking"]["Face"]["block"])
+        # checkbox_layout_1.addWidget(self.block_face_checkbox)
 
-        self.only_front_checkbox = QCheckBox("Front Hand", self)
-        self.only_front_checkbox.clicked.connect(self.set_hand_front)
-        self.only_front_checkbox.setChecked(g.config["Tracking"]["Hand"]["only_front"])
-        checkbox_layout_1.addWidget(self.only_front_checkbox)
-        layout.addLayout(checkbox_layout_1)
+        # self.only_front_checkbox = QCheckBox("Front Hand", self)
+        # self.only_front_checkbox.clicked.connect(self.set_hand_front)
+        # self.only_front_checkbox.setChecked(g.config["Tracking"]["Hand"]["only_front"])
+        # checkbox_layout_1.addWidget(self.only_front_checkbox)
+        # layout.addLayout(checkbox_layout_1)
 
 
         self.update_checkboxes()
@@ -256,6 +254,35 @@ class  VideoWindow(QMainWindow):
         separator_1.setFrameShadow(QFrame.Sunken)  # Give it a sunken shadow effect
         layout.addWidget(separator_1)
 
+        label_layout = QHBoxLayout()
+        self.left_label = self.create_label("Left Controller", "red")
+        self.right_label = self.create_label("Right Controller", "red")
+        label_layout.addWidget(self.left_label)
+        label_layout.addWidget(self.right_label)
+        layout.addLayout(label_layout)
+        # self.set_label_state(self.left_label, "green")
+        # self.set_label_state(self.right_label, "green")
+
+        mobile_checkbox_layout = QHBoxLayout()
+        self.mobile_checkbox1 = QCheckBox("Left Controller", self)
+        self.mobile_checkbox1.clicked.connect(
+            lambda: self.update_tracking_config("LeftController", self.mobile_checkbox1.isChecked())
+        )
+        self.mobile_checkbox2 = QCheckBox("Right Controller", self)
+        self.mobile_checkbox2.clicked.connect(
+            lambda: self.update_tracking_config("RightController", self.mobile_checkbox2.isChecked())
+        )
+        mobile_checkbox_layout.addWidget(self.mobile_checkbox1)
+        mobile_checkbox_layout.addWidget(self.mobile_checkbox2)
+        layout.addLayout(mobile_checkbox_layout)
+
+        separator_2 = QFrame(self)
+        separator_2.setFrameShape(
+            QFrame.HLine
+        )  # Set the frame to be a horizontal line
+        separator_2.setFrameShadow(QFrame.Sunken)  # Give it a sunken shadow effect
+        layout.addWidget(separator_2)
+
         config_layout = QHBoxLayout()
         self.reset_hotkey_button = QPushButton("Reset Hotkey", self)
         self.reset_hotkey_button.clicked.connect(self.reset_hotkeys)
@@ -275,6 +302,19 @@ class  VideoWindow(QMainWindow):
         layout.addLayout(config_layout)
 
         self.video_thread = None
+        self.controller_thread = None
+
+
+    def create_label(self, text, color):
+        label = QLabel(text, self)
+        label.setAlignment(Qt.AlignCenter)
+        # label.setFixedSize(200, 50)
+        label.setFixedHeight(50)
+        label.setStyleSheet(f"background-color: {color}; border: 2px solid black;")
+        return label
+
+    def set_label_state(self, label, color):
+        label.setStyleSheet(f"background-color: {color}; border: 2px solid black;")
 
     def save_data(self):
         for i, (key, edits) in enumerate(self.lineEdits.items()):
@@ -377,8 +417,8 @@ class  VideoWindow(QMainWindow):
         self.checkbox2.setChecked(g.config["Tracking"]["Face"]["enable"])
         self.checkbox3.setChecked(g.config["Tracking"]["Tongue"]["enable"])
         self.checkbox4.setChecked(g.config["Tracking"]["Hand"]["enable"])
-        self.block_face_checkbox.setChecked(g.config["Tracking"]["Face"]["block"])
-        self.only_front_checkbox.setChecked(g.config["Tracking"]["Hand"]["only_front"])
+        # self.block_face_checkbox.setChecked(g.config["Tracking"]["Face"]["block"])
+        # self.only_front_checkbox.setChecked(g.config["Tracking"]["Hand"]["only_front"])
 
     def set_scalar(self, value, axis):
         scalar_value = value / 100.0
@@ -409,7 +449,7 @@ class  VideoWindow(QMainWindow):
         if self.video_thread is None:
             stop_hotkeys()
 
-    def update_config(self, key, value):
+    def update_tracking_config(self, key, value):
         if key in g.config["Tracking"]:
             g.config["Tracking"][key]["enable"] = value
 
@@ -536,8 +576,13 @@ class  VideoWindow(QMainWindow):
             )
             self.video_thread = VideoCaptureThread(source)
             self.video_thread.frame_ready.connect(self.update_frame)
-            self.video_thread.stopped.connect(self.thread_stopped)
             self.video_thread.start()
+
+            # controller
+            self.controller_thread = ControllerApp()
+            self.controller_thread.start()
+
+
         self.show_frame_button.setText("Show Frame")
 
     def toggle_video_display(self):
@@ -595,6 +640,10 @@ class  VideoWindow(QMainWindow):
             self.video_thread.stop()
             self.video_thread.wait()
             self.video_thread = None
+        if self.controller_thread:
+            self.controller_thread.stop()
+            self.controller_thread.wait()
+            self.controller_thread = None
         self.image_label.setPixmap(QPixmap())
 
     def closeEvent(self, event):

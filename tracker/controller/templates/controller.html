@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>VR Controller - {{ hand|upper }}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <style>
+        :root {
+            --primary-color: #2196F3;
+            --button-size: 18vw; /* Use viewport width for button size */
+        }
+        body {
+            margin: 0;
+            padding: 0;
+            background: #000;
+            touch-action: none;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+        {% if hand == 'Right' %}
+        .joystick-area {
+            position: absolute;
+            left: 20%;
+            bottom: 20%;
+            width: 55vw; /* Use viewport width for joystick area size */
+            height: 55vw; /* Keep aspect ratio consistent */
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        {% else %}
+        .joystick-area {
+        position: absolute;
+        left: 20%;
+        bottom: 30%;
+        width: 55vw; /* Use viewport width for joystick area size */
+        height: 55vw; /* Keep aspect ratio consistent */
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 50%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        }
+        {% endif %}
+        .joystick-thumb {
+            width: 15vw; /* Use viewport width for thumb size */
+            height: 15vw; /* Keep aspect ratio consistent */
+            background: var(--primary-color);
+            border-radius: 50%;
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            transition: transform 0.1s, background 0.1s;
+        }
+        .joystick-thumb.active {
+            background: red;
+        }
+        .vr-button {
+            width: var(--button-size);
+            height: var(--button-size);
+            border-radius: 50%;
+            background: rgba(51, 51, 51, 0.5);
+            border: 2px solid #666;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: absolute;
+            transition: background 0.1s, border-color 0.1s;
+        }
+        .vr-button.active {
+            background: var(--primary-color);
+            border-color: #fff;
+        }
+        .vr-button-label {
+            position: absolute;
+            bottom: -2vh; /* Use viewport height for label position */
+            color: white;
+            font-size: 2vh; /* Use viewport height for font size */
+            user-select: none;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            -webkit-touch-callout: none;
+        }
+        .trigger {
+            width: var(--button-size);
+            height: var(--button-size);
+            border-radius: 50%;
+            background: rgba(51, 51, 51, 0.5);
+            border: 2px solid #666;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.1s, border-color 0.1s;
+            position: absolute;
+        }
+        .trigger.active {
+            background: var(--primary-color);
+            border-color: #fff;
+        }
+        .trigger-label {
+            position: absolute;
+            color: white;
+            font-size: 2vh; /* Use viewport height for font size */
+            user-select: none;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            -webkit-touch-callout: none;
+        }
+        .upper-trigger .trigger-label {
+            top: -2vh; /* Use viewport height for label position */
+            bottom: auto;
+        }
+        .lower-trigger .trigger-label {
+            bottom: -2vh; /* Use viewport height for label position */
+        }
+        {% if hand == 'Right' %}
+        .upper-trigger { right: 6vw; bottom : 42%;}
+        .lower-trigger { right: 6vw; bottom : 33%;}
+        {% else %}
+        .upper-trigger { left: 6vw; bottom : 42%;}
+        .lower-trigger { left: 6vw; bottom : 33%;}
+        {% endif %}
+        {% if hand == 'Right' %}
+        .cube-container {
+            width: 24vw;
+            height: 24vw;
+            perspective: 50vw;
+            margin-bottom: 2vh;
+            position: absolute;
+            right: 40%;
+            bottom: 60%;
+        }
+        {% else %}
+       .cube-container {
+            width: 24vw;
+            height: 24vw;
+            perspective: 50vw;
+            margin-bottom: 2vh;
+            position: absolute;
+            left: 40%;
+            bottom: 60%;
+        }
+        {% endif %}
+
+        .cube {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            transform-style: preserve-3d;
+            transform: rotateX(0deg) rotateY(0deg) rotateZ(0deg);
+            transition: transform 0.1s linear;
+        }
+        .cube-face {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid var(--primary-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            font-size: 3vh; /* Use viewport height for font size */
+            font-weight: bold;
+        }
+        .cube-face.front { transform: translateZ(12vw); }
+        .cube-face.back { transform: rotateY(180deg) translateZ(12vw); }
+        .cube-face.left { transform: rotateY(-90deg) translateZ(12vw); }
+        .cube-face.right { transform: rotateY(90deg) translateZ(12vw); }
+        .cube-face.top { transform: rotateX(90deg) translateZ(12vw); }
+        .cube-face.bottom { transform: rotateX(-90deg) translateZ(12vw); }
+        /* 新增编辑按钮样式 */
+        .edit-button {
+            width: 8vw;
+            height: 8vw;
+            border-radius: 10%;
+            background: rgba(255, 165, 0, 0.5);
+            border: 2px solid #FFA500;
+            position: absolute;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+            z-index: 100;
+        }
+        .edit-button.active {
+            background: #FFA500;
+        }
+        .edit-button-label {
+            color: white;
+            font-size: 1.5vh;
+            user-select: none;
+        }
+        /* 新增编辑模式下的可拖动样式 */
+        .draggable {
+            transition: none !important;
+            cursor: move;
+        }
+        /* 调整原有按钮位置 */
+        {% if hand == 'Right' %}
+        .edit-button {
+            top: 5%;
+            left: 5%;
+        }
+        #resetBtn {
+            top: 5%;
+            left: 15%;
+        }
+        {% else %}
+        .edit-button {
+            top: 5%;
+            right: 5%;
+        }
+        #resetBtn {
+            top: 5%;
+            right: 15%;
+        }
+        {% endif %}
+    </style>
+</head>
+<body>
+<div class="edit-button" id="editBtn">
+    <div class="edit-button-label">EDIT</div>
+</div>
+
+<div class="edit-button" id="resetBtn">
+    <div class="edit-button-label">RST</div>
+</div>
+
+<!-- CAL Button at the top center -->
+<div class="vr-button" id="calibrate" style="bottom: 80%; left: 40%;">
+    <div class="vr-button-label">CAL</div>
+</div>
+
+<!-- Cube Container -->
+<div class="cube-container">
+    <div class="cube" id="cube">
+        <div class="cube-face front">F</div>
+        <div class="cube-face back">B</div>
+        <div class="cube-face left">L</div>
+        <div class="cube-face right">R</div>
+        <div class="cube-face top">T</div>
+        <div class="cube-face bottom">B</div>
+    </div>
+</div>
+
+<!-- Joystick -->
+<div class="joystick-area">
+    <div class="joystick-thumb" id="joystick"></div>
+</div>
+
+<!-- Triggers -->
+<div class="trigger upper-trigger" id="upperTrigger">
+    <div class="trigger-label">Upper</div>
+</div>
+<div class="trigger lower-trigger" id="lowerTrigger">
+    <div class="trigger-label">Lower</div>
+</div>
+
+<!-- Right Hand Layout -->
+{% if hand == 'Right' %}
+<div class="vr-button" id="system" style="bottom: 15%; right: 20%;">
+    <div class="vr-button-label">SYS</div>
+</div>
+<div class="vr-button" id="B" style="bottom: 15%; right: 40%;">
+    <div class="vr-button-label">B</div>
+</div>
+<div class="vr-button" id="A" style="bottom: 15%; right: 60%;">
+    <div class="vr-button-label">A</div>
+</div>
+
+<!-- Left Hand Layout -->
+{% else %}
+<div class="vr-button" id="X" style="bottom: 15%; left: 20%;">
+    <div class="vr-button-label">X</div>
+</div>
+<div class="vr-button" id="Y" style="bottom: 15%; left: 40%;">
+    <div class="vr-button-label">Y</div>
+</div>
+<div class="vr-button" id="system" style="bottom: 15%; left: 60%;">
+    <div class="vr-button-label">SYS</div>
+</div>
+{% endif %}
+
+<script>
+    const CONFIG = {
+        hand: "{{ hand }}",
+        sendInterval: "{{ send_interval }}",
+        deadZone: 0.05
+    };
+
+    const serverIp = "{{ server_ip }}";
+    const serverPort="{{ server_port }}"
+    const websocketUrl = `ws://${serverIp}:${serverPort}`;
+
+    const socket = new WebSocket(websocketUrl);
+
+    socket.onopen = function() {
+        console.log('WebSocket connection established');
+    };
+
+    socket.onmessage = function(event) {
+        const data = JSON.parse(event.data);
+        console.log('Message received:', data);
+    };
+
+    socket.onclose = function() {
+        console.log('WebSocket connection closed');
+    };
+
+    socket.onerror = function(error) {
+        console.error('WebSocket error:', error);
+    };
+
+    let state = {
+        alpha: 0,
+        beta: 0,
+        gamma: 0,
+        joystick: [0, 0],
+        joystickClicked: false,
+        buttons: {
+            system: false,
+            A: false,
+            B: false,
+            X: false,
+            Y: false,
+            upperTrigger: false,
+            lowerTrigger: false
+        }
+    };
+
+    let rawQuaternion = { w: 1, x: 0, y: 0, z: 0 };
+    let calibQuaternion = { w: 1, x: 0, y: 0, z: 0 };
+    let calibratedQuaternion = { w: 1, x: 0, y: 0, z: 0 };
+
+    const cube = document.getElementById('cube');
+    // 新增编辑模式相关代码
+    let isEditMode = false;
+    let selectedElement = null;
+    let initialX = 0;
+    let initialY = 0;
+    let currentX = 0;
+    let currentY = 0;
+    let positions = {};
+
+    const storageKey = `controllerPositions_${CONFIG.hand}`;
+
+    // 初始化编辑按钮
+    document.getElementById('editBtn').addEventListener('touchstart', function(e) {
+        isEditMode = !isEditMode;
+        this.classList.toggle('active');
+
+        // 切换所有可拖动元素的样式
+        document.querySelectorAll('.vr-button, .trigger, .joystick-area, .cube-container').forEach(el => {
+            el.classList.toggle('draggable', isEditMode);
+        });
+
+        if (!isEditMode) {
+            // 保存位置到localStorage
+            localStorage.setItem(storageKey, JSON.stringify(positions));
+        }
+    });
+
+    // Reset Button functionality
+    document.getElementById('resetBtn').addEventListener('touchstart', function() {
+        localStorage.removeItem(storageKey);
+        window.location.reload(); // Reload the page to reset positions
+    });
+
+document.addEventListener('touchstart', function(e) {
+    if (!isEditMode) return;
+
+    selectedElement = e.target.closest('.draggable');
+    if (!selectedElement) return;
+
+    e.preventDefault();
+    const rect = selectedElement.getBoundingClientRect();
+
+    // 记录触控点相对于元素左上角的偏移
+    initialX = e.touches[0].clientX - rect.left;
+    initialY = e.touches[0].clientY - rect.top;
+
+    // 记录元素的初始位置（像素）
+    currentX = rect.left;
+    currentY = rect.top;
+
+    // 添加拖动中样式
+    selectedElement.style.transition = 'none';
+    selectedElement.style.boxShadow = '0 0 15px orange';
+});
+
+document.addEventListener('touchmove', function(e) {
+    if (!isEditMode || !selectedElement) return;
+
+    e.preventDefault();
+    const touch = e.touches[0];
+
+    // 计算新的位置（像素）
+    const newX = touch.clientX - initialX;
+    const newY = touch.clientY - initialY;
+
+    // 更新位置（使用像素）
+    selectedElement.style.left = `${newX}px`;
+    selectedElement.style.top = `${newY}px`;
+});
+
+document.addEventListener('touchend', function() {
+    if (!isEditMode || !selectedElement) return;
+
+    // 移除拖动中样式
+    selectedElement.style.transition = '';
+    selectedElement.style.boxShadow = '';
+
+    // 保存位置（转换为百分比）
+    const rect = selectedElement.getBoundingClientRect();
+    const id = selectedElement.id || selectedElement.className.match(/[\w-]+/)[0];
+    positions[id] = {
+        x: rect.left / window.innerWidth * 100,
+        y: rect.top / window.innerHeight * 100
+    };
+
+    selectedElement = null;
+});
+    // 加载保存的位置
+    window.addEventListener('load', function() {
+        const savedPositions = localStorage.getItem(storageKey);
+        if (savedPositions) {
+            positions = JSON.parse(savedPositions);
+            Object.entries(positions).forEach(([id, pos]) => {
+                const el = document.getElementById(id) ||
+                         document.querySelector(`.${id.split(' ')[0]}`);
+                if (el) {
+                    el.style.left = `${pos.x}%`;
+                    el.style.top = `${pos.y}%`;
+                }
+            });
+        }
+    });
+
+    initJoystick();
+    initButtons();
+    initTriggers();
+    initCalibrate();
+    startTracking();
+
+    function startTracking() {
+        window.addEventListener('deviceorientation', event => {
+            rawQuaternion = toQuaternion(event.alpha || 0, event.beta || 0, event.gamma || 0);
+            calibratedQuaternion = multiplyQuaternions(calibQuaternion, rawQuaternion);
+            updateCubeRotation(calibratedQuaternion);
+        });
+
+        setInterval(() => {
+            if (socket.readyState === WebSocket.OPEN) {
+                socket.send(JSON.stringify({
+                    hand: CONFIG.hand,
+                    quaternion: calibratedQuaternion,
+                    ...state
+                }));
+            }
+        }, CONFIG.sendInterval);
+    }
+
+    function updateCubeRotation(quaternion) {
+        const matrix = quaternionToMatrix(quaternion);
+        cube.style.transform = `matrix3d(${matrix.join(',')})`;
+    }
+
+    function toQuaternion(alpha, beta, gamma) {
+        const degToRad = Math.PI / 180;
+
+        const angles = {
+            z: -alpha * degToRad,
+            x: -beta * degToRad,
+            y: gamma * degToRad
+        };
+
+        const cz = Math.cos(angles.z / 2);
+        const sz = Math.sin(angles.z / 2);
+        const cx = Math.cos(angles.x / 2);
+        const sx = Math.sin(angles.x / 2);
+        const cy = Math.cos(angles.y / 2);
+        const sy = Math.sin(angles.y / 2);
+
+        const qz = { w: cz, x: 0, y: 0, z: sz };
+        const qx = { w: cx, x: sx, y: 0, z: 0 };
+        const qy = { w: cy, x: 0, y: sy, z: 0 };
+
+        const temp = multiplyQuaternions(qz, qx);
+        return multiplyQuaternions(temp, qy);
+    }
+
+    function multiplyQuaternions(a, b) {
+        return {
+            w: a.w * b.w - a.x * b.x - a.y * b.y - a.z * b.z,
+            x: a.w * b.x + a.x * b.w + a.y * b.z - a.z * b.y,
+            y: a.w * b.y - a.x * b.z + a.y * b.w + a.z * b.x,
+            z: a.w * b.z + a.x * b.y - a.y * b.x + a.z * b.w
+        };
+    }
+
+    function quaternionToMatrix(q) {
+        const { x, y, z, w } = q;
+        const xx = x * x, xy = x * y, xz = x * z, xw = x * w;
+        const yy = y * y, yz = y * z, yw = y * w;
+        const zz = z * z, zw = z * w;
+
+        return [
+            1 - 2 * (yy + zz), 2 * (xy - zw), 2 * (xz + yw), 0,
+            2 * (xy + zw), 1 - 2 * (xx + zz), 2 * (yz - xw), 0,
+            2 * (xz - yw), 2 * (yz + xw), 1 - 2 * (xx + yy), 0,
+            0, 0, 0, 1
+        ];
+    }
+
+    function initJoystick() {
+        const joystick = document.getElementById('joystick');
+        const area = document.querySelector('.joystick-area');
+        let touchId = null;
+
+        const updatePosition = (x, y) => {
+            const distance = Math.sqrt(x * x + y * y);
+            if (distance > 1) {
+                x /= distance;
+                y /= distance;
+            }
+            state.joystick = [
+                Math.abs(x) > CONFIG.deadZone ? x : 0,
+                Math.abs(y) > CONFIG.deadZone ? y : 0
+            ];
+            joystick.style.transform = `translate(${x * 200}%, ${y * 200}%) translate(-50%, -50%)`;
+        };
+
+        area.addEventListener('touchstart', e => {
+            if (!touchId) {
+                touchId = e.changedTouches[0].identifier;
+                updateJoystick(e);
+            }
+        });
+
+        area.addEventListener('touchmove', e => {
+            if (touchId !== null) {
+                updateJoystick(e);
+            }
+        });
+
+        area.addEventListener('touchend', () => {
+            touchId = null;
+            joystick.style.transform = 'translate(-50%, -50%)';
+            state.joystick = [0, 0];
+        });
+
+        joystick.addEventListener('dblclick', () => {
+            state.joystickClicked = !state.joystickClicked;
+
+            if (state.joystickClicked) {
+                joystick.classList.add('active');
+            } else {
+                joystick.classList.remove('active');
+            }
+
+            if (socket.readyState === WebSocket.OPEN) {
+                socket.send(JSON.stringify({
+                    hand: CONFIG.hand,
+                    joystickClicked: state.joystickClicked
+                }));
+            }
+        });
+
+        function updateJoystick(e) {
+            const touch = Array.from(e.touches).find(t => t.identifier === touchId);
+            if (!touch) return;
+            const rect = area.getBoundingClientRect();
+            const centerX = rect.width / 2;
+            const centerY = rect.height / 2;
+            const x = (touch.clientX - rect.left - centerX) / centerX;
+            const y = (touch.clientY - rect.top - centerY) / centerY;
+            updatePosition(x, y);
+        }
+    }
+
+    function initButtons() {
+        document.querySelectorAll('.vr-button').forEach(btn => {
+            btn.addEventListener('touchstart', () => {
+                btn.classList.add('active');
+                state.buttons[btn.id] = true;
+            });
+
+            btn.addEventListener('touchend', () => {
+                btn.classList.remove('active');
+                state.buttons[btn.id] = false;
+            });
+        });
+    }
+
+    function initTriggers() {
+        const initTrigger = (id, stateKey) => {
+            const trigger = document.getElementById(id);
+            trigger.addEventListener('touchstart', () => {
+                trigger.classList.add('active');
+                state.buttons[stateKey] = true;
+            });
+
+            trigger.addEventListener('touchend', () => {
+                trigger.classList.remove('active');
+                state.buttons[stateKey] = false;
+            });
+        };
+
+        initTrigger('upperTrigger', 'upperTrigger');
+        initTrigger('lowerTrigger', 'lowerTrigger');
+    }
+
+    function initCalibrate() {
+        document.getElementById('calibrate').addEventListener('click', () => {
+            calibQuaternion = {
+                w: rawQuaternion.w,
+                x: -rawQuaternion.x,
+                y: -rawQuaternion.y,
+                z: -rawQuaternion.z
+            };
+
+            // Define a quaternion for a -90 degree rotation around the X axis
+            const NinetyDegreesXQuaternion = {
+                w: Math.cos(Math.PI / 4),
+                x: Math.sin(Math.PI / 4),
+                y: 0,
+                z: 0
+            };
+
+            // Multiply the calibration quaternion with the extra -90 degree rotation quaternion
+            calibQuaternion = multiplyQuaternions(NinetyDegreesXQuaternion, calibQuaternion);
+
+            console.log('Calibration applied');
+        });
+    }
+</script>
+</body>
+</html>

@@ -87,8 +87,6 @@ The `config.json` file, located in the root (`./settings`) directory, allows use
 | **Hand**       | enable                                                  | Activate hand tracking.                              |
 |                | x_scalar, y_scalar, z_scalar                            | Adjust sensitivity for hand position in each axis.   |
 |                | hand_confidence                                         | Minimum confidence for hand detection.               |
-|                | hand_delta_threshold                                    | Minimum movement required for detection.             |
-|                | hand_shifting_threshold                                 | Minimum shifting required for detection.             |
 |                | enable_hand_auto_reset                                  | Automatically resets hand position (`true`/`false`). |
 |                | hand_detection_upper_threshold                          | Upper threshold for hand detection.                  |
 |                | hand_detection_lower_threshold                          | Lower threshold for hand detection.                  |

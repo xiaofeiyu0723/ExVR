@@ -88,16 +88,24 @@
             "shifting": 70,
             "max_delta": 0.1,
             "deadzone": 0.01,
-            "dt_multiplier": 20
+            "dt_multiplier": 100,
+              "kalman_params": {
+                "q_process": 0.01,
+                "r_measure": 0.02
+              }
         },
         "RightHandPosition": {
             "key": "RightHandPosition",
             "is_rotation": false,
             "indices": [76, 77, 78],
             "shifting": 76,
-            "max_delta": 0.1,
-            "deadzone": 0.01,
-            "dt_multiplier": 20
+            "max_delta": null,
+            "deadzone": null,
+            "dt_multiplier": 100,
+              "kalman_params": {
+                "q_process": 0.01,
+                "r_measure": 0.02
+              }
         },
         "LeftHandFinger": {
             "key": "LeftHandFinger",
@@ -116,6 +124,62 @@
             "max_delta": null,
             "deadzone": null,
             "dt_multiplier": 20
+        },
+
+        "LeftControllerRotation": {
+            "key": "LeftControllerRotation",
+            "is_rotation": true,
+            "indices": [95, 96, 97],
+            "shifting": 95,
+            "max_delta": null,
+            "deadzone": null,
+            "dt_multiplier": 20
+        },
+        "RightControllerRotation": {
+            "key": "RightControllerRotation",
+            "is_rotation": true,
+            "indices": [101, 102, 103],
+            "shifting": 101,
+            "max_delta": null,
+            "deadzone": null,
+            "dt_multiplier": 20
+        },
+        "LeftControllerPosition": {
+            "key": "LeftControllerPosition",
+            "is_rotation": false,
+            "indices": [92, 93, 94],
+            "shifting": 92,
+            "max_delta": 0.1,
+            "deadzone": 0.01,
+            "dt_multiplier": 20
+        },
+        "RightControllerPosition": {
+            "key": "RightControllerPosition",
+            "is_rotation": false,
+            "indices": [98, 99, 100],
+            "shifting": 98,
+            "max_delta": 0.1,
+            "deadzone": 0.01,
+            "dt_multiplier": 20
+        },
+        "LeftControllerFinger": {
+            "key": "LeftControllerFinger",
+            "is_rotation": false,
+            "indices": [104, 105, 106, 107, 108],
+            "shifting": 104,
+            "max_delta": null,
+            "deadzone": null,
+            "dt_multiplier": 20
+        },
+        "RightControllerFinger": {
+            "key": "RightControllerFinger",
+            "is_rotation": false,
+            "indices": [109, 110, 111, 112, 113],
+            "shifting": 109,
+            "max_delta": null,
+            "deadzone": null,
+            "dt_multiplier": 20
         }
+
     }
 }

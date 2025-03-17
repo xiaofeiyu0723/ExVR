@@ -27,7 +27,7 @@ def reset_head():
     g.config["Tracking"]["Head"]["yaw_calibration"] = g.data["Rotation"][0]["v"]
     g.config["Tracking"]["Head"]["pitch_calibration"] = g.data["Rotation"][1]["v"]
     g.config["Tracking"]["Head"]["roll_calibration"] = g.data["Rotation"][2]["v"]
-    print(g.config["Tracking"]["Head"]["yaw_calibration"],g.config["Tracking"]["Head"]["pitch_calibration"],g.config["Tracking"]["Head"]["roll_calibration"])
+    # print(g.config["Tracking"]["Head"]["yaw_calibration"],g.config["Tracking"]["Head"]["pitch_calibration"],g.config["Tracking"]["Head"]["roll_calibration"])
     for i in range(0, 3):
         g.data["Position"][i]["s"] = -g.data["Position"][i]["v"]
     for i in range(0, 3):
@@ -66,7 +66,7 @@ def head_pitch(flag=True):
 grab_status = {True: False, False: False}
 def grab(value, index):
     grab_status[value] = not grab_status[value]
-    print(value, grab_status[value])
+    # print(value, grab_status[value])
     if grab_status[value]:
         g.controller.send_trigger(value, index, 1.0)
     else:
@@ -74,12 +74,12 @@ def grab(value, index):
 
 
 def trigger_press(value, index):
-    print(1)
+    # print(1)
     g.controller.send_trigger(value, index, 1.0)
 
 
 def trigger_release(value, index):
-    print(0)
+    # print(0)
     g.controller.send_trigger(value, index, 0.0)
 
 import math
@@ -95,7 +95,7 @@ def joystick_up(value, index):
     x = round(joystick_value * math.cos(angle), 1)
     y = round(joystick_value * math.sin(angle), 1)
     joystick_status = (x, y)
-    print(joystick_status)
+    # print(joystick_status)
     g.controller.send_joystick(value, index, joystick_status[0], joystick_status[1])
 
 def joystick_down(value, index):
@@ -104,7 +104,7 @@ def joystick_down(value, index):
     x = round(joystick_value * math.cos(angle), 1)
     y = round(joystick_value * math.sin(angle), 1)
     joystick_status = (x, y)
-    print(joystick_status)
+    # print(joystick_status)
     g.controller.send_joystick(value, index, joystick_status[0], joystick_status[1])
 
 
@@ -112,7 +112,7 @@ def joystick_middle(value, index):
     global joystick_status,joystick_value
     g.controller.send_joystick(value, index, 0.0, 0.0)
     joystick_status = (0.0, joystick_value)
-    print(joystick_status)
+    # print(joystick_status)
 
 
 joystick_middle_timer = None
@@ -124,7 +124,7 @@ def joystick_middle_delay(value, index):
         global joystick_middle_timer, joystick_status
         g.controller.send_joystick(value, index, 0.0, 0.0)
         joystick_status = (0.0, joystick_value)
-        print(joystick_status)
+        # print(joystick_status)
         if joystick_middle_timer is not None:
             joystick_middle_timer.cancel()
             joystick_middle_timer = None
@@ -143,7 +143,7 @@ def enable_fingers(value=None):
     for d in g.data[finger_side]:
         d["e"] = fingers_enbale_status[value]
     fingers_enbale_status[value] = not fingers_enbale_status[value]
-    print(g.data[finger_side])
+    # print(g.data[finger_side])
 
 
 def set_finger(value=None, index=None):
@@ -154,11 +154,11 @@ def set_finger(value=None, index=None):
         g.default_data[finger_side][index]["v"] = 0.0
     else:
         g.default_data[finger_side][index]["v"] = 1.0
-    print(g.default_data[finger_side])
+    # print(g.default_data[finger_side])
 
 
 def set_fingers(index_str=None): # five set_finger！
-    print(index_str)
+    # print(index_str)
     if "left_fingers" in index_str:
         finger_side = "LeftHandFinger"
     elif "right_fingers" in index_str:
@@ -171,7 +171,7 @@ def set_fingers(index_str=None): # five set_finger！
     for idx, value in enumerate(handlist, start=1):  
         if 0 <= idx - 1 < len(g.default_data[finger_side]):  
             g.default_data[finger_side][idx - 1]["v"] = value
-            print(g.default_data[finger_side])
+            # print(g.default_data[finger_side])
 
 
 def enable_hand():
@@ -214,7 +214,7 @@ def reset_hand(value=None):
 
 def toggle_hand_tracking_mode():
     g.config["Tracking"]["Hand"]["is_joint"] = not g.config["Tracking"]["Hand"]["is_joint"]
-    print(g.config["Tracking"]["Hand"]["is_joint"])
+    # print(g.config["Tracking"]["Hand"]["is_joint"])
 
 def enable_tongue():
     g.config["Tracking"]["Tongue"]["enable"] = not g.config["Tracking"]["Tongue"]["enable"]

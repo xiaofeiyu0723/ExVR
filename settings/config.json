@@ -1,6 +1,6 @@
 {
     "Setting": {
-        "priority": "NORMAL_PRIORITY_CLASS",
+        "priority": "REALTIME_PRIORITY_CLASS",
         "flip_x": false,
         "flip_y": false
     },
@@ -13,7 +13,16 @@
     "Smoothing": {
         "enable": true
     },
+    "Controller": {
+        "port": 8888
+    },
     "Tracking": {
+        "LeftController":{
+            "enable": false
+        },
+        "RightController":{
+            "enable": false
+        },
         "Head": {
             "enable": true,
             "x_scalar": 2.0,
@@ -43,17 +52,15 @@
             "enable": true,
             "x_scalar": 1.0,
             "y_scalar": 1.0,
-            "z_scalar": 0.05,
-            "z_shifting": 6.550301796711368,
-            "hand_confidence": 0.5,
-            "hand_delta_threshold": 0.1,
-            "hand_shifting_threshold": 0.1,
+            "z_scalar": 0.5,
+            "z_shifting": 1,
+            "hand_confidence": 0.3,
             "enable_hand_auto_reset": true,
             "hand_detection_upper_threshold": 100,
             "hand_detection_lower_threshold": 6,
             "hand_count_threshold": 6,
             "only_front": true,
-            "is_joint": true
+            "follow": true
         },
         "Finger": {
             "enable": true,
