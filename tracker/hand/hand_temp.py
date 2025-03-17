@@ -1,3 +1,5 @@
+import sys
+
 import cv2
 from mediapipe import solutions
 from mediapipe.framework.formats import landmark_pb2
@@ -7,6 +9,15 @@ from scipy.spatial.transform import Rotation as R
 from tracker.hand.gesture import get_fingers_angle_from_hand3d
 from copy import deepcopy
 import utils.globals as g
+
+
+def create_rotation_matrix(yaw, pitch, roll):
+    rotation = R.from_euler('yxz', [yaw, pitch, -roll], degrees=True)
+    return rotation.as_matrix()
+
+def transform_hand_position(hand_position, head_position, rotation_matrix):
+    hand_position_global = rotation_matrix @ hand_position + head_position
+    return hand_position_global
 
 def draw_hand_landmarks(rgb_image):
     MARGIN = 10  # pixels
@@ -63,6 +74,7 @@ def draw_hand_landmarks(rgb_image):
 
     return rgb_image
 
+
 def get_hand_pose(landmarks, reverse_flag=True):
     hand_pose = np.asarray([[l.x, l.y, l.z] for l in landmarks])
     if reverse_flag:
@@ -71,6 +83,7 @@ def get_hand_pose(landmarks, reverse_flag=True):
         ]  # flip the points a bit since steamvrs coordinate system is a bit diffrent
         hand_pose[:, 1] = -hand_pose[:, 1]
     return hand_pose
+
 
 finger_status = {"Left": [0] * 5, "Right": [0] * 5}
 finger_counts = {"Left": [0] * 5, "Right": [0] * 5}
@@ -150,20 +163,31 @@ def hand_pred_handling(detection_result):
             image_landmarks = hand_landmarks.landmark
             image_hand_pose = get_hand_pose(image_landmarks, False)
             hand_position = g.head_pos - image_hand_pose[5]
-            hand_position[:2] *= [
-                g.config["Tracking"]["Hand"]["x_scalar"],
-                g.config["Tracking"]["Hand"]["y_scalar"]
-            ]
-            hand_distance = np.linalg.norm(
-                np.array(image_hand_pose[0][:2]) - np.array(image_hand_pose[1][:2])
-            ) / g.head_pos[2]
-            hand_distance += g.config["Tracking"]["Hand"]["z_shifting"]
-            hand_distance *= g.config["Tracking"]["Hand"]["z_scalar"]
-            hand_distance = np.interp(hand_distance, [-2, 2], [-1.1, 1])
-            if g.config["Tracking"]["Hand"]["only_front"]:
-                hand_distance = np.clip(hand_distance, -0.8, -0.1)
 
-            hand_position[2] = hand_distance
+            hand_position[0] = hand_position[0] * g.config["Tracking"]["Hand"]["x_scalar"]
+            hand_position[1] = hand_position[1] * g.config["Tracking"]["Hand"]["y_scalar"]
+            # distance = (
+            #     np.linalg.norm(image_hand_pose[0] - image_hand_pose[17]) / g.head_pos[2]
+            #     + g.config["Tracking"]["Hand"]["z_shifting"]
+            # ) * g.config["Tracking"]["Hand"]["z_scalar"]
+            distance = (
+                np.linalg.norm(image_hand_pose[0] - image_hand_pose[17]+image_hand_pose[0] - image_hand_pose[5]) / g.head_pos[2]
+                + g.config["Tracking"]["Hand"]["z_shifting"]
+            ) * g.config["Tracking"]["Hand"]["z_scalar"]
+
+            if g.config["Tracking"]["Hand"]["only_front"]:
+                if distance > 0:
+                    distance = 0
+
+            # position calibration
+            # rotation_matrix = create_rotation_matrix(g.config["Tracking"]["Head"]["yaw_calibration"],
+            #                                          g.config["Tracking"]["Head"]["pitch_calibration"],
+            #                                          g.config["Tracking"]["Head"]["roll_calibration"])
+            # new_hand_position = np.array([hand_position[0], hand_position[1], distance])
+            # hand_global_position = transform_hand_position(new_hand_position, np.array([0, 0, 0]), rotation_matrix)
+            # hand_position[0]=hand_global_position[0]
+            # hand_position[1]=hand_global_position[1]
+            # distance=hand_global_position[2]
 
             hand_f = hand_pose[17]
             hand_b = hand_pose[0]
@@ -178,17 +202,6 @@ def hand_pred_handling(detection_result):
             z = z / np.linalg.norm(z)
 
             wrist_matrix = np.vstack((z, y, -x)).T
-            # Here has problem
-            # if hand_name=="Left":
-            #     angle = np.deg2rad(30)
-            # else:
-            #     angle = np.deg2rad(-30)
-            # rotation_z_35 = np.array([
-            #     [np.cos(angle), -np.sin(angle), 0],
-            #     [np.sin(angle), np.cos(angle), 0],
-            #     [0, 0, 1]
-            # ])
-            # wrist_matrix = rotation_z_35 @ wrist_matrix
             wrist_rot = R.from_matrix(wrist_matrix).as_euler("xyz", degrees=True)
 
             wrist_rot[0] += -g.config["Tracking"]["Head"]["yaw_calibration"]
@@ -210,6 +223,21 @@ def hand_pred_handling(detection_result):
                 finger_0, finger_1, finger_2, finger_3, finger_4 = 1.0, 1.0, 1.0, 1.0, 1.0
 
             if hand_name == "Left":
+                # avoid the tracking error when two hands exist
+                delta_hand_pos_l = (
+                    np.abs(g.data["LeftHandPosition"][0]["v"] - hand_position[0])
+                    + np.abs(g.data["LeftHandPosition"][1]["v"] - hand_position[1])
+                ) / 2
+                hand_shifting = (
+                    np.abs(
+                        g.data["LeftHandPosition"][0]["v"]
+                        - g.data["RightHandPosition"][0]["v"]
+                    )
+                    + np.abs(
+                        g.data["LeftHandPosition"][1]["v"]
+                        - g.data["RightHandPosition"][1]["v"]
+                    )
+                ) / 2
                 if g.config["Smoothing"]["enable"]:
                     g.latest_data[73] = wrist_rot[0]
                     g.latest_data[74] = wrist_rot[1]
@@ -217,7 +245,7 @@ def hand_pred_handling(detection_result):
 
                     g.latest_data[70] = hand_position[0]
                     g.latest_data[71] = hand_position[1]
-                    g.latest_data[72] = hand_position[2]
+                    g.latest_data[72] = distance
 
                     g.latest_data[82] = finger_0
                     g.latest_data[83] = finger_1
@@ -231,7 +259,7 @@ def hand_pred_handling(detection_result):
 
                     g.data["LeftHandPosition"][0]["v"] = hand_position[0]
                     g.data["LeftHandPosition"][1]["v"] = hand_position[1]
-                    g.data["LeftHandPosition"][2]["v"] = hand_position[2]
+                    g.data["LeftHandPosition"][2]["v"] = distance
 
                     g.data["LeftHandFinger"][0]["v"] = finger_0
                     g.data["LeftHandFinger"][1]["v"] = finger_1
@@ -240,6 +268,21 @@ def hand_pred_handling(detection_result):
                     g.data["LeftHandFinger"][4]["v"] = finger_4
 
             else:
+                delta_hand_pos_r = (
+                    np.abs(g.data["RightHandPosition"][0]["v"] - hand_position[0])
+                    + np.abs(g.data["RightHandPosition"][1]["v"] - hand_position[1])
+                ) / 2
+                hand_shifting = (
+                    np.abs(
+                        g.data["LeftHandPosition"][0]["v"]
+                        - g.data["RightHandPosition"][0]["v"]
+                    )
+                    + np.abs(
+                        g.data["LeftHandPosition"][1]["v"]
+                        - g.data["RightHandPosition"][1]["v"]
+                    )
+                ) / 2
+                # avoid the tracking error when two hands exist
                 if g.config["Smoothing"]["enable"]:
                     g.latest_data[79] = wrist_rot[0]
                     g.latest_data[80] = wrist_rot[1]
@@ -247,7 +290,7 @@ def hand_pred_handling(detection_result):
 
                     g.latest_data[76] = hand_position[0]
                     g.latest_data[77] = hand_position[1]
-                    g.latest_data[78] = hand_position[2]
+                    g.latest_data[78] = distance
 
                     g.latest_data[87] = finger_0
                     g.latest_data[88] = finger_1
@@ -261,7 +304,7 @@ def hand_pred_handling(detection_result):
 
                     g.data["RightHandPosition"][0]["v"] = hand_position[0]
                     g.data["RightHandPosition"][1]["v"] = hand_position[1]
-                    g.data["RightHandPosition"][2]["v"] = hand_position[2]
+                    g.data["RightHandPosition"][2]["v"] = distance
 
                     g.data["RightHandFinger"][0]["v"] = finger_0
                     g.data["RightHandFinger"][1]["v"] = finger_1
@@ -273,6 +316,7 @@ def hand_pred_handling(detection_result):
         <= g.config["Tracking"]["Hand"]["hand_detection_lower_threshold"]
         and g.config["Tracking"]["Hand"]["enable_hand_auto_reset"]
     ):
+        g.controller.left_hand.default=True
         if g.config["Smoothing"]["enable"]:
             g.latest_data[73] = g.default_data["LeftHandRotation"][0]["v"]
             g.latest_data[74] = g.default_data["LeftHandRotation"][1]["v"]
@@ -291,16 +335,15 @@ def hand_pred_handling(detection_result):
             g.data["LeftHandPosition"] = deepcopy(g.default_data["LeftHandPosition"])
             g.data["LeftHandRotation"] = deepcopy(g.default_data["LeftHandRotation"])
             g.data["LeftHandFinger"] = deepcopy(g.default_data["LeftHandFinger"])
-        if g.config["Tracking"]["Hand"]["follow"]:
-            g.controller.left_hand.follow = False
     else:
-        g.controller.left_hand.follow = True
+        g.controller.left_hand.default=False
 
     if (
         right_hand_detection_counts
         <= g.config["Tracking"]["Hand"]["hand_detection_lower_threshold"]
         and g.config["Tracking"]["Hand"]["enable_hand_auto_reset"]
     ):
+        g.controller.right_hand.default=True
         if g.config["Smoothing"]["enable"]:
             g.latest_data[79] = g.default_data["RightHandRotation"][0]["v"]
             g.latest_data[80] = g.default_data["RightHandRotation"][1]["v"]
@@ -319,10 +362,8 @@ def hand_pred_handling(detection_result):
             g.data["RightHandPosition"] = deepcopy(g.default_data["RightHandPosition"])
             g.data["RightHandRotation"] = deepcopy(g.default_data["RightHandRotation"])
             g.data["RightHandFinger"] = deepcopy(g.default_data["RightHandFinger"])
-        if g.config["Tracking"]["Hand"]["follow"]:
-            g.controller.right_hand.follow = False
     else:
-        g.controller.right_hand.follow = True
+        g.controller.right_hand.default=False
 
 
 def initialize_hand():
