@@ -100,16 +100,16 @@ class ControllerApp(QThread):
         return server_ip
 
     def home(self):
-        server_ip = self.get_server_ip()
-        return render_template('index.html', server_ip=server_ip, server_port=self.websocket_port, send_interval=50)
+        self.server_ip = self.get_server_ip()
+        return render_template('index.html', server_ip=self.server_ip, server_port=self.websocket_port, send_interval=50)
 
     def left_controller(self):
-        server_ip = self.get_server_ip()
-        return render_template('controller.html', hand='Left', server_ip=server_ip, server_port=self.websocket_port, send_interval=50)
+        self.server_ip = self.get_server_ip()
+        return render_template('controller.html', hand='Left', server_ip=self.server_ip, server_port=self.websocket_port, send_interval=50)
 
     def right_controller(self):
-        server_ip = self.get_server_ip()
-        return render_template('controller.html', hand='Right', server_ip=server_ip, server_port=self.websocket_port, send_interval=50)
+        self.server_ip = self.get_server_ip()
+        return render_template('controller.html', hand='Right', server_ip=self.server_ip, server_port=self.websocket_port, send_interval=50)
 
     async def websocket_handler(self, websocket, path):
         """处理WebSocket连接和消息"""
