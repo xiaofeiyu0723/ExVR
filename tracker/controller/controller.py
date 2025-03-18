@@ -12,6 +12,8 @@ from scipy.spatial.transform import Rotation as R
 import utils.globals as g
 import websockets
 import ssl
+import netifaces
+
 
 def update_controller_data(hand_name, hand_position, wrist_rot, finger_states):
     """更新手部的位置信息、旋转信息和手指状态"""
@@ -68,7 +70,7 @@ class ControllerApp(QThread):
         self.websocket_thread = None
         self.websocket_loop = None  # 新增事件循环引用
 
-        self.server_ip=self.get_server_ip()
+        self.server_ip=self.get_default_ip()
         self.server_port=8888
         self.websocket_port=8889
 
@@ -79,25 +81,20 @@ class ControllerApp(QThread):
         self.app.add_url_rule('/left', 'left_controller', self.left_controller)
         self.app.add_url_rule('/right', 'right_controller', self.right_controller)
 
-    # def get_server_ip(self):
-    #     """获取本机在局域网中的IP地址"""
-    #     server_ip=request.host.split(':')[0]  # 提取IP
-    #     print(server_ip)
-    #     return server_ip
-
     def get_server_ip(self):
-        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        s.settimeout(0)
-        try:
-            # doesn't even have to be reachable
-            s.connect(('10.254.254.254', 1))
-            server_ip = s.getsockname()[0]
-        except Exception:
-            server_ip = '127.0.0.1'
-        finally:
-            s.close()
+        """获取本机在局域网中的IP地址"""
+        server_ip=request.host.split(':')[0]  # 提取IP
         print(server_ip)
         return server_ip
+
+    def get_default_ip(self):
+        try:
+            gateways = netifaces.gateways()
+            default_interface = gateways['default'][netifaces.AF_INET][1]
+            ip = netifaces.ifaddresses(default_interface)[netifaces.AF_INET][0]['addr']
+            return ip
+        except Exception:
+            return '127.0.0.1'
 
     def home(self):
         self.server_ip = self.get_server_ip()
