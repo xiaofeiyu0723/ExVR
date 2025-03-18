@@ -7,7 +7,6 @@ import threading
 from PyQt5.QtCore import QThread
 import time
 from werkzeug.serving import make_server
-import socket
 from scipy.spatial.transform import Rotation as R
 import utils.globals as g
 import websockets
