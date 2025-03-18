@@ -299,7 +299,7 @@
 
     const serverIp = "{{ server_ip }}";
     const serverPort="{{ server_port }}"
-    const websocketUrl = `ws://${serverIp}:${serverPort}`;
+    const websocketUrl = `wss://${serverIp}:${serverPort}`;
 
     const socket = new WebSocket(websocketUrl);
 

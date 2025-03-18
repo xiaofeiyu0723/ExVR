@@ -149,7 +149,7 @@ def hand_pred_handling(detection_result):
             hand_pose = get_hand_pose(world_landmarks)
             image_landmarks = hand_landmarks.landmark
             image_hand_pose = get_hand_pose(image_landmarks, False)
-            hand_position = g.head_pos - image_hand_pose[5]
+            hand_position = g.head_pos - image_hand_pose[2]
             hand_position[:2] *= [
                 g.config["Tracking"]["Hand"]["x_scalar"],
                 g.config["Tracking"]["Hand"]["y_scalar"]
@@ -159,9 +159,9 @@ def hand_pred_handling(detection_result):
             ) / g.head_pos[2]
             hand_distance += g.config["Tracking"]["Hand"]["z_shifting"]
             hand_distance *= g.config["Tracking"]["Hand"]["z_scalar"]
-            hand_distance = np.interp(hand_distance, [-2, 2], [-1.1, 1])
+            hand_distance = np.interp(hand_distance, [-2, 2], [-1.2, 1])
             if g.config["Tracking"]["Hand"]["only_front"]:
-                hand_distance = np.clip(hand_distance, -0.8, -0.1)
+                hand_distance = np.clip(hand_distance, -0.8, 0.0)
 
             hand_position[2] = hand_distance
 
@@ -271,7 +271,7 @@ def hand_pred_handling(detection_result):
     if (
         left_hand_detection_counts
         <= g.config["Tracking"]["Hand"]["hand_detection_lower_threshold"]
-        and g.config["Tracking"]["Hand"]["enable_hand_auto_reset"]
+        and g.config["Tracking"]["Hand"]["enable_hand_auto_reset"] and not g.config["Tracking"]["LeftController"]["enable"]
     ):
         if g.config["Smoothing"]["enable"]:
             g.latest_data[73] = g.default_data["LeftHandRotation"][0]["v"]
@@ -299,7 +299,7 @@ def hand_pred_handling(detection_result):
     if (
         right_hand_detection_counts
         <= g.config["Tracking"]["Hand"]["hand_detection_lower_threshold"]
-        and g.config["Tracking"]["Hand"]["enable_hand_auto_reset"]
+        and g.config["Tracking"]["Hand"]["enable_hand_auto_reset"] and not g.config["Tracking"]["RightController"]["enable"]
     ):
         if g.config["Smoothing"]["enable"]:
             g.latest_data[79] = g.default_data["RightHandRotation"][0]["v"]

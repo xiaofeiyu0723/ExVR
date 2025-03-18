@@ -11,7 +11,7 @@ import socket
 from scipy.spatial.transform import Rotation as R
 import utils.globals as g
 import websockets
-
+import ssl
 
 def update_controller_data(hand_name, hand_position, wrist_rot, finger_states):
     """更新手部的位置信息、旋转信息和手指状态"""
@@ -54,7 +54,7 @@ class ControllerState:
 class ControllerApp(QThread):
     def __init__(self):
         super().__init__()
-        self.app = Flask(__name__, template_folder=os.path.join(os.path.dirname(__file__), "templates"))
+        self.app = Flask(__name__, template_folder=os.path.join(os.getcwd(), "templates"))
         self.controllers = {
             "Left": ControllerState(
                 buttons={"system": False, "X": False, "Y": False, "upperTrigger": False, "lowerTrigger": False}),
@@ -119,7 +119,7 @@ class ControllerApp(QThread):
                         controller.buttons[btn] = data['buttons'][btn]
 
                 self.update_controller(hand, controller)
-                await websocket.send(json.dumps({"status": "success"}))
+                # await websocket.send(json.dumps({"status": "success"}))
         finally:
             self.websocket_clients.remove(websocket)
 
@@ -127,19 +127,25 @@ class ControllerApp(QThread):
         """更新控制器状态到全局数据"""
         if hand == "Left" and g.config["Tracking"]["LeftController"]["enable"]:
             rotation = R.from_quat([controller.x, controller.y, controller.z, controller.w])
+            conversion_rot = R.from_euler('y', -90, degrees=True)
+            rotation = rotation * conversion_rot
             euler_angles = rotation.as_euler('xyz', degrees=True)
             wrist_rot = [-euler_angles[0], euler_angles[1], -euler_angles[2]]
             update_controller_data(hand, [0.0, 0.0, 0.0], wrist_rot, [1, 1, 1, 1, 1])
         if hand == "Right" and g.config["Tracking"]["RightController"]["enable"]:
             rotation = R.from_quat([controller.x, controller.y, controller.z, controller.w])
+            conversion_rot = R.from_euler('y', 90, degrees=True)
+            rotation = rotation * conversion_rot
             euler_angles = rotation.as_euler('xyz', degrees=True)
             wrist_rot = [-euler_angles[0], euler_angles[1], -euler_angles[2]]
             update_controller_data(hand, [0.0, 0.0, 0.0], wrist_rot, [1, 1, 1, 1, 1])
 
     async def start_websocket_server(self):
         """启动WebSocket服务器"""
+        ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+        ssl_context.load_cert_chain(certfile="./templates/ssl/cert.pem", keyfile="./templates/ssl/key.pem")  # 替换为你的证书和密钥文件路径
         self.websocket_server = await websockets.serve(
-            self.websocket_handler, "0.0.0.0", 8889
+            self.websocket_handler, "0.0.0.0", 8889,ssl=ssl_context
         )
         return self.websocket_server
 
@@ -152,7 +158,8 @@ class ControllerApp(QThread):
         self.websocket_loop.run_forever()
 
     def run(self):
-        self.server = make_server('0.0.0.0', 8888, self.app, ssl_context='adhoc')
+        ssl_context = ("./templates/ssl/cert.pem", "./templates/ssl/key.pem")
+        self.server = make_server('0.0.0.0', 8888, self.app, ssl_context=ssl_context)
         self.server_thread = threading.Thread(target=self.server.serve_forever)
         self.server_thread.daemon = True
         self.server_thread.start()

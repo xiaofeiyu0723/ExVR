@@ -76,7 +76,7 @@ def handling_hand_data(data, default_data):
         data[f"Right{right_hand_type}Rotation"][2], default_data[f"Right{right_hand_type}Rotation"][2]
     )
     if g.config["Tracking"]["RightController"]["enable"]:
-        data[f"Right{right_hand_type}Position"][0]["v"],data[f"Right{right_hand_type}Position"][1]["v"],data[f"Right{right_hand_type}Position"][2]["v"] = calculate_endpoint([0.15, -0.4, -0.2], 0.4, [yaw_r,pitch_r,roll_r])
+        data[f"Right{right_hand_type}Position"][0]["v"],data[f"Right{right_hand_type}Position"][1]["v"],data[f"Right{right_hand_type}Position"][2]["v"] = calculate_endpoint([0.15, -0.3, -0.15], 0.35, [yaw_r-40,pitch_r,roll_r])
 
     x_r = get_value(data[f"Right{right_hand_type}Position"][0], default_data[f"Right{right_hand_type}Position"][0])
     y_r = get_value(data[f"Right{right_hand_type}Position"][1], default_data[f"Right{right_hand_type}Position"][1])
