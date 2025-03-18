@@ -1,6 +1,6 @@
 import asyncio
 import json
-from flask import Flask, render_template
+from flask import Flask, render_template, request
 from dataclasses import dataclass
 import os
 import threading
@@ -39,7 +39,6 @@ def update_controller_data(hand_name, hand_position, wrist_rot, finger_states):
         for i, finger_state in enumerate(finger_states):
             g.data[f"{hand_name}ControllerFinger"][i]["v"] = finger_state
 
-
 @dataclass
 class ControllerState:
     w: float = 0
@@ -69,28 +68,48 @@ class ControllerApp(QThread):
         self.websocket_thread = None
         self.websocket_loop = None  # 新增事件循环引用
 
+        self.server_ip=self.get_server_ip()
+        self.server_port=8888
+        self.websocket_port=8889
+
+        print(f"https://{self.server_ip}:{self.server_port}")
+
     def setup_routes(self):
         self.app.add_url_rule('/', 'home', self.home)
         self.app.add_url_rule('/left', 'left_controller', self.left_controller)
         self.app.add_url_rule('/right', 'right_controller', self.right_controller)
 
+    # def get_server_ip(self):
+    #     """获取本机在局域网中的IP地址"""
+    #     server_ip=request.host.split(':')[0]  # 提取IP
+    #     print(server_ip)
+    #     return server_ip
+
     def get_server_ip(self):
-        """获取本机在局域网中的IP地址"""
-        hostname = socket.gethostname()
-        server_ip = socket.gethostbyname(hostname)
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.settimeout(0)
+        try:
+            # doesn't even have to be reachable
+            s.connect(('10.254.254.254', 1))
+            server_ip = s.getsockname()[0]
+        except Exception:
+            server_ip = '127.0.0.1'
+        finally:
+            s.close()
+        print(server_ip)
         return server_ip
 
     def home(self):
         server_ip = self.get_server_ip()
-        return render_template('index.html', server_ip=server_ip, server_port=8889, send_interval=50)
+        return render_template('index.html', server_ip=server_ip, server_port=self.websocket_port, send_interval=50)
 
     def left_controller(self):
         server_ip = self.get_server_ip()
-        return render_template('controller.html', hand='Left', server_ip=server_ip, server_port=8889, send_interval=50)
+        return render_template('controller.html', hand='Left', server_ip=server_ip, server_port=self.websocket_port, send_interval=50)
 
     def right_controller(self):
         server_ip = self.get_server_ip()
-        return render_template('controller.html', hand='Right', server_ip=server_ip, server_port=8889, send_interval=50)
+        return render_template('controller.html', hand='Right', server_ip=server_ip, server_port=self.websocket_port, send_interval=50)
 
     async def websocket_handler(self, websocket, path):
         """处理WebSocket连接和消息"""
@@ -159,7 +178,7 @@ class ControllerApp(QThread):
 
     def run(self):
         ssl_context = ("./templates/ssl/cert.pem", "./templates/ssl/key.pem")
-        self.server = make_server('0.0.0.0', 8888, self.app, ssl_context=ssl_context)
+        self.server = make_server('0.0.0.0', self.server_port, self.app, ssl_context=ssl_context)
         self.server_thread = threading.Thread(target=self.server.serve_forever)
         self.server_thread.daemon = True
         self.server_thread.start()
