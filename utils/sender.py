@@ -58,7 +58,7 @@ def handling_hand_data(data, default_data):
     )
     roll_l = get_value(data[f"Left{left_hand_type}Rotation"][2], default_data[f"Left{left_hand_type}Rotation"][2])
     if g.config["Tracking"]["LeftController"]["enable"]:
-        data[f"Left{left_hand_type}Position"][0]["v"],data[f"Left{left_hand_type}Position"][1]["v"],data[f"Left{left_hand_type}Position"][2]["v"] = calculate_endpoint([0.15, -0.3, -0.15], 0.35, [yaw_l-40,pitch_l,roll_l])
+        data[f"Left{left_hand_type}Position"][0]["v"],data[f"Left{left_hand_type}Position"][1]["v"],data[f"Left{left_hand_type}Position"][2]["v"] = calculate_endpoint([-0.15, -0.3, -0.15], 0.35, [yaw_l-40,pitch_l,roll_l])
 
     x_l = get_value(data[f"Left{left_hand_type}Position"][0], default_data[f"Left{left_hand_type}Position"][0])
     y_l = get_value(data[f"Left{left_hand_type}Position"][1], default_data[f"Left{left_hand_type}Position"][1])
