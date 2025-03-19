@@ -23,10 +23,10 @@
         {% if hand == 'Right' %}
         .joystick-area {
             position: absolute;
-            left: 22%;
+            right: 27%;
             bottom: 30%;
-            width: 55vw; /* Use viewport width for joystick area size */
-            height: 55vw; /* Keep aspect ratio consistent */
+            width: 45vw; /* Use viewport width for joystick area size */
+            height: 45vw; /* Keep aspect ratio consistent */
             background: rgba(255, 255, 255, 0.1);
             border-radius: 50%;
             display: flex;
@@ -36,10 +36,10 @@
         {% else %}
         .joystick-area {
             position: absolute;
-            left: 22%;
+            left: 27%;
             bottom: 30%;
-            width: 55vw; /* Use viewport width for joystick area size */
-            height: 55vw; /* Keep aspect ratio consistent */
+            width: 45vw; /* Use viewport width for joystick area size */
+            height: 45vw; /* Keep aspect ratio consistent */
             background: rgba(255, 255, 255, 0.1);
             border-radius: 50%;
             display: flex;
@@ -48,8 +48,8 @@
         }
         {% endif %}
         .joystick-thumb {
-            width: 15vw; /* Use viewport width for thumb size */
-            height: 15vw; /* Keep aspect ratio consistent */
+            width: 12vw; /* Use viewport width for thumb size */
+            height: 12vw; /* Keep aspect ratio consistent */
             background: var(--primary-color);
             border-radius: 50%;
             position: absolute;
@@ -91,7 +91,6 @@
             -webkit-touch-callout: none;
         }
         .vr-button-label {
-            bottom: -2vh; /* Use viewport height for label position */
         }
         .trigger {
             width: var(--button-size);
@@ -110,12 +109,8 @@
             border-color: #fff;
         }
         .trigger .trigger-label {
-            top: -2vh; /* Use viewport height for label position */
-            bottom: auto;
         }
         .grab .trigger-label {
-            top: auto;
-            bottom: -2vh; /* Use viewport height for label position */
         }
         {% if hand == 'Right' %}
         .trigger { right: 6vw; bottom : 42%;}
