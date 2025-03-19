@@ -58,7 +58,11 @@ def handling_hand_data(data, default_data):
     )
     roll_l = get_value(data[f"Left{left_hand_type}Rotation"][2], default_data[f"Left{left_hand_type}Rotation"][2])
     if g.config["Tracking"]["LeftController"]["enable"]:
-        data[f"Left{left_hand_type}Position"][0]["v"],data[f"Left{left_hand_type}Position"][1]["v"],data[f"Left{left_hand_type}Position"][2]["v"] = calculate_endpoint([-0.15, -0.3, -0.15], 0.35, [yaw_l-40,pitch_l,roll_l])
+        base_x_l=g.config["Tracking"]["LeftController"]["base_x"]
+        base_y_l=g.config["Tracking"]["LeftController"]["base_y"]
+        base_z_l=g.config["Tracking"]["LeftController"]["base_z"]
+        length_l=g.config["Tracking"]["LeftController"]["length"]
+        data[f"Left{left_hand_type}Position"][0]["v"],data[f"Left{left_hand_type}Position"][1]["v"],data[f"Left{left_hand_type}Position"][2]["v"] = calculate_endpoint([base_x_l,base_y_l,base_z_l], length_l, [yaw_l-40,pitch_l,roll_l])
 
     x_l = get_value(data[f"Left{left_hand_type}Position"][0], default_data[f"Left{left_hand_type}Position"][0])
     y_l = get_value(data[f"Left{left_hand_type}Position"][1], default_data[f"Left{left_hand_type}Position"][1])
@@ -76,7 +80,11 @@ def handling_hand_data(data, default_data):
         data[f"Right{right_hand_type}Rotation"][2], default_data[f"Right{right_hand_type}Rotation"][2]
     )
     if g.config["Tracking"]["RightController"]["enable"]:
-        data[f"Right{right_hand_type}Position"][0]["v"],data[f"Right{right_hand_type}Position"][1]["v"],data[f"Right{right_hand_type}Position"][2]["v"] = calculate_endpoint([0.15, -0.3, -0.15], 0.35, [yaw_r-40,pitch_r,roll_r])
+        base_x_r=g.config["Tracking"]["RightController"]["base_x"]
+        base_y_r=g.config["Tracking"]["RightController"]["base_y"]
+        base_z_r=g.config["Tracking"]["RightController"]["base_z"]
+        length_r=g.config["Tracking"]["RightController"]["length"]
+        data[f"Right{right_hand_type}Position"][0]["v"],data[f"Right{right_hand_type}Position"][1]["v"],data[f"Right{right_hand_type}Position"][2]["v"] = calculate_endpoint([base_x_r,base_y_r,base_z_r], length_r, [yaw_r-40,pitch_r,roll_r])
 
     x_r = get_value(data[f"Right{right_hand_type}Position"][0], default_data[f"Right{right_hand_type}Position"][0])
     y_r = get_value(data[f"Right{right_hand_type}Position"][1], default_data[f"Right{right_hand_type}Position"][1])

@@ -15,9 +15,6 @@ class Tracker:
         self.is_running = True
         self.image = None
 
-        g.update_configs(True)
-
-        # TODO: I hate the new version mediapipe
         if g.face_detector is None or g.hand_detector is None or g.tongue_model is None:
             print("Initializing tongue model")
             g.tongue_model = initialize_tongue_model()
@@ -36,8 +33,6 @@ class Tracker:
         if g.config["Smoothing"]["enable"]:
             self.smoothing_thread = threading.Thread(target=apply_smoothing, daemon=True)
             self.smoothing_thread.start()
-        
-        apply_hotkeys()
 
     def restart_smoothing(self):
         print("restart smoothing")

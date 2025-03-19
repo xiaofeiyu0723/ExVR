@@ -8,7 +8,7 @@ import cv2
 
 config=setup_config()
 data,default_data = setup_data()
-latest_data = [0.0] * (64 + 6 + 12 + 10)
+latest_data = [0.0] * (64 + 6 + 12 + 10 + 12 + 10)
 head_pos = [0, 0, 0]
 stop_event = Event()
 controller=setup_controller()
@@ -24,19 +24,16 @@ face_detector=None
 hand_detector=None
 start_time=cv2.getTickCount()
 
-def update_configs(restart=False):
+def update_configs():
     global config, data,default_data,latest_data,head_pos,controller,hotkey_config,smoothing_config
-    config_temp=setup_config()
-    if not restart:
-        config_temp["Smoothing"]["enable"] = config["Smoothing"]["enable"]
-    config = config_temp
+    config = setup_config()
     data,default_data=setup_data()
     latest_data = [0.0] * (64 + 6 + 12 + 10 + 12 + 10)
     head_pos = [0, 0, 0]
     controller=setup_controller()
     hotkey_config=setup_hotkeys()
-    apply_hotkeys()
     smoothing_config=setup_smoothing()
+    apply_hotkeys()
 
 def save_configs():
     global config, data

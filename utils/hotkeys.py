@@ -25,6 +25,8 @@ actions = {
     "right": right,
     "head_pitch_up": lambda: head_pitch(True),
     "head_pitch_down": lambda: head_pitch(False),
+    "head_yaw_left": lambda: head_yaw(True),
+    "head_yaw_right": lambda: head_yaw(False),
     "grab_left": lambda: grab(True, 2),
     "grab_right": lambda: grab(False, 2),
     "trigger_left": (
@@ -91,7 +93,6 @@ def apply_hotkeys():
                     mouse_actions[mouse_button] = []
                 mouse_actions[mouse_button].append(actions[action])
     pressed_buttons = set()
-
     def on_click(x, y, button, pressed):
         button_str = None
         if pressed:

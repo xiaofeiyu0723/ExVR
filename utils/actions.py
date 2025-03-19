@@ -1,3 +1,5 @@
+import time
+
 import utils.globals as g
 from threading import Timer
 
@@ -50,18 +52,29 @@ def right():
 
 
 def head_pitch(flag=True):
+    temp=g.data["Rotation"][1]["s"]
     if flag:
-        g.data["Rotation"][1]["s"] += 5
+        temp += 5
     else:
-        g.data["Rotation"][1]["s"] -= 5
+        temp -= 5
+    g.data["Rotation"][1]["s"] = temp % 360
 
-
-# def head_yaw(flag=True):
-#     if flag:
-#         g.data["Rotation"][0]["s"] += 5
-#     else:
-#         g.data["Rotation"][0]["s"] -= 5
-
+head_yaw_timer = None
+def head_yaw(flag=True):
+    global head_yaw_timer
+    if flag:
+        g.controller.send_joystick(False, 1, -1.0, 0.0)
+    else:
+        g.controller.send_joystick(False, 1, 1.0, 0.0)
+    def head_move(flag):
+        global head_yaw_timer
+        g.controller.send_joystick(False, 1, 0.0, 0.0)
+        if head_yaw_timer is not None:
+            head_yaw_timer.cancel()
+            head_yaw_timer = None
+    if head_yaw_timer is None:
+        head_yaw_timer = Timer(0.05, head_move,args=[flag])
+        head_yaw_timer.start()
 
 grab_status = {True: False, False: False}
 def grab(value, index):
@@ -91,16 +104,15 @@ angle = math.atan2(joystick_status[1], joystick_status[0])
 
 def joystick_up(value, index):
     global joystick_status, joystick_step, angle, joystick_value
-    angle += joystick_step  # 顺时针旋转
+    angle += joystick_step
     x = round(joystick_value * math.cos(angle), 1)
     y = round(joystick_value * math.sin(angle), 1)
     joystick_status = (x, y)
-    # print(joystick_status)
     g.controller.send_joystick(value, index, joystick_status[0], joystick_status[1])
 
 def joystick_down(value, index):
     global joystick_status, joystick_step, angle, joystick_value
-    angle -= joystick_step  # 逆时针旋转
+    angle -= joystick_step
     x = round(joystick_value * math.cos(angle), 1)
     y = round(joystick_value * math.sin(angle), 1)
     joystick_status = (x, y)

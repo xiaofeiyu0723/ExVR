@@ -2,7 +2,9 @@
     "Setting": {
         "priority": "REALTIME_PRIORITY_CLASS",
         "flip_x": false,
-        "flip_y": false
+        "flip_y": false,
+        "camera_width": 1280,
+        "camera_height": 720
     },
     "Hotkey": {
         "enable": true
@@ -14,14 +16,24 @@
         "enable": true
     },
     "Controller": {
-        "port": 8888
+        "send_interval": 30,
+        "server_port": 8888,
+        "websocket_port": 8889
     },
     "Tracking": {
-        "LeftController":{
-            "enable": false
+        "LeftController": {
+            "enable": false,
+            "base_x": -0.18,
+            "base_y": -0.3,
+            "base_z": -0.15,
+            "length": 0.35
         },
-        "RightController":{
-            "enable": false
+        "RightController": {
+            "enable": false,
+            "base_x": 0.18,
+            "base_y": -0.3,
+            "base_z": -0.15,
+            "length": 0.35
         },
         "Head": {
             "enable": true,
@@ -53,7 +65,7 @@
             "x_scalar": 1.0,
             "y_scalar": 1.0,
             "z_scalar": 0.5,
-            "z_shifting": 1.1,
+            "z_shifting": 1.5,
             "hand_confidence": 0.3,
             "enable_hand_auto_reset": true,
             "hand_detection_upper_threshold": 100,

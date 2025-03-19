@@ -375,61 +375,60 @@
         window.location.reload(); // Reload the page to reset positions
     });
 
-document.addEventListener('touchstart', function(e) {
-    if (!isEditMode) return;
+    document.addEventListener('touchstart', function(e) {
+        if (!isEditMode) return;
 
-    selectedElement = e.target.closest('.draggable');
-    if (!selectedElement) return;
+        selectedElement = e.target.closest('.draggable');
+        if (!selectedElement) return;
 
-    e.preventDefault();
-    const rect = selectedElement.getBoundingClientRect();
+        e.preventDefault();
+        const rect = selectedElement.getBoundingClientRect();
 
-    // 记录触控点相对于元素左上角的偏移
-    initialX = e.touches[0].clientX - rect.left;
-    initialY = e.touches[0].clientY - rect.top;
+        // 记录触控点相对于元素左上角的偏移
+        initialX = e.touches[0].clientX - rect.left;
+        initialY = e.touches[0].clientY - rect.top;
 
-    // 记录元素的初始位置（像素）
-    currentX = rect.left;
-    currentY = rect.top;
+        // 记录元素的初始位置（像素）
+        currentX = rect.left;
+        currentY = rect.top;
 
-    // 添加拖动中样式
-    selectedElement.style.transition = 'none';
-    selectedElement.style.boxShadow = '0 0 15px orange';
-});
+        // 添加拖动中样式
+        selectedElement.style.transition = 'none';
+        selectedElement.style.boxShadow = '0 0 15px orange';
+    });
 
-document.addEventListener('touchmove', function(e) {
-    if (!isEditMode || !selectedElement) return;
+    document.addEventListener('touchmove', function(e) {
+        if (!isEditMode || !selectedElement) return;
 
-    e.preventDefault();
-    const touch = e.touches[0];
+        e.preventDefault();
+        const touch = e.touches[0];
 
-    // 计算新的位置（像素）
-    const newX = touch.clientX - initialX;
-    const newY = touch.clientY - initialY;
+        // 计算新的位置（像素）
+        const newX = touch.clientX - initialX;
+        const newY = touch.clientY - initialY;
 
-    // 更新位置（使用像素）
-    selectedElement.style.left = `${newX}px`;
-    selectedElement.style.top = `${newY}px`;
-});
+        // 更新位置（使用像素）
+        selectedElement.style.left = `${newX}px`;
+        selectedElement.style.top = `${newY}px`;
+    });
 
-document.addEventListener('touchend', function() {
-    if (!isEditMode || !selectedElement) return;
+    // 保存位置时，记录像素值
+    document.addEventListener('touchend', function() {
+        if (!isEditMode || !selectedElement) return;
+        selectedElement.style.transition = '';
+        selectedElement.style.boxShadow = '';
 
-    // 移除拖动中样式
-    selectedElement.style.transition = '';
-    selectedElement.style.boxShadow = '';
+        const rect = selectedElement.getBoundingClientRect();
+        const id = selectedElement.id || selectedElement.className.match(/[\w-]+/)[0];
+        positions[id] = {
+            x: rect.left, // 保存像素值
+            y: rect.top   // 保存像素值
+        };
 
-    // 保存位置（转换为百分比）
-    const rect = selectedElement.getBoundingClientRect();
-    const id = selectedElement.id || selectedElement.className.match(/[\w-]+/)[0];
-    positions[id] = {
-        x: rect.left / window.innerWidth * 100,
-        y: rect.top / window.innerHeight * 100
-    };
+        selectedElement = null;
+    });
 
-    selectedElement = null;
-});
-    // 加载保存的位置
+    // 加载位置时，应用像素值
     window.addEventListener('load', function() {
         const savedPositions = localStorage.getItem(storageKey);
         if (savedPositions) {
@@ -438,13 +437,14 @@ document.addEventListener('touchend', function() {
                 const el = document.getElementById(id) ||
                          document.querySelector(`.${id.split(' ')[0]}`);
                 if (el) {
-                    el.style.left = `${pos.x}%`;
-                    el.style.top = `${pos.y}%`;
+                    el.style.left = `${pos.x}px`;
+                    el.style.top = `${pos.y}px`;
+                    el.style.right = 'auto';
+                    el.style.bottom = 'auto';
                 }
             });
         }
     });
-
     initJoystick();
     initButtons();
     initTriggers();

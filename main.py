@@ -38,16 +38,22 @@ from tracker.controller.controller import *
 class VideoCaptureThread(QThread):
     frame_ready = pyqtSignal(QImage)
 
-    def __init__(self, source):
+    def __init__(self, source,width=640, height=480):
         super().__init__()
         self.source = source
         self.video_capture = None
         self.is_running = True
         self.show_image = False
         self.tracker = utils.tracking.Tracker()
+        self.width = width
+        self.height = height
 
     def run(self):
         self.video_capture = cv2.VideoCapture(self.source, cv2.CAP_ANY)
+        self.video_capture.set(cv2.CAP_PROP_FRAME_WIDTH, self.width)
+        self.video_capture.set(cv2.CAP_PROP_FRAME_HEIGHT, self.height)
+        # self.video_capture.set(cv2.CAP_PROP_FPS, 60)
+        print(self.video_capture.get(cv2.CAP_PROP_FRAME_WIDTH), self.video_capture.get(cv2.CAP_PROP_FRAME_HEIGHT),self.video_capture.get(cv2.CAP_PROP_FPS))
         self.video_capture.set(cv2.CAP_PROP_BUFFERSIZE, 1)
         while self.is_running:
             ret, frame = self.video_capture.read()
@@ -85,7 +91,6 @@ class VideoCaptureThread(QThread):
 class VideoWindow(QMainWindow):
     def __init__(self):
         super().__init__()
-
         screen = QApplication.screens()[0]
         screen_size = screen.size()
         self.width = int(screen_size.width() * 0.3)
@@ -122,9 +127,15 @@ class VideoWindow(QMainWindow):
         self.ip_camera_url_input.setPlaceholderText("Enter IP camera URL")
         layout.addWidget(self.ip_camera_url_input)
 
+        camera_layout = QHBoxLayout()
         self.camera_selection = QComboBox(self)
         self.populate_camera_list()
-        layout.addWidget(self.camera_selection)
+        camera_layout.addWidget(self.camera_selection)
+        self.camera_resolution_selection = QComboBox(self)
+        self.populate_resolution_list()
+        self.camera_resolution_selection.currentIndexChanged.connect(self.update_video_resolution)
+        camera_layout.addWidget(self.camera_resolution_selection)
+        layout.addLayout(camera_layout)
 
         self.priority_selection = QComboBox(self)
         self.priority_selection.addItems(["IDLE_PRIORITY_CLASS", "BELOW_NORMAL_PRIORITY_CLASS", "NORMAL_PRIORITY_CLASS", "ABOVE_NORMAL_PRIORITY_CLASS", "HIGH_PRIORITY_CLASS", "REALTIME_PRIORITY_CLASS"])
@@ -184,40 +195,25 @@ class VideoWindow(QMainWindow):
         checkbox_layout = QHBoxLayout()
         self.checkbox1 = QCheckBox("Head", self)
         self.checkbox1.clicked.connect(
-            lambda: self.update_tracking_config("Head", self.checkbox1.isChecked())
+            lambda: self.set_tracking_config("Head", self.checkbox1.isChecked())
         )
         checkbox_layout.addWidget(self.checkbox1)
         self.checkbox2 = QCheckBox("Face", self)
         self.checkbox2.clicked.connect(
-            lambda: self.update_tracking_config("Face", self.checkbox2.isChecked())
+            lambda: self.set_tracking_config("Face", self.checkbox2.isChecked())
         )
         checkbox_layout.addWidget(self.checkbox2)
         self.checkbox3 = QCheckBox("Tongue", self)
         self.checkbox3.clicked.connect(
-            lambda: self.update_tracking_config("Tongue", self.checkbox3.isChecked())
+            lambda: self.set_tracking_config("Tongue", self.checkbox3.isChecked())
         )
         checkbox_layout.addWidget(self.checkbox3)
         self.checkbox4 = QCheckBox("Hand", self)
         self.checkbox4.clicked.connect(
-            lambda: self.update_tracking_config("Hand", self.checkbox4.isChecked())
+            lambda: self.set_tracking_config("Hand", self.checkbox4.isChecked())
         )
         checkbox_layout.addWidget(self.checkbox4)
         layout.addLayout(checkbox_layout)
-
-        # checkbox_layout_1 = QHBoxLayout()
-        # self.block_face_checkbox = QCheckBox("Block Face", self)
-        # self.block_face_checkbox.clicked.connect(self.set_face_block)
-        # self.block_face_checkbox.setChecked(g.config["Tracking"]["Face"]["block"])
-        # checkbox_layout_1.addWidget(self.block_face_checkbox)
-
-        # self.only_front_checkbox = QCheckBox("Front Hand", self)
-        # self.only_front_checkbox.clicked.connect(self.set_hand_front)
-        # self.only_front_checkbox.setChecked(g.config["Tracking"]["Hand"]["only_front"])
-        # checkbox_layout_1.addWidget(self.only_front_checkbox)
-        # layout.addLayout(checkbox_layout_1)
-
-
-        self.update_checkboxes()
 
         slider_layout = QHBoxLayout()
         self.slider1 = QSlider(Qt.Horizontal)
@@ -245,8 +241,6 @@ class VideoWindow(QMainWindow):
         slider_layout.addWidget(self.slider3)
         layout.addLayout(slider_layout)
 
-        self.update_sliders()
-
         separator_1 = QFrame(self)
         separator_1.setFrameShape(
             QFrame.HLine
@@ -260,17 +254,15 @@ class VideoWindow(QMainWindow):
         label_layout.addWidget(self.left_label)
         label_layout.addWidget(self.right_label)
         layout.addLayout(label_layout)
-        # self.set_label_state(self.left_label, "green")
-        # self.set_label_state(self.right_label, "green")
 
         mobile_checkbox_layout = QHBoxLayout()
         self.mobile_checkbox1 = QCheckBox("Left Controller", self)
         self.mobile_checkbox1.clicked.connect(
-            lambda: self.update_tracking_config("LeftController", self.mobile_checkbox1.isChecked())
+            lambda: self.set_tracking_config("LeftController", self.mobile_checkbox1.isChecked())
         )
         self.mobile_checkbox2 = QCheckBox("Right Controller", self)
         self.mobile_checkbox2.clicked.connect(
-            lambda: self.update_tracking_config("RightController", self.mobile_checkbox2.isChecked())
+            lambda: self.set_tracking_config("RightController", self.mobile_checkbox2.isChecked())
         )
         mobile_checkbox_layout.addWidget(self.mobile_checkbox1)
         mobile_checkbox_layout.addWidget(self.mobile_checkbox2)
@@ -301,6 +293,9 @@ class VideoWindow(QMainWindow):
         config_layout.addWidget(self.save_config_button)
         layout.addLayout(config_layout)
 
+        self.update_checkboxes()
+        self.update_sliders()
+
         self.video_thread = None
         self.controller_thread = None
 
@@ -308,7 +303,6 @@ class VideoWindow(QMainWindow):
     def create_label(self, text, color):
         label = QLabel(text, self)
         label.setAlignment(Qt.AlignCenter)
-        # label.setFixedSize(200, 50)
         label.setFixedHeight(50)
         label.setStyleSheet(f"background-color: {color}; border: 2px solid black;")
         return label
@@ -417,8 +411,8 @@ class VideoWindow(QMainWindow):
         self.checkbox2.setChecked(g.config["Tracking"]["Face"]["enable"])
         self.checkbox3.setChecked(g.config["Tracking"]["Tongue"]["enable"])
         self.checkbox4.setChecked(g.config["Tracking"]["Hand"]["enable"])
-        # self.block_face_checkbox.setChecked(g.config["Tracking"]["Face"]["block"])
-        # self.only_front_checkbox.setChecked(g.config["Tracking"]["Hand"]["only_front"])
+        self.mobile_checkbox1.setChecked(g.config["Tracking"]["LeftController"]["enable"])
+        self.mobile_checkbox2.setChecked(g.config["Tracking"]["RightController"]["enable"])
 
     def set_scalar(self, value, axis):
         scalar_value = value / 100.0
@@ -449,7 +443,7 @@ class VideoWindow(QMainWindow):
         if self.video_thread is None:
             stop_hotkeys()
 
-    def update_tracking_config(self, key, value):
+    def set_tracking_config(self, key, value):
         if key in g.config["Tracking"]:
             g.config["Tracking"][key]["enable"] = value
 
@@ -556,6 +550,8 @@ class VideoWindow(QMainWindow):
             self.install_button.setStyleSheet("")
 
     def toggle_camera(self):
+        self.update_checkboxes()
+        self.update_sliders()
         if self.video_thread and self.video_thread.isRunning():
             self.toggle_button.setText("Start Tracking")
             self.toggle_button.setStyleSheet(
@@ -563,6 +559,7 @@ class VideoWindow(QMainWindow):
             )
             self.thread_stopped()
         else:
+            apply_hotkeys()
             self.toggle_button.setText("Stop Tracking")
             self.toggle_button.setStyleSheet(
                 "QPushButton { background-color: red; color: white; }"
@@ -574,7 +571,7 @@ class VideoWindow(QMainWindow):
                 if ip_camera_url != ""
                 else self.get_camera_source(selected_camera_name)
             )
-            self.video_thread = VideoCaptureThread(source)
+            self.video_thread = VideoCaptureThread(source,g.config["Setting"]["camera_width"],g.config["Setting"]["camera_height"])
             self.video_thread.frame_ready.connect(self.update_frame)
             self.video_thread.start()
 
@@ -623,10 +620,7 @@ class VideoWindow(QMainWindow):
                 self.image_label.setAlignment(Qt.AlignCenter)
 
     def populate_camera_list(self):
-        # graph = FilterGraph()
-        # devices = graph.get_input_devices()
         devices = enumerate_cameras(cv2.CAP_ANY)
-        # print(dev)
         for device in devices:
             if device.index > 1000:
                 device.name += " (MSMF)"
@@ -634,6 +628,34 @@ class VideoWindow(QMainWindow):
                 device.name += " (DSHOW)"
         for device in devices:
             self.camera_selection.addItem(device.name)
+
+    def populate_resolution_list(self):
+        resolutions = [
+            (640, 480),
+            (1280, 720),
+            (1920, 1080),
+            (2560, 1440),
+            (3840, 2160)
+        ]
+        for width, height in resolutions:
+            self.camera_resolution_selection.addItem(f"{width} x {height}", (width, height))
+        config_width = int(g.config["Setting"]["camera_width"])
+        config_height = int(g.config["Setting"]["camera_height"])
+        config_resolution = (config_width, config_height)
+        if config_resolution in resolutions:
+            index = resolutions.index(config_resolution)
+            self.camera_resolution_selection.setCurrentIndex(index)
+        else:
+            self.camera_resolution_selection.setCurrentIndex(0)
+
+    def update_video_resolution(self):
+        # Get the currently selected resolution
+        current_resolution = self.camera_resolution_selection.currentData()
+        if current_resolution:
+            width, height = current_resolution
+            g.config["Setting"]["camera_width"] = width
+            g.config["Setting"]["camera_height"] = height
+            print(f"Resolution updated to: {width} x {height}")
 
     def thread_stopped(self):
         if self.video_thread:

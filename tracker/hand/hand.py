@@ -155,7 +155,7 @@ def hand_pred_handling(detection_result):
                 g.config["Tracking"]["Hand"]["y_scalar"]
             ]
             hand_distance = np.linalg.norm(
-                np.array(image_hand_pose[0][:2]) - np.array(image_hand_pose[1][:2])
+                np.array(image_hand_pose[1][:2]) - np.array(image_hand_pose[2][:2])
             ) / g.head_pos[2]
             hand_distance += g.config["Tracking"]["Hand"]["z_shifting"]
             hand_distance *= g.config["Tracking"]["Hand"]["z_scalar"]
@@ -196,7 +196,6 @@ def hand_pred_handling(detection_result):
             wrist_rot[2] += -g.config["Tracking"]["Head"]["roll_calibration"]
 
             # Fingers, mediapipe is inaccurate
-
             if g.config["Tracking"]["Finger"]["enable"]:
                 finger_angle = get_fingers_angle_from_hand3d(hand_pose)
                 finger_0 = finger_handling(

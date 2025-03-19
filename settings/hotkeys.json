@@ -39,13 +39,15 @@
     {"key": "]+f6", "action": "right_fingers_0.0_1.0_0.0_0.0_1.0"},
     {"key": "]+f7", "action": "right_fingers_1.0_1.0_0.0_0.0_0.0"},
     {"key": "]+f8", "action": "right_fingers_1.0_0.0_0.0_0.0_0.0"},
-    
+
     {"key": "ctrl+up", "action": "up"},
     {"key": "ctrl+down", "action": "down"},
     {"key": "ctrl+left", "action": "left"},
     {"key": "ctrl+right", "action": "right"},
     {"key": "up", "action": "head_pitch_up"},
     {"key": "down", "action": "head_pitch_down"},
+    {"key": "left", "action": "head_yaw_left"},
+    {"key": "right", "action": "head_yaw_right"},
     {"key": "-", "action": "grab_left"},
     {"key": "=", "action": "grab_right"},
     {"key": "[", "action": "trigger_left"},

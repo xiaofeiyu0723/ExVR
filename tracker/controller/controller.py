@@ -15,7 +15,6 @@ import netifaces
 
 
 def update_controller_data(hand_name, hand_position, wrist_rot, finger_states):
-    """更新手部的位置信息、旋转信息和手指状态"""
     if g.config["Smoothing"]["enable"]:
         index_offset = 92 if hand_name == "Left" else 98
         finger_offset = 104 if hand_name == "Left" else 109
@@ -70,10 +69,11 @@ class ControllerApp(QThread):
         self.websocket_loop = None  # 新增事件循环引用
 
         self.server_ip=self.get_default_ip()
-        self.server_port=8888
-        self.websocket_port=8889
-
+        self.server_port=g.config["Controller"]["server_port"]
+        self.websocket_port=g.config["Controller"]["websocket_port"]
+        print("============================")
         print(f"https://{self.server_ip}:{self.server_port}")
+        print("============================")
 
     def setup_routes(self):
         self.app.add_url_rule('/', 'home', self.home)
@@ -83,7 +83,6 @@ class ControllerApp(QThread):
     def get_server_ip(self):
         """获取本机在局域网中的IP地址"""
         server_ip=request.host.split(':')[0]  # 提取IP
-        print(server_ip)
         return server_ip
 
     def get_default_ip(self):
@@ -97,18 +96,17 @@ class ControllerApp(QThread):
 
     def home(self):
         self.server_ip = self.get_server_ip()
-        return render_template('index.html', server_ip=self.server_ip, server_port=self.websocket_port, send_interval=50)
+        return render_template('index.html', server_ip=self.server_ip, server_port=self.websocket_port, send_interval=g.config["Controller"]["send_interval"])
 
     def left_controller(self):
         self.server_ip = self.get_server_ip()
-        return render_template('controller.html', hand='Left', server_ip=self.server_ip, server_port=self.websocket_port, send_interval=50)
+        return render_template('controller.html', hand='Left', server_ip=self.server_ip, server_port=self.websocket_port, send_interval=g.config["Controller"]["send_interval"])
 
     def right_controller(self):
         self.server_ip = self.get_server_ip()
-        return render_template('controller.html', hand='Right', server_ip=self.server_ip, server_port=self.websocket_port, send_interval=50)
+        return render_template('controller.html', hand='Right', server_ip=self.server_ip, server_port=self.websocket_port, send_interval=g.config["Controller"]["send_interval"])
 
     async def websocket_handler(self, websocket, path):
-        """处理WebSocket连接和消息"""
         self.websocket_clients.add(websocket)
         try:
             async for message in websocket:
@@ -120,7 +118,6 @@ class ControllerApp(QThread):
                     await websocket.send(json.dumps({"status": "error", "message": "Invalid controller"}))
                     continue
 
-                # 更新控制器数据
                 quaternion = data.get('quaternion', {})
                 controller.w = quaternion.get('w', 0)
                 controller.x = quaternion.get('x', 0)
@@ -139,7 +136,6 @@ class ControllerApp(QThread):
             self.websocket_clients.remove(websocket)
 
     def update_controller(self, hand, controller):
-        """更新控制器状态到全局数据"""
         if hand == "Left" and g.config["Tracking"]["LeftController"]["enable"]:
             rotation = R.from_quat([controller.x, controller.y, controller.z, controller.w])
             conversion_rot = R.from_euler('y', -90, degrees=True)
@@ -156,7 +152,6 @@ class ControllerApp(QThread):
             update_controller_data(hand, [0.0, 0.0, 0.0], wrist_rot, [1, 1, 1, 1, 1])
 
     async def start_websocket_server(self):
-        """启动WebSocket服务器"""
         ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
         ssl_context.load_cert_chain(certfile="./templates/ssl/cert.pem", keyfile="./templates/ssl/key.pem")  # 替换为你的证书和密钥文件路径
         self.websocket_server = await websockets.serve(
