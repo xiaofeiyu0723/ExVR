@@ -308,9 +308,6 @@
     };
 
     let state = {
-        alpha: 0,
-        beta: 0,
-        gamma: 0,
         joystick: [0, 0],
         joystickClicked: false,
         buttons: {
@@ -497,6 +494,21 @@
         ];
     }
 
+    function sendState() {
+        const message = JSON.stringify({
+            hand: CONFIG.hand,
+            quaternion: calibratedQuaternion,
+            ...state
+        })
+
+        // Send the message multiple times to ensure it is received
+        for (let i = 0; i < 5; i++) {
+            if (socket.readyState === WebSocket.OPEN) {
+                socket.send(message);
+            }
+        }
+    }
+
     function initJoystick() {
         const joystick = document.getElementById('joystick');
         const area = document.querySelector('.joystick-area');
@@ -519,12 +531,14 @@
             if (!touchId) {
                 touchId = e.changedTouches[0].identifier;
                 updateJoystick(e);
+                sendState();
             }
         });
 
         area.addEventListener('touchmove', e => {
             if (touchId !== null) {
                 updateJoystick(e);
+                sendState();
             }
         });
 
@@ -532,6 +546,7 @@
             touchId = null;
             joystick.style.transform = 'translate(-50%, -50%)';
             state.joystick = [0, 0];
+            sendState();
         });
 
         joystick.addEventListener('dblclick', () => {
@@ -542,13 +557,7 @@
             } else {
                 joystick.classList.remove('active');
             }
-
-            if (socket.readyState === WebSocket.OPEN) {
-                socket.send(JSON.stringify({
-                    hand: CONFIG.hand,
-                    joystickClicked: state.joystickClicked
-                }));
-            }
+            sendState();
         });
 
         function updateJoystick(e) {
@@ -567,18 +576,10 @@
         const element = document.getElementById(elementId);
         element.addEventListener('dblclick', () => {
             state.buttons[stateKey] = !state.buttons[stateKey];
-
             if (state.buttons[stateKey]) {
                 element.classList.add('active');
             } else {
                 element.classList.remove('active');
-            }
-
-            if (socket.readyState === WebSocket.OPEN) {
-                socket.send(JSON.stringify({
-                    hand: CONFIG.hand,
-                    [stateKey]: state.buttons[stateKey]
-                }));
             }
         });
     }
@@ -588,11 +589,13 @@
             btn.addEventListener('touchstart', () => {
                 btn.classList.add('active');
                 state.buttons[btn.id] = true;
+                sendState();
             });
 
             btn.addEventListener('touchend', () => {
                 btn.classList.remove('active');
                 state.buttons[btn.id] = false;
+                sendState();
             });
         });
     }
@@ -603,11 +606,13 @@
             trigger.addEventListener('touchstart', () => {
                 trigger.classList.add('active');
                 state.buttons[stateKey] = true;
+                sendState();
             });
 
             trigger.addEventListener('touchend', () => {
                 trigger.classList.remove('active');
                 state.buttons[stateKey] = false;
+                sendState();
             });
         };
 

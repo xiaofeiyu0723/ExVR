@@ -23,7 +23,6 @@ class ControllerState:
     joystickClicked: bool = False
     buttons: dict = None
 
-
 class ControllerApp(QThread):
     def __init__(self):
         super().__init__()
@@ -34,6 +33,11 @@ class ControllerApp(QThread):
             "Right": ControllerState(
                 buttons={"system": False, "button0": False, "button1": False, "trigger": False, "grab": False})
         }
+        # Initialize previous button states
+        self.previous_states = {
+            "Left": {"joystick": (0, 0), "joystickClicked": False, "buttons": {btn: False for btn in self.controllers["Left"].buttons}},
+            "Right": {"joystick": (0, 0), "joystickClicked": False, "buttons": {btn: False for btn in self.controllers["Right"].buttons}}
+        }
         self.setup_routes()
 
         # WebSocket server variables
@@ -42,10 +46,9 @@ class ControllerApp(QThread):
         self.websocket_thread = None
         self.websocket_loop = None
 
-        self.server_ip=self.get_default_ip()
-        self.server_port=g.config["Controller"]["server_port"]
-        self.websocket_port=g.config["Controller"]["websocket_port"]
-
+        self.server_ip = self.get_default_ip()
+        self.server_port = g.config["Controller"]["server_port"]
+        self.websocket_port = g.config["Controller"]["websocket_port"]
 
         print("============================")
         print(f"https://{self.server_ip}:{self.server_port}")
@@ -57,7 +60,7 @@ class ControllerApp(QThread):
         self.app.add_url_rule('/right', 'right_controller', self.right_controller)
 
     def get_server_ip(self):
-        server_ip=request.host.split(':')[0]  # 提取IP
+        server_ip = request.host.split(':')[0]  # 提取IP
         return server_ip
 
     def get_default_ip(self):
@@ -109,7 +112,7 @@ class ControllerApp(QThread):
         finally:
             self.websocket_clients.remove(websocket)
 
-    def update_controller_data(self,hand_name, hand_position, wrist_rot, finger_states):
+    def update_controller_data(self, hand_name, hand_position, wrist_rot, finger_states):
         if g.config["Smoothing"]["enable"]:
             index_offset = 92 if hand_name == "Left" else 98
             finger_offset = 104 if hand_name == "Left" else 109
@@ -134,16 +137,35 @@ class ControllerApp(QThread):
             for i, finger_state in enumerate(finger_states):
                 g.data[f"{hand_name}ControllerFinger"][i]["v"] = finger_state
 
-    def controller_handling(self,controller, is_left):
-        # TODO
-        g.controller.send_joystick(is_left, 1, controller.joystick[0], -controller.joystick[1])
-        g.controller.send_joystick_click(is_left,1, 1 if controller.joystickClicked else 0)
-        g.controller.send_trigger(is_left, 0, 1 if controller.buttons["trigger"] else 0)
-        g.controller.send_trigger(is_left, 2, 1 if controller.buttons["grab"] else 0)
-        g.controller.send_button(is_left,0, 1 if controller.buttons["system"] else 0)
-        g.controller.send_button(is_left,1, 1 if controller.buttons["button0"] else 0)
-        g.controller.send_button(is_left,3, 1 if controller.buttons["button1"] else 0)
+    def controller_handling(self, controller, is_left):
+        hand_name = "Left" if is_left else "Right"
+        prev_state = self.previous_states[hand_name]
 
+        # Check joystick state
+        if controller.joystick != prev_state["joystick"]:
+            g.controller.send_joystick(is_left, 1, controller.joystick[0], -controller.joystick[1])
+            prev_state["joystick"] = controller.joystick
+
+        # Check joystick click state
+        if controller.joystickClicked != prev_state["joystickClicked"]:
+            g.controller.send_joystick_click(is_left, 1, 1 if controller.joystickClicked else 0)
+            prev_state["joystickClicked"] = controller.joystickClicked
+
+        # Check button states
+        for btn, state in controller.buttons.items():
+            if state != prev_state["buttons"][btn]:
+                if btn == "trigger":
+                    g.controller.send_trigger(is_left, 0, 1 if state else 0)
+                elif btn == "grab":
+                    g.controller.send_trigger(is_left, 2, 1 if state else 0)
+                elif btn == "system":
+                    g.controller.send_button(is_left, 0, 1 if state else 0)
+                elif btn == "button0":
+                    g.controller.send_button(is_left, 1, 1 if state else 0)
+                elif btn == "button1":
+                    g.controller.send_button(is_left, 3, 1 if state else 0)
+                # Update previous state
+                prev_state["buttons"][btn] = state
 
     def update_controller(self, hand, controller):
         if controller.w == 0 and controller.x == 0 and controller.y == 0 and controller.z == 0:
@@ -151,8 +173,6 @@ class ControllerApp(QThread):
 
         if hand == "Left" and g.config["Tracking"]["LeftController"]["enable"]:
             rotation = R.from_quat([controller.x, controller.y, controller.z, controller.w])
-            # conversion_rot = R.from_euler('y', -90, degrees=True)
-            # rotation = rotation * conversion_rot
             euler_angles = rotation.as_euler('xyz', degrees=True)
             wrist_rot = [-euler_angles[0], euler_angles[1], -euler_angles[2]]
             self.controller_handling(controller, True)
@@ -160,8 +180,6 @@ class ControllerApp(QThread):
 
         if hand == "Right" and g.config["Tracking"]["RightController"]["enable"]:
             rotation = R.from_quat([controller.x, controller.y, controller.z, controller.w])
-            # conversion_rot = R.from_euler('y', 90, degrees=True)
-            # rotation = rotation * conversion_rot
             euler_angles = rotation.as_euler('xyz', degrees=True)
             wrist_rot = [-euler_angles[0], euler_angles[1], -euler_angles[2]]
             self.controller_handling(controller, False)
@@ -171,7 +189,7 @@ class ControllerApp(QThread):
         ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
         ssl_context.load_cert_chain(certfile="./templates/ssl/cert.pem", keyfile="./templates/ssl/key.pem")  # 替换为你的证书和密钥文件路径
         self.websocket_server = await websockets.serve(
-            self.websocket_handler, "0.0.0.0", 8889,ssl=ssl_context
+            self.websocket_handler, "0.0.0.0", 8889, ssl=ssl_context
         )
         return self.websocket_server
 
