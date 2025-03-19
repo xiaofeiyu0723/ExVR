@@ -18,7 +18,6 @@ face_landmarks=None
 hand_landmarks=None
 handedness=None
 
-# TODO: I hate the new version mediapipe
 tongue_model=None
 face_detector=None
 hand_detector=None

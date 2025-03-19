@@ -52,7 +52,7 @@ def draw_hand_landmarks(rgb_image):
         # Draw handedness (left or right hand) on the image.
         cv2.putText(
             rgb_image,
-            f"{"Right" if hand.classification[0].label == "Left" else "Left"}",  # Handedness label
+            f"{'Right' if hand.classification[0].label == 'Left' else 'Left'}",  # Handedness label
             (text_x, text_y),
             cv2.FONT_HERSHEY_DUPLEX,
             FONT_SIZE,
