@@ -13,32 +13,6 @@ import websockets
 import ssl
 import netifaces
 
-
-def update_controller_data(hand_name, hand_position, wrist_rot, finger_states):
-    if g.config["Smoothing"]["enable"]:
-        index_offset = 92 if hand_name == "Left" else 98
-        finger_offset = 104 if hand_name == "Left" else 109
-
-        g.latest_data[index_offset] = hand_position[0]
-        g.latest_data[index_offset + 1] = hand_position[1]
-        g.latest_data[index_offset + 2] = hand_position[2]
-
-        g.latest_data[index_offset + 3] = wrist_rot[0]
-        g.latest_data[index_offset + 4] = wrist_rot[1]
-        g.latest_data[index_offset + 5] = wrist_rot[2]
-
-        for i, finger_state in enumerate(finger_states):
-            g.latest_data[finger_offset + i] = finger_state
-    else:
-        for i, val in enumerate(wrist_rot):
-            g.data[f"{hand_name}ControllerRotation"][i]["v"] = val
-
-        for i, val in enumerate(hand_position):
-            g.data[f"{hand_name}ControllerPosition"][i]["v"] = val
-
-        for i, finger_state in enumerate(finger_states):
-            g.data[f"{hand_name}ControllerFinger"][i]["v"] = finger_state
-
 @dataclass
 class ControllerState:
     w: float = 0
@@ -56,9 +30,9 @@ class ControllerApp(QThread):
         self.app = Flask(__name__, template_folder=os.path.join(os.getcwd(), "templates"))
         self.controllers = {
             "Left": ControllerState(
-                buttons={"system": False, "X": False, "Y": False, "upperTrigger": False, "lowerTrigger": False}),
+                buttons={"system": False, "button0": False, "button1": False, "trigger": False, "grab": False}),
             "Right": ControllerState(
-                buttons={"system": False, "B": False, "A": False, "upperTrigger": False, "lowerTrigger": False})
+                buttons={"system": False, "button0": False, "button1": False, "trigger": False, "grab": False})
         }
         self.setup_routes()
 
@@ -66,11 +40,13 @@ class ControllerApp(QThread):
         self.websocket_clients = set()
         self.websocket_server = None
         self.websocket_thread = None
-        self.websocket_loop = None  # 新增事件循环引用
+        self.websocket_loop = None
 
         self.server_ip=self.get_default_ip()
         self.server_port=g.config["Controller"]["server_port"]
         self.websocket_port=g.config["Controller"]["websocket_port"]
+
+
         print("============================")
         print(f"https://{self.server_ip}:{self.server_port}")
         print("============================")
@@ -81,7 +57,6 @@ class ControllerApp(QThread):
         self.app.add_url_rule('/right', 'right_controller', self.right_controller)
 
     def get_server_ip(self):
-        """获取本机在局域网中的IP地址"""
         server_ip=request.host.split(':')[0]  # 提取IP
         return server_ip
 
@@ -129,27 +104,68 @@ class ControllerApp(QThread):
                 for btn in controller.buttons.keys():
                     if btn in data.get('buttons', {}):
                         controller.buttons[btn] = data['buttons'][btn]
-
                 self.update_controller(hand, controller)
                 # await websocket.send(json.dumps({"status": "success"}))
         finally:
             self.websocket_clients.remove(websocket)
 
+    def update_controller_data(self,hand_name, hand_position, wrist_rot, finger_states):
+        if g.config["Smoothing"]["enable"]:
+            index_offset = 92 if hand_name == "Left" else 98
+            finger_offset = 104 if hand_name == "Left" else 109
+
+            g.latest_data[index_offset] = hand_position[0]
+            g.latest_data[index_offset + 1] = hand_position[1]
+            g.latest_data[index_offset + 2] = hand_position[2]
+
+            g.latest_data[index_offset + 3] = wrist_rot[0]
+            g.latest_data[index_offset + 4] = wrist_rot[1]
+            g.latest_data[index_offset + 5] = wrist_rot[2]
+
+            for i, finger_state in enumerate(finger_states):
+                g.latest_data[finger_offset + i] = finger_state
+        else:
+            for i, val in enumerate(wrist_rot):
+                g.data[f"{hand_name}ControllerRotation"][i]["v"] = val
+
+            for i, val in enumerate(hand_position):
+                g.data[f"{hand_name}ControllerPosition"][i]["v"] = val
+
+            for i, finger_state in enumerate(finger_states):
+                g.data[f"{hand_name}ControllerFinger"][i]["v"] = finger_state
+
+    def controller_handling(self,controller, is_left):
+        # TODO
+        g.controller.send_joystick(is_left, 1, controller.joystick[0], -controller.joystick[1])
+        g.controller.send_joystick_click(is_left,1, 1 if controller.joystickClicked else 0)
+        g.controller.send_trigger(is_left, 0, 1 if controller.buttons["trigger"] else 0)
+        g.controller.send_trigger(is_left, 2, 1 if controller.buttons["grab"] else 0)
+        g.controller.send_button(is_left,0, 1 if controller.buttons["system"] else 0)
+        g.controller.send_button(is_left,1, 1 if controller.buttons["button0"] else 0)
+        g.controller.send_button(is_left,3, 1 if controller.buttons["button1"] else 0)
+
+
     def update_controller(self, hand, controller):
+        if controller.w == 0 and controller.x == 0 and controller.y == 0 and controller.z == 0:
+            return
+
         if hand == "Left" and g.config["Tracking"]["LeftController"]["enable"]:
             rotation = R.from_quat([controller.x, controller.y, controller.z, controller.w])
-            conversion_rot = R.from_euler('y', -90, degrees=True)
-            rotation = rotation * conversion_rot
+            # conversion_rot = R.from_euler('y', -90, degrees=True)
+            # rotation = rotation * conversion_rot
             euler_angles = rotation.as_euler('xyz', degrees=True)
             wrist_rot = [-euler_angles[0], euler_angles[1], -euler_angles[2]]
-            update_controller_data(hand, [0.0, 0.0, 0.0], wrist_rot, [1, 1, 1, 1, 1])
+            self.controller_handling(controller, True)
+            self.update_controller_data(hand, [0.0, 0.0, 0.0], wrist_rot, [1, 1, 1, 1, 1])
+
         if hand == "Right" and g.config["Tracking"]["RightController"]["enable"]:
             rotation = R.from_quat([controller.x, controller.y, controller.z, controller.w])
-            conversion_rot = R.from_euler('y', 90, degrees=True)
-            rotation = rotation * conversion_rot
+            # conversion_rot = R.from_euler('y', 90, degrees=True)
+            # rotation = rotation * conversion_rot
             euler_angles = rotation.as_euler('xyz', degrees=True)
             wrist_rot = [-euler_angles[0], euler_angles[1], -euler_angles[2]]
-            update_controller_data(hand, [0.0, 0.0, 0.0], wrist_rot, [1, 1, 1, 1, 1])
+            self.controller_handling(controller, False)
+            self.update_controller_data(hand, [0.0, 0.0, 0.0], wrist_rot, [1, 1, 1, 1, 1])
 
     async def start_websocket_server(self):
         ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)

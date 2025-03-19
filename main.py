@@ -248,12 +248,12 @@ class VideoWindow(QMainWindow):
         separator_1.setFrameShadow(QFrame.Sunken)  # Give it a sunken shadow effect
         layout.addWidget(separator_1)
 
-        label_layout = QHBoxLayout()
-        self.left_label = self.create_label("Left Controller", "red")
-        self.right_label = self.create_label("Right Controller", "red")
-        label_layout.addWidget(self.left_label)
-        label_layout.addWidget(self.right_label)
-        layout.addLayout(label_layout)
+        # label_layout = QHBoxLayout()
+        # self.left_label = self.create_label("Left Controller", "red")
+        # self.right_label = self.create_label("Right Controller", "red")
+        # label_layout.addWidget(self.left_label)
+        # label_layout.addWidget(self.right_label)
+        # layout.addLayout(label_layout)
 
         mobile_checkbox_layout = QHBoxLayout()
         self.mobile_checkbox1 = QCheckBox("Left Controller", self)
@@ -300,15 +300,15 @@ class VideoWindow(QMainWindow):
         self.controller_thread = None
 
 
-    def create_label(self, text, color):
-        label = QLabel(text, self)
-        label.setAlignment(Qt.AlignCenter)
-        label.setFixedHeight(50)
-        label.setStyleSheet(f"background-color: {color}; border: 2px solid black;")
-        return label
+    # def create_label(self, text, color):
+    #     label = QLabel(text, self)
+    #     label.setAlignment(Qt.AlignCenter)
+    #     label.setFixedHeight(50)
+    #     label.setStyleSheet(f"background-color: {color}; border: 2px solid black;")
+    #     return label
 
-    def set_label_state(self, label, color):
-        label.setStyleSheet(f"background-color: {color}; border: 2px solid black;")
+    # def set_label_state(self, label, color):
+    #     label.setStyleSheet(f"background-color: {color}; border: 2px solid black;")
 
     def save_data(self):
         for i, (key, edits) in enumerate(self.lineEdits.items()):

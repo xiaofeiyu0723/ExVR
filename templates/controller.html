@@ -23,8 +23,8 @@
         {% if hand == 'Right' %}
         .joystick-area {
             position: absolute;
-            left: 20%;
-            bottom: 20%;
+            left: 22%;
+            bottom: 30%;
             width: 55vw; /* Use viewport width for joystick area size */
             height: 55vw; /* Keep aspect ratio consistent */
             background: rgba(255, 255, 255, 0.1);
@@ -35,16 +35,16 @@
         }
         {% else %}
         .joystick-area {
-        position: absolute;
-        left: 20%;
-        bottom: 30%;
-        width: 55vw; /* Use viewport width for joystick area size */
-        height: 55vw; /* Keep aspect ratio consistent */
-        background: rgba(255, 255, 255, 0.1);
-        border-radius: 50%;
-        display: flex;
-        justify-content: center;
-        align-items: center;
+            position: absolute;
+            left: 22%;
+            bottom: 30%;
+            width: 55vw; /* Use viewport width for joystick area size */
+            height: 55vw; /* Keep aspect ratio consistent */
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
         }
         {% endif %}
         .joystick-thumb {
@@ -77,9 +77,11 @@
             background: var(--primary-color);
             border-color: #fff;
         }
-        .vr-button-label {
+        .vr-button-label,
+        .trigger-label,
+        .edit-button-label,
+        .cube-face {
             position: absolute;
-            bottom: -2vh; /* Use viewport height for label position */
             color: white;
             font-size: 2vh; /* Use viewport height for font size */
             user-select: none;
@@ -87,6 +89,9 @@
             -moz-user-select: none;
             -ms-user-select: none;
             -webkit-touch-callout: none;
+        }
+        .vr-button-label {
+            bottom: -2vh; /* Use viewport height for label position */
         }
         .trigger {
             width: var(--button-size);
@@ -104,29 +109,20 @@
             background: var(--primary-color);
             border-color: #fff;
         }
-        .trigger-label {
-            position: absolute;
-            color: white;
-            font-size: 2vh; /* Use viewport height for font size */
-            user-select: none;
-            -webkit-user-select: none;
-            -moz-user-select: none;
-            -ms-user-select: none;
-            -webkit-touch-callout: none;
-        }
-        .upper-trigger .trigger-label {
+        .trigger .trigger-label {
             top: -2vh; /* Use viewport height for label position */
             bottom: auto;
         }
-        .lower-trigger .trigger-label {
+        .grab .trigger-label {
+            top: auto;
             bottom: -2vh; /* Use viewport height for label position */
         }
         {% if hand == 'Right' %}
-        .upper-trigger { right: 6vw; bottom : 42%;}
-        .lower-trigger { right: 6vw; bottom : 33%;}
+        .trigger { right: 6vw; bottom : 42%;}
+        .grab { right: 6vw; bottom : 33%;}
         {% else %}
-        .upper-trigger { left: 6vw; bottom : 42%;}
-        .lower-trigger { left: 6vw; bottom : 33%;}
+        .trigger { left: 6vw; bottom : 42%;}
+        .grab { left: 6vw; bottom : 33%;}
         {% endif %}
         {% if hand == 'Right' %}
         .cube-container {
@@ -135,17 +131,17 @@
             perspective: 50vw;
             margin-bottom: 2vh;
             position: absolute;
-            right: 40%;
+            right: 38%;
             bottom: 60%;
         }
         {% else %}
-       .cube-container {
+        .cube-container {
             width: 24vw;
             height: 24vw;
             perspective: 50vw;
             margin-bottom: 2vh;
             position: absolute;
-            left: 40%;
+            left: 38%;
             bottom: 60%;
         }
         {% endif %}
@@ -159,7 +155,6 @@
             transition: transform 0.1s linear;
         }
         .cube-face {
-            position: absolute;
             width: 100%;
             height: 100%;
             background: rgba(255, 255, 255, 0.1);
@@ -167,7 +162,6 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            color: white;
             font-size: 3vh; /* Use viewport height for font size */
             font-weight: bold;
         }
@@ -177,7 +171,7 @@
         .cube-face.right { transform: rotateY(90deg) translateZ(12vw); }
         .cube-face.top { transform: rotateX(90deg) translateZ(12vw); }
         .cube-face.bottom { transform: rotateX(-90deg) translateZ(12vw); }
-        /* 新增编辑按钮样式 */
+
         .edit-button {
             width: 8vw;
             height: 8vw;
@@ -195,16 +189,14 @@
             background: #FFA500;
         }
         .edit-button-label {
-            color: white;
             font-size: 1.5vh;
-            user-select: none;
         }
-        /* 新增编辑模式下的可拖动样式 */
+
         .draggable {
             transition: none !important;
             cursor: move;
         }
-        /* 调整原有按钮位置 */
+
         {% if hand == 'Right' %}
         .edit-button {
             top: 5%;
@@ -258,31 +250,31 @@
 </div>
 
 <!-- Triggers -->
-<div class="trigger upper-trigger" id="upperTrigger">
-    <div class="trigger-label">Upper</div>
+<div class="trigger" id="trigger">
+    <div class="trigger-label">Trigger</div>
 </div>
-<div class="trigger lower-trigger" id="lowerTrigger">
-    <div class="trigger-label">Lower</div>
+<div class="trigger grab" id="grab">
+    <div class="trigger-label">Grab</div>
 </div>
 
 <!-- Right Hand Layout -->
 {% if hand == 'Right' %}
-<div class="vr-button" id="system" style="bottom: 15%; right: 20%;">
+<div class="vr-button" id="system" style="bottom: 15%; right: 60%;">
     <div class="vr-button-label">SYS</div>
 </div>
-<div class="vr-button" id="B" style="bottom: 15%; right: 40%;">
+<div class="vr-button" id="button1" style="bottom: 15%; right: 40%;">
     <div class="vr-button-label">B</div>
 </div>
-<div class="vr-button" id="A" style="bottom: 15%; right: 60%;">
+<div class="vr-button" id="button0" style="bottom: 15%; right: 20%;">
     <div class="vr-button-label">A</div>
 </div>
 
 <!-- Left Hand Layout -->
 {% else %}
-<div class="vr-button" id="X" style="bottom: 15%; left: 20%;">
+<div class="vr-button" id="button0" style="bottom: 15%; left: 20%;">
     <div class="vr-button-label">X</div>
 </div>
-<div class="vr-button" id="Y" style="bottom: 15%; left: 40%;">
+<div class="vr-button" id="button1" style="bottom: 15%; left: 40%;">
     <div class="vr-button-label">Y</div>
 </div>
 <div class="vr-button" id="system" style="bottom: 15%; left: 60%;">
@@ -328,12 +320,10 @@
         joystickClicked: false,
         buttons: {
             system: false,
-            A: false,
-            B: false,
-            X: false,
-            Y: false,
-            upperTrigger: false,
-            lowerTrigger: false
+            button0: false,
+            button1: false,
+            trigger: false,
+            grab: false
         }
     };
 
@@ -342,7 +332,7 @@
     let calibratedQuaternion = { w: 1, x: 0, y: 0, z: 0 };
 
     const cube = document.getElementById('cube');
-    // 新增编辑模式相关代码
+
     let isEditMode = false;
     let selectedElement = null;
     let initialX = 0;
@@ -353,18 +343,15 @@
 
     const storageKey = `controllerPositions_${CONFIG.hand}`;
 
-    // 初始化编辑按钮
     document.getElementById('editBtn').addEventListener('touchstart', function(e) {
         isEditMode = !isEditMode;
         this.classList.toggle('active');
 
-        // 切换所有可拖动元素的样式
         document.querySelectorAll('.vr-button, .trigger, .joystick-area, .cube-container').forEach(el => {
             el.classList.toggle('draggable', isEditMode);
         });
 
         if (!isEditMode) {
-            // 保存位置到localStorage
             localStorage.setItem(storageKey, JSON.stringify(positions));
         }
     });
@@ -384,15 +371,12 @@
         e.preventDefault();
         const rect = selectedElement.getBoundingClientRect();
 
-        // 记录触控点相对于元素左上角的偏移
         initialX = e.touches[0].clientX - rect.left;
         initialY = e.touches[0].clientY - rect.top;
 
-        // 记录元素的初始位置（像素）
         currentX = rect.left;
         currentY = rect.top;
 
-        // 添加拖动中样式
         selectedElement.style.transition = 'none';
         selectedElement.style.boxShadow = '0 0 15px orange';
     });
@@ -403,16 +387,13 @@
         e.preventDefault();
         const touch = e.touches[0];
 
-        // 计算新的位置（像素）
         const newX = touch.clientX - initialX;
         const newY = touch.clientY - initialY;
 
-        // 更新位置（使用像素）
         selectedElement.style.left = `${newX}px`;
         selectedElement.style.top = `${newY}px`;
     });
 
-    // 保存位置时，记录像素值
     document.addEventListener('touchend', function() {
         if (!isEditMode || !selectedElement) return;
         selectedElement.style.transition = '';
@@ -421,14 +402,13 @@
         const rect = selectedElement.getBoundingClientRect();
         const id = selectedElement.id || selectedElement.className.match(/[\w-]+/)[0];
         positions[id] = {
-            x: rect.left, // 保存像素值
-            y: rect.top   // 保存像素值
+            x: rect.left,
+            y: rect.top
         };
 
         selectedElement = null;
     });
 
-    // 加载位置时，应用像素值
     window.addEventListener('load', function() {
         const savedPositions = localStorage.getItem(storageKey);
         if (savedPositions) {
@@ -445,6 +425,7 @@
             });
         }
     });
+
     initJoystick();
     initButtons();
     initTriggers();
@@ -509,7 +490,7 @@
 
     function quaternionToMatrix(q) {
         const { x, y, z, w } = q;
-        const xx = x * x, xy = x * y, xz = x * z, xw = x * w;
+        const xx = x * x, xy = x * y, xz = x * z,         xw = x * w;
         const yy = y * y, yz = y * z, yw = y * w;
         const zz = z * z, zw = z * w;
 
@@ -587,6 +568,26 @@
         }
     }
 
+    function initDoubleClick(elementId, stateKey) {
+        const element = document.getElementById(elementId);
+        element.addEventListener('dblclick', () => {
+            state.buttons[stateKey] = !state.buttons[stateKey];
+
+            if (state.buttons[stateKey]) {
+                element.classList.add('active');
+            } else {
+                element.classList.remove('active');
+            }
+
+            if (socket.readyState === WebSocket.OPEN) {
+                socket.send(JSON.stringify({
+                    hand: CONFIG.hand,
+                    [stateKey]: state.buttons[stateKey]
+                }));
+            }
+        });
+    }
+
     function initButtons() {
         document.querySelectorAll('.vr-button').forEach(btn => {
             btn.addEventListener('touchstart', () => {
@@ -615,8 +616,9 @@
             });
         };
 
-        initTrigger('upperTrigger', 'upperTrigger');
-        initTrigger('lowerTrigger', 'lowerTrigger');
+        initTrigger('trigger', 'trigger');
+        initTrigger('grab', 'grab');
+        initDoubleClick('grab', 'grab');
     }
 
     function initCalibrate() {

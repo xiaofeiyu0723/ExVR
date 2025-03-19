@@ -50,7 +50,7 @@ class GloveControllerSender:
             message_0 = [
                 1 if is_left_hand else 2,  # lefthand ? 1 : 2
                 int(index),
-                value,
+                float(value),
                 0,
                 0,
             ]
@@ -58,20 +58,32 @@ class GloveControllerSender:
         message_1 = [1 if is_left_hand else 2, 0.0]  # lefthand ? 1 : 2
         self.client.send_message("/VMT/Skeleton/Apply", message_1)
 
+    def send_button(self,is_left_hand, index,status):
+        message = [1 if is_left_hand else 2, int(index), 0.0, int(status)]
+        self.client.send_message("/VMT/Input/Button", message)
+
     def send_trigger(self, is_left_hand, index, status=0.0):
-        message = [1 if is_left_hand else 2, index, 0.0, status]  # lefthand ? 1 : 2
+        message = [1 if is_left_hand else 2, int(index), 0.0, float(status)]
         self.client.send_message("/VMT/Input/Trigger", message)
 
     def send_joystick(self, is_left_hand, index, status_0=0.0, status_1=0.0):
         message = [
             1 if is_left_hand else 2,  # lefthand ? 1 : 2
-            index,
+            int(index),
             0.0,
-            status_0,
-            status_1,
+            float(status_0),
+            float(status_1),
         ]
         self.client.send_message("/VMT/Input/Joystick", message)
 
+    def send_joystick_click(self,is_left_hand, index, status):
+        message = [
+            1 if is_left_hand else 2,  # lefthand ? 1 : 2
+            int(index),
+            0.0,
+            int(status)
+        ]
+        self.client.send_message("/VMT/Input/Joystick/Click", message)
 
     def vmt_init(self):
         self.client.send_message(
