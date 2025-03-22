@@ -14,9 +14,9 @@ from PyQt5.QtWidgets import (
     QMessageBox,
     QDialog,
     QScrollArea,
-    QGridLayout
+    QGridLayout, QSizePolicy
 )
-from PyQt5.QtCore import QThread, pyqtSignal, Qt
+from PyQt5.QtCore import QThread, pyqtSignal, Qt, QTimer, QEvent
 from PyQt5.QtGui import QImage, QPixmap, QDoubleValidator
 
 import cv2
@@ -87,6 +87,7 @@ class VideoCaptureThread(QThread):
     def cleanup(self):
         if self.video_capture:
             self.video_capture.release()
+            cv2.destroyAllWindows()
 
 class VideoWindow(QMainWindow):
     def __init__(self):
@@ -97,6 +98,10 @@ class VideoWindow(QMainWindow):
         self.height = int(screen_size.height() * 0.65)
         self.half_height = int(self.height / 2)
 
+        # self.setAttribute(Qt.WA_TranslucentBackground)
+        # self.setAttribute(Qt.WA_NoSystemBackground, False)
+        # self.setAttribute(Qt.WA_PaintOnScreen)  # 硬件加速
+
         self.setWindowTitle(
             "ExVR - Experience Virtual Reality"
         )
@@ -106,10 +111,13 @@ class VideoWindow(QMainWindow):
         central_widget = QWidget(self)
         self.setCentralWidget(central_widget)
         layout = QVBoxLayout(central_widget)
-
         self.image_label = QLabel(self)
-        self.image_label.resize(self.width, self.half_height)
         layout.addWidget(self.image_label)
+        self.setMinimumSize(600, 800)  # 调整最小尺寸防止布局尺寸锁定
+        self.image_label.setSizePolicy(
+            QSizePolicy.Expanding,
+            QSizePolicy.Expanding
+        )
 
         flip_layout = QHBoxLayout()  # Create a QHBoxLayout for new reset buttons
         self.flip_x_checkbox = QCheckBox("Flip X", self)
@@ -298,6 +306,10 @@ class VideoWindow(QMainWindow):
 
         self.video_thread = None
         self.controller_thread = None
+        self.resize_timer = QTimer()
+        self.resize_timer.setSingleShot(True)
+        self.resize_timer.timeout.connect(self.resume_frame_update)
+        self.frame_update_enabled = True
 
 
     # def create_label(self, text, color):
@@ -309,6 +321,24 @@ class VideoWindow(QMainWindow):
 
     # def set_label_state(self, label, color):
     #     label.setStyleSheet(f"background-color: {color}; border: 2px solid black;")
+
+    def __window_visible(self):
+        return not self.isMinimized() and self.image_label.isVisible()
+
+    def changeEvent(self, event):
+        if event.type() == QEvent.WindowStateChange:
+            if not self.isMinimized() and self.video_thread:
+                self.video_thread.show_image = True  # 恢复
+                # QTimer.singleShot(100, lambda: self.image_label.update())
+        super().changeEvent(event)
+
+    def resizeEvent(self, event):
+        self.frame_update_enabled = False  # 暂停
+        self.resize_timer.start(100)
+        super().resizeEvent(event)
+
+    def resume_frame_update(self):
+        self.frame_update_enabled = True  # 恢复
 
     def save_data(self):
         for i, (key, edits) in enumerate(self.lineEdits.items()):
@@ -609,15 +639,24 @@ class VideoWindow(QMainWindow):
         return 0
 
     def update_frame(self, image):
-        if self.video_thread:
-            if self.video_thread.show_image:
-                p = image.scaled(
-                    self.image_label.width(),
-                    self.image_label.height(),
-                    Qt.KeepAspectRatio,
-                )
-                self.image_label.setPixmap(QPixmap.fromImage(p))
-                self.image_label.setAlignment(Qt.AlignCenter)
+        if self.isMinimized() or not self.image_label.isVisible():
+            return
+        if not self.frame_update_enabled:
+            return
+        if self.video_thread and self.video_thread.show_image:
+            target_width = self.image_label.width()
+            target_height = self.image_label.height()
+
+            scaled_image = image.scaled(
+                target_width,
+                target_height,
+                Qt.KeepAspectRatio,
+                Qt.SmoothTransformation
+            )
+            self.image_label.setPixmap(QPixmap.fromImage(scaled_image))
+            self.image_label.setAlignment(Qt.AlignCenter)
+            QApplication.processEvents()
+
 
     def populate_camera_list(self):
         devices = enumerate_cameras(cv2.CAP_ANY)
