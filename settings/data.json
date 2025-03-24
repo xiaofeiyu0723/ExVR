@@ -76,9 +76,17 @@
 
     "LeftControllerPosition": [{"k": "x", "v": 0.0, "s": 0.0,"e":true}, {"k": "y", "v": 0.0, "s": 0.0,"e":true}, {"k": "z", "v": 0.0, "s": 0.0,"e":true}],
     "LeftControllerRotation": [{"k": "x", "v": 0.0, "s": 140,"e":true}, {"k": "y", "v": 0.0, "s": 0.0,"e":true}, {"k": "z", "v": 0.0, "s": 0.0,"e":true}],
+    "LeftSlimeVRControllerPosition": [{"k": "x", "v": 0.0, "s": 0.0,"e":true}, {"k": "y", "v": 0.0, "s": 0.0,"e":true}, {"k": "z", "v": 0.0, "s": 0.0,"e":true}],
+    "LeftSlimeVRControllerRotation": [{"k": "x", "v": 0.0, "s": 140,"e":true}, {"k": "y", "v": 0.0, "s": 0.0,"e":true}, {"k": "z", "v": 0.0, "s": 0.0,"e":true},{"k": "w", "v": 0.0, "s": 0.0,"e":true}],
+    "LeftSlimeVRControllerVelocity":  [{"k": "x", "v": 0.0, "s": 0.0,"e":true}, {"k": "y", "v": 0.0, "s": 0.0,"e":true}, {"k": "z", "v": 0.0, "s": 0.0,"e":true}],
+    "LeftControllerFinger": [{"k": "0", "v": 1.0, "s": 0.0,"e":true}, {"k": "1", "v": 1.0, "s": 0.0,"e":true}, {"k": "2", "v": 1.0, "s": 0.0,"e":true}, {"k": "3", "v": 1.0, "s": 0.0,"e":true}, {"k": "4", "v": 1.0, "s": 0.0,"e":true}],
+
+
     "RightControllerPosition": [{"k": "x", "v": 0.0, "s": 0.0,"e":true}, {"k": "y", "v": 0.0, "s": 0.0,"e":true}, {"k": "z", "v": 0.0, "s": 0.0,"e":true}],
     "RightControllerRotation": [{"k": "x", "v": 0.0, "s": 140,"e":true}, {"k": "y", "v": 0.0, "s": 0.0,"e":true}, {"k": "z", "v": 0.0, "s": 0.0,"e":true}],
-    "LeftControllerFinger": [{"k": "0", "v": 1.0, "s": 0.0,"e":true}, {"k": "1", "v": 1.0, "s": 0.0,"e":true}, {"k": "2", "v": 1.0, "s": 0.0,"e":true}, {"k": "3", "v": 1.0, "s": 0.0,"e":true}, {"k": "4", "v": 1.0, "s": 0.0,"e":true}],
+    "RightSlimeVRControllerPosition": [{"k": "x", "v": 0.0, "s": 0.0,"e":true}, {"k": "y", "v": 0.0, "s": 0.0,"e":true}, {"k": "z", "v": 0.0, "s": 0.0,"e":true}],
+    "RightSlimeVRControllerRotation": [{"k": "x", "v": 0.0, "s": 140,"e":true}, {"k": "y", "v": 0.0, "s": 0.0,"e":true}, {"k": "z", "v": 0.0, "s": 0.0,"e":true},{"k": "w", "v": 0.0, "s": 0.0,"e":true}],
+    "RightSlimeVRControllerVelocity":  [{"k": "x", "v": 0.0, "s": 0.0,"e":true}, {"k": "y", "v": 0.0, "s": 0.0,"e":true}, {"k": "z", "v": 0.0, "s": 0.0,"e":true}],
     "RightControllerFinger": [{"k": "0", "v": 1.0, "s": 0.0,"e":true}, {"k": "1", "v": 1.0, "s": 0.0,"e":true}, {"k": "2", "v": 1.0, "s": 0.0,"e":true}, {"k": "3", "v": 1.0, "s": 0.0,"e":true}, {"k": "4", "v": 1.0, "s": 0.0,"e":true}]
 
 }

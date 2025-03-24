@@ -16,9 +16,11 @@ from PyQt5.QtWidgets import (
     QScrollArea,
     QGridLayout, QSizePolicy
 )
-from PyQt5.QtCore import QThread, pyqtSignal, Qt, QTimer, QEvent
+from PyQt5.QtCore import QThread, pyqtSignal, Qt
 from PyQt5.QtGui import QImage, QPixmap, QDoubleValidator
+from pubsub import pub
 
+import utils.GUITemplate as GUITemplate
 import cv2
 from pygrabber.dshow_graph import FilterGraph
 import sys, os, winreg, shutil
@@ -34,7 +36,7 @@ from ctypes import windll
 from cv2_enumerate_cameras import enumerate_cameras
 
 from tracker.controller.controller import *
-
+from SlimeVRServer_Simple.SlimeVRServer import SlimeVRServer
 class VideoCaptureThread(QThread):
     frame_ready = pyqtSignal(QImage)
 
@@ -87,20 +89,16 @@ class VideoCaptureThread(QThread):
     def cleanup(self):
         if self.video_capture:
             self.video_capture.release()
-            cv2.destroyAllWindows()
 
 class VideoWindow(QMainWindow):
     def __init__(self):
         super().__init__()
+        self.slimeVR_server:SlimeVRServer = None
         screen = QApplication.screens()[0]
         screen_size = screen.size()
         self.width = int(screen_size.width() * 0.3)
         self.height = int(screen_size.height() * 0.65)
         self.half_height = int(self.height / 2)
-
-        # self.setAttribute(Qt.WA_TranslucentBackground)
-        # self.setAttribute(Qt.WA_NoSystemBackground, False)
-        # self.setAttribute(Qt.WA_PaintOnScreen)  # 硬件加速
 
         self.setWindowTitle(
             "ExVR - Experience Virtual Reality"
@@ -111,13 +109,10 @@ class VideoWindow(QMainWindow):
         central_widget = QWidget(self)
         self.setCentralWidget(central_widget)
         layout = QVBoxLayout(central_widget)
+
         self.image_label = QLabel(self)
+        self.image_label.resize(self.width, self.half_height)
         layout.addWidget(self.image_label)
-        self.setMinimumSize(600, 800)  # 调整最小尺寸防止布局尺寸锁定
-        self.image_label.setSizePolicy(
-            QSizePolicy.Expanding,
-            QSizePolicy.Expanding
-        )
 
         flip_layout = QHBoxLayout()  # Create a QHBoxLayout for new reset buttons
         self.flip_x_checkbox = QCheckBox("Flip X", self)
@@ -276,6 +271,39 @@ class VideoWindow(QMainWindow):
         mobile_checkbox_layout.addWidget(self.mobile_checkbox2)
         layout.addLayout(mobile_checkbox_layout)
 
+        separator_1.setFrameShadow(QFrame.Sunken)  # Give it a sunken shadow effect
+        layout.addWidget(separator_1)
+
+        mobile_checkbox_layout = QHBoxLayout()
+        self.slimeVRSwitch_button = QPushButton("Switch SlimeVR Server", self)
+        self.slimeVRSwitch_button.clicked.connect(lambda: self.SlimeVRServerSwitch())
+        self.slimeVRSwitch_button.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        self.slimeVRSwitch_button.setStyleSheet(
+            "QPushButton { background-color: purple; color: white; }"
+        )
+        mobile_checkbox_layout.addWidget(self.slimeVRSwitch_button)
+        layout.addLayout(mobile_checkbox_layout)
+        mobile_checkbox_layout = QHBoxLayout()
+        self.DevicesShowerL=GUITemplate.CustomRow("left",
+                                                  lambda:(self.slimeVR_server.link_slimeVR_device("slimeVR_controller_left"),
+                                                          self.DevicesShowerL.SetText("Searching")),
+                                                  lambda:(self.slimeVR_server.remove_device("slimeVR_controller_left"),
+                                                          self.DevicesShowerL.SetText("None"))
+                                                  )
+        pub.subscribe(self.DevicesShowerL.SetText, "slimeVR_controller_left_find_device")
+        self.DevicesShowerR=GUITemplate.CustomRow("right",
+                                                  lambda:(self.slimeVR_server.link_slimeVR_device("slimeVR_controller_right"),
+                                                          self.DevicesShowerR.SetText("Searching")),
+                                                  lambda:(self.slimeVR_server.remove_device("slimeVR_controller_right"),
+                                                          self.DevicesShowerR.SetText("None"))
+                                                  )
+        pub.subscribe( self.DevicesShowerR.SetText, "slimeVR_controller_right_find_device")
+        self.DevicesShowerR.hide()
+        self.DevicesShowerL.hide()
+        mobile_checkbox_layout.addWidget(self.DevicesShowerL)
+        mobile_checkbox_layout.addWidget(self.DevicesShowerR)
+        layout.addLayout(mobile_checkbox_layout)
+
         separator_2 = QFrame(self)
         separator_2.setFrameShape(
             QFrame.HLine
@@ -306,10 +334,6 @@ class VideoWindow(QMainWindow):
 
         self.video_thread = None
         self.controller_thread = None
-        self.resize_timer = QTimer()
-        self.resize_timer.setSingleShot(True)
-        self.resize_timer.timeout.connect(self.resume_frame_update)
-        self.frame_update_enabled = True
 
 
     # def create_label(self, text, color):
@@ -321,24 +345,6 @@ class VideoWindow(QMainWindow):
 
     # def set_label_state(self, label, color):
     #     label.setStyleSheet(f"background-color: {color}; border: 2px solid black;")
-
-    def __window_visible(self):
-        return not self.isMinimized() and self.image_label.isVisible()
-
-    def changeEvent(self, event):
-        if event.type() == QEvent.WindowStateChange:
-            if not self.isMinimized() and self.video_thread:
-                self.video_thread.show_image = True  # 恢复
-                # QTimer.singleShot(100, lambda: self.image_label.update())
-        super().changeEvent(event)
-
-    def resizeEvent(self, event):
-        self.frame_update_enabled = False  # 暂停
-        self.resize_timer.start(100)
-        super().resizeEvent(event)
-
-    def resume_frame_update(self):
-        self.frame_update_enabled = True  # 恢复
 
     def save_data(self):
         for i, (key, edits) in enumerate(self.lineEdits.items()):
@@ -639,24 +645,15 @@ class VideoWindow(QMainWindow):
         return 0
 
     def update_frame(self, image):
-        if self.isMinimized() or not self.image_label.isVisible():
-            return
-        if not self.frame_update_enabled:
-            return
-        if self.video_thread and self.video_thread.show_image:
-            target_width = self.image_label.width()
-            target_height = self.image_label.height()
-
-            scaled_image = image.scaled(
-                target_width,
-                target_height,
-                Qt.KeepAspectRatio,
-                Qt.SmoothTransformation
-            )
-            self.image_label.setPixmap(QPixmap.fromImage(scaled_image))
-            self.image_label.setAlignment(Qt.AlignCenter)
-            QApplication.processEvents()
-
+        if self.video_thread:
+            if self.video_thread.show_image:
+                p = image.scaled(
+                    self.image_label.width(),
+                    self.image_label.height(),
+                    Qt.KeepAspectRatio,
+                )
+                self.image_label.setPixmap(QPixmap.fromImage(p))
+                self.image_label.setAlignment(Qt.AlignCenter)
 
     def populate_camera_list(self):
         devices = enumerate_cameras(cv2.CAP_ANY)
@@ -696,11 +693,35 @@ class VideoWindow(QMainWindow):
             g.config["Setting"]["camera_height"] = height
             print(f"Resolution updated to: {width} x {height}")
 
+    def SlimeVRServerSwitch(self):
+        print(self.slimeVR_server)
+        if self.slimeVR_server is None:
+            self.slimeVRSwitch_button.setStyleSheet(
+                "QPushButton { background-color: red; color: white; }"
+            )
+            self.slimeVR_server=SlimeVRServer()
+            self.slimeVR_server.start()
+            self.DevicesShowerR.show()
+            self.DevicesShowerL.show()
+        else:
+            self.slimeVRSwitch_button.setStyleSheet(
+                "QPushButton { background-color: purple; color: white; }"
+            )
+            self.slimeVR_server.stop()
+            self.slimeVR_server.join()
+            self.slimeVR_server=None
+            self.DevicesShowerR.hide()
+            self.DevicesShowerL.hide()
+
+
     def thread_stopped(self):
         if self.video_thread:
             self.video_thread.stop()
             self.video_thread.wait()
             self.video_thread = None
+        if self.slimeVR_server:
+            self.slimeVR_server.stop()
+            self.slimeVR_server=None
         if self.controller_thread:
             self.controller_thread.stop()
             self.controller_thread.wait()

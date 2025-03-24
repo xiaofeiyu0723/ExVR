@@ -20,6 +20,9 @@
         "server_port": 8888,
         "websocket_port": 8889
     },
+    "SlimeVRServer": {
+        "server_port": 6868
+    },
     "Tracking": {
         "LeftController": {
             "enable": false,
@@ -71,6 +74,7 @@
             "hand_detection_upper_threshold": 100,
             "hand_detection_lower_threshold": 6,
             "hand_count_threshold": 6,
+            "lose_rate_per_second": 0.01,
             "only_front": true,
             "follow": true
         },

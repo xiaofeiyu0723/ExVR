@@ -111,12 +111,15 @@ def hand_pred_handling(detection_result):
     if left_hand_detection_counts < 0:
         left_hand_detection_counts = 0
 
-    if detection_result.multi_hand_landmarks is not None and detection_result.multi_handedness is not None and detection_result.multi_hand_world_landmarks is not None:
+    if (detection_result.multi_hand_landmarks is not None
+            and detection_result.multi_handedness is not None
+            and detection_result.multi_hand_world_landmarks is not None):
         for idx, (hand,hand_landmarks,hand_world_landmarks) in enumerate(zip(detection_result.multi_handedness, detection_result.multi_hand_landmarks, detection_result.multi_hand_world_landmarks)):
             if hand.classification[0].score < g.config["Tracking"]["Hand"]["hand_confidence"]:
+                g.video_media_pipline[hand.classification[0].label]=False
                 continue
             hand_name = "Right" if hand.classification[0].label == "Left" else "Left"
-
+            g.video_media_pipline[hand_name]=True
             if hand_name == "Left":
                 left_hand_detection_counts += 2
                 if (
@@ -267,10 +270,14 @@ def hand_pred_handling(detection_result):
                     g.data["RightHandFinger"][2]["v"] = finger_2
                     g.data["RightHandFinger"][3]["v"] = finger_3
                     g.data["RightHandFinger"][4]["v"] = finger_4
+    else:
+        g.video_media_pipline["Left"] = False
+        g.video_media_pipline["Right"] = False
     if (
         left_hand_detection_counts
         <= g.config["Tracking"]["Hand"]["hand_detection_lower_threshold"]
-        and g.config["Tracking"]["Hand"]["enable_hand_auto_reset"] and not g.config["Tracking"]["LeftController"]["enable"]
+        and g.config["Tracking"]["Hand"]["enable_hand_auto_reset"]
+        and not g.config["Tracking"]["LeftController"]["enable"]
     ):
         if g.config["Smoothing"]["enable"]:
             g.latest_data[73] = g.default_data["LeftHandRotation"][0]["v"]
@@ -290,7 +297,9 @@ def hand_pred_handling(detection_result):
             g.data["LeftHandPosition"] = deepcopy(g.default_data["LeftHandPosition"])
             g.data["LeftHandRotation"] = deepcopy(g.default_data["LeftHandRotation"])
             g.data["LeftHandFinger"] = deepcopy(g.default_data["LeftHandFinger"])
-        if g.config["Tracking"]["Hand"]["follow"]:
+        if g.slimeVR_device_enable["slimeVR_controller_left"]:
+            g.controller.left_hand.follow=True
+        elif g.config["Tracking"]["Hand"]["follow"]:
             g.controller.left_hand.follow = False
     else:
         g.controller.left_hand.follow = True
@@ -298,7 +307,8 @@ def hand_pred_handling(detection_result):
     if (
         right_hand_detection_counts
         <= g.config["Tracking"]["Hand"]["hand_detection_lower_threshold"]
-        and g.config["Tracking"]["Hand"]["enable_hand_auto_reset"] and not g.config["Tracking"]["RightController"]["enable"]
+        and g.config["Tracking"]["Hand"]["enable_hand_auto_reset"]
+        and not g.config["Tracking"]["RightController"]["enable"]
     ):
         if g.config["Smoothing"]["enable"]:
             g.latest_data[79] = g.default_data["RightHandRotation"][0]["v"]
@@ -318,7 +328,9 @@ def hand_pred_handling(detection_result):
             g.data["RightHandPosition"] = deepcopy(g.default_data["RightHandPosition"])
             g.data["RightHandRotation"] = deepcopy(g.default_data["RightHandRotation"])
             g.data["RightHandFinger"] = deepcopy(g.default_data["RightHandFinger"])
-        if g.config["Tracking"]["Hand"]["follow"]:
+        if g.slimeVR_device_enable["slimeVR_controller_right"]:
+            g.controller.right_hand.follow=True
+        elif g.config["Tracking"]["Hand"]["follow"]:
             g.controller.right_hand.follow = False
     else:
         g.controller.right_hand.follow = True

@@ -179,7 +179,24 @@
             "max_delta": null,
             "deadzone": null,
             "dt_multiplier": 20
+        },
+        "LeftControllerVelocity": {
+            "key":  "LeftControllerVelocity",
+            "is_rotation": false,
+            "indices": [114, 115, 116],
+            "shifting": 114,
+            "max_delta": 0.1,
+            "deadzone": 0.01,
+            "dt_multiplier": 20
+        },
+        "RightControllerVelocity":{
+            "key": "RightControllerVelocity",
+            "is_rotation": false,
+            "indices": [117, 118, 119],
+            "shifting": 117,
+            "max_delta": 0.1,
+            "deadzone": 0.01,
+            "dt_multiplier": 20
         }
-
     }
 }
