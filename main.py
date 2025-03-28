@@ -14,9 +14,9 @@ from PyQt5.QtWidgets import (
     QMessageBox,
     QDialog,
     QScrollArea,
-    QGridLayout
+    QGridLayout, QSizePolicy
 )
-from PyQt5.QtCore import QThread, pyqtSignal, Qt
+from PyQt5.QtCore import QThread, pyqtSignal, Qt, QTimer, QEvent
 from PyQt5.QtGui import QImage, QPixmap, QDoubleValidator
 
 import cv2
@@ -38,7 +38,7 @@ from tracker.controller.controller import *
 class VideoCaptureThread(QThread):
     frame_ready = pyqtSignal(QImage)
 
-    def __init__(self, source,width=640, height=480):
+    def __init__(self, source,width=1280, height=720, fps=30):
         super().__init__()
         self.source = source
         self.video_capture = None
@@ -47,12 +47,13 @@ class VideoCaptureThread(QThread):
         self.tracker = utils.tracking.Tracker()
         self.width = width
         self.height = height
+        self.fps = fps
 
     def run(self):
         self.video_capture = cv2.VideoCapture(self.source, cv2.CAP_ANY)
         self.video_capture.set(cv2.CAP_PROP_FRAME_WIDTH, self.width)
         self.video_capture.set(cv2.CAP_PROP_FRAME_HEIGHT, self.height)
-        # self.video_capture.set(cv2.CAP_PROP_FPS, 60)
+        self.video_capture.set(cv2.CAP_PROP_FPS, 60)
         print(self.video_capture.get(cv2.CAP_PROP_FRAME_WIDTH), self.video_capture.get(cv2.CAP_PROP_FRAME_HEIGHT),self.video_capture.get(cv2.CAP_PROP_FPS))
         self.video_capture.set(cv2.CAP_PROP_BUFFERSIZE, 1)
         while self.is_running:
@@ -87,6 +88,7 @@ class VideoCaptureThread(QThread):
     def cleanup(self):
         if self.video_capture:
             self.video_capture.release()
+            cv2.destroyAllWindows()
 
 class VideoWindow(QMainWindow):
     def __init__(self):
@@ -97,6 +99,10 @@ class VideoWindow(QMainWindow):
         self.height = int(screen_size.height() * 0.65)
         self.half_height = int(self.height / 2)
 
+        # self.setAttribute(Qt.WA_TranslucentBackground)
+        # self.setAttribute(Qt.WA_NoSystemBackground, False)
+        # self.setAttribute(Qt.WA_PaintOnScreen)  # 硬件加速
+
         self.setWindowTitle(
             "ExVR - Experience Virtual Reality"
         )
@@ -106,10 +112,13 @@ class VideoWindow(QMainWindow):
         central_widget = QWidget(self)
         self.setCentralWidget(central_widget)
         layout = QVBoxLayout(central_widget)
-
         self.image_label = QLabel(self)
-        self.image_label.resize(self.width, self.half_height)
         layout.addWidget(self.image_label)
+        self.setMinimumSize(600, 800)  # 调整最小尺寸防止布局尺寸锁定
+        self.image_label.setSizePolicy(
+            QSizePolicy.Expanding,
+            QSizePolicy.Expanding
+        )
 
         flip_layout = QHBoxLayout()  # Create a QHBoxLayout for new reset buttons
         self.flip_x_checkbox = QCheckBox("Flip X", self)
@@ -133,8 +142,12 @@ class VideoWindow(QMainWindow):
         camera_layout.addWidget(self.camera_selection)
         self.camera_resolution_selection = QComboBox(self)
         self.populate_resolution_list()
-        self.camera_resolution_selection.currentIndexChanged.connect(self.update_video_resolution)
+        self.camera_resolution_selection.currentIndexChanged.connect(self.update_camera_resolution)
         camera_layout.addWidget(self.camera_resolution_selection)
+        self.camera_fps_selection = QComboBox(self)
+        self.populate_fps_list()
+        self.camera_fps_selection.currentIndexChanged.connect(self.update_camera_fps)
+        camera_layout.addWidget(self.camera_fps_selection)
         layout.addLayout(camera_layout)
 
         self.priority_selection = QComboBox(self)
@@ -298,6 +311,10 @@ class VideoWindow(QMainWindow):
 
         self.video_thread = None
         self.controller_thread = None
+        self.resize_timer = QTimer()
+        self.resize_timer.setSingleShot(True)
+        self.resize_timer.timeout.connect(self.resume_frame_update)
+        self.frame_update_enabled = True
 
 
     # def create_label(self, text, color):
@@ -309,6 +326,24 @@ class VideoWindow(QMainWindow):
 
     # def set_label_state(self, label, color):
     #     label.setStyleSheet(f"background-color: {color}; border: 2px solid black;")
+
+    def __window_visible(self):
+        return not self.isMinimized() and self.image_label.isVisible()
+
+    def changeEvent(self, event):
+        if event.type() == QEvent.WindowStateChange:
+            if not self.isMinimized() and self.video_thread:
+                self.video_thread.show_image = True  # 恢复
+                # QTimer.singleShot(100, lambda: self.image_label.update())
+        super().changeEvent(event)
+
+    def resizeEvent(self, event):
+        self.frame_update_enabled = False  # 暂停
+        self.resize_timer.start(100)
+        super().resizeEvent(event)
+
+    def resume_frame_update(self):
+        self.frame_update_enabled = True  # 恢复
 
     def save_data(self):
         for i, (key, edits) in enumerate(self.lineEdits.items()):
@@ -552,6 +587,8 @@ class VideoWindow(QMainWindow):
     def toggle_camera(self):
         self.update_checkboxes()
         self.update_sliders()
+        self.update_camera_resolution()
+        self.update_camera_fps()
         if self.video_thread and self.video_thread.isRunning():
             self.toggle_button.setText("Start Tracking")
             self.toggle_button.setStyleSheet(
@@ -571,7 +608,7 @@ class VideoWindow(QMainWindow):
                 if ip_camera_url != ""
                 else self.get_camera_source(selected_camera_name)
             )
-            self.video_thread = VideoCaptureThread(source,g.config["Setting"]["camera_width"],g.config["Setting"]["camera_height"])
+            self.video_thread = VideoCaptureThread(source,g.config["Setting"]["camera_width"],g.config["Setting"]["camera_height"],g.config["Setting"]["camera_fps"])
             self.video_thread.frame_ready.connect(self.update_frame)
             self.video_thread.start()
 
@@ -609,15 +646,24 @@ class VideoWindow(QMainWindow):
         return 0
 
     def update_frame(self, image):
-        if self.video_thread:
-            if self.video_thread.show_image:
-                p = image.scaled(
-                    self.image_label.width(),
-                    self.image_label.height(),
-                    Qt.KeepAspectRatio,
-                )
-                self.image_label.setPixmap(QPixmap.fromImage(p))
-                self.image_label.setAlignment(Qt.AlignCenter)
+        if self.isMinimized() or not self.image_label.isVisible():
+            return
+        if not self.frame_update_enabled:
+            return
+        if self.video_thread and self.video_thread.show_image:
+            target_width = self.image_label.width()
+            target_height = self.image_label.height()
+
+            scaled_image = image.scaled(
+                target_width,
+                target_height,
+                Qt.KeepAspectRatio,
+                Qt.SmoothTransformation
+            )
+            self.image_label.setPixmap(QPixmap.fromImage(scaled_image))
+            self.image_label.setAlignment(Qt.AlignCenter)
+            QApplication.processEvents()
+
 
     def populate_camera_list(self):
         devices = enumerate_cameras(cv2.CAP_ANY)
@@ -648,7 +694,18 @@ class VideoWindow(QMainWindow):
         else:
             self.camera_resolution_selection.setCurrentIndex(0)
 
-    def update_video_resolution(self):
+    def populate_fps_list(self):
+        fps_list = [30,60]
+        for fps in fps_list:
+            self.camera_fps_selection.addItem(f"{fps} FPS")
+        config_fps = int(g.config["Setting"]["camera_fps"])
+        if config_fps in fps_list:
+            index = fps_list.index(config_fps)
+            self.camera_fps_selection.setCurrentIndex(index)
+        else:
+            self.camera_fps_selection.setCurrentIndex(0)
+
+    def update_camera_resolution(self):
         # Get the currently selected resolution
         current_resolution = self.camera_resolution_selection.currentData()
         if current_resolution:
@@ -656,6 +713,13 @@ class VideoWindow(QMainWindow):
             g.config["Setting"]["camera_width"] = width
             g.config["Setting"]["camera_height"] = height
             print(f"Resolution updated to: {width} x {height}")
+
+    def update_camera_fps(self):
+        # Get the currently selected resolution
+        current_fps = self.camera_fps_selection.currentData()
+        if current_fps:
+            g.config["Setting"]["camera_fps"] = current_fps
+            print(f"FPS updated to: {current_fps}")
 
     def thread_stopped(self):
         if self.video_thread:

@@ -1,0 +1,27 @@
+{
+   "AddCompatibleControllerOnStartup": false,
+   "AddControllerOnStartup": false,
+   "AlwaysCompatible": false,
+   "AutoPoseUpdateOnStartup": true,
+   "DiagLogOnStartup": false,
+   "OptoutTrackingRole": true,
+   "Priority": 10,
+   "ReceivePort": -1,
+   "RejectWhenCannotTracking": true,
+   "RoomMatrix": [
+      1.0,
+      0.0,
+      0.0,
+      1.0,
+      0.0,
+      1.0,
+      0.0,
+      -0.7599999904632568,
+      0.0,
+      0.0,
+      1.0,
+      1.0
+   ],
+   "SendPort": -1,
+   "SkeletonInput": true
+}

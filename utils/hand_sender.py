@@ -16,7 +16,7 @@ class Transform:
 
 # GloveControllerSender equivalent in Python
 class GloveControllerSender:
-    def __init__(self, osc_ip: str = "127.0.0.1", osc_port: int = 8000):
+    def __init__(self, osc_ip: str = "127.0.0.1", osc_port: int = 39570):
         # Initialize OSC client
         self.client = udp_client.SimpleUDPClient(osc_ip, osc_port)
 

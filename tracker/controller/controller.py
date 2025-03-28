@@ -12,6 +12,10 @@ import utils.globals as g
 import websockets
 import ssl
 import netifaces
+from pythonosc import dispatcher
+from pythonosc import osc_server
+import socket
+
 
 @dataclass
 class ControllerState:
@@ -22,6 +26,7 @@ class ControllerState:
     joystick: tuple = (0, 0)
     joystickClicked: bool = False
     buttons: dict = None
+
 
 class ControllerApp(QThread):
     def __init__(self):
@@ -35,24 +40,30 @@ class ControllerApp(QThread):
         }
         # Initialize previous button states
         self.previous_states = {
-            "Left": {"joystick": (0, 0), "joystickClicked": False, "buttons": {btn: False for btn in self.controllers["Left"].buttons}},
-            "Right": {"joystick": (0, 0), "joystickClicked": False, "buttons": {btn: False for btn in self.controllers["Right"].buttons}}
+            "Left": {"joystick": (0, 0), "joystickClicked": False,
+                     "buttons": {btn: False for btn in self.controllers["Left"].buttons}},
+            "Right": {"joystick": (0, 0), "joystickClicked": False,
+                      "buttons": {btn: False for btn in self.controllers["Right"].buttons}}
         }
         self.setup_routes()
-
         # WebSocket server variables
         self.websocket_clients = set()
         self.websocket_server = None
         self.websocket_thread = None
         self.websocket_loop = None
-
         self.server_ip = self.get_default_ip()
         self.server_port = g.config["Controller"]["server_port"]
         self.websocket_port = g.config["Controller"]["websocket_port"]
-
         print("============================")
         print(f"https://{self.server_ip}:{self.server_port}")
         print("============================")
+
+        # OSC server variables
+        self.osc_server = None
+        self.osc_server_thread = None
+
+        # Set up OSC server
+        self.setup_osc_server()
 
     def setup_routes(self):
         self.app.add_url_rule('/', 'home', self.home)
@@ -74,15 +85,18 @@ class ControllerApp(QThread):
 
     def home(self):
         self.server_ip = self.get_server_ip()
-        return render_template('index.html', server_ip=self.server_ip, server_port=self.websocket_port, send_interval=g.config["Controller"]["send_interval"])
+        return render_template('index.html', server_ip=self.server_ip, server_port=self.websocket_port,
+                               send_interval=g.config["Controller"]["send_interval"])
 
     def left_controller(self):
         self.server_ip = self.get_server_ip()
-        return render_template('controller.html', hand='Left', server_ip=self.server_ip, server_port=self.websocket_port, send_interval=g.config["Controller"]["send_interval"])
+        return render_template('controller.html', hand='Left', server_ip=self.server_ip,
+                               server_port=self.websocket_port, send_interval=g.config["Controller"]["send_interval"])
 
     def right_controller(self):
         self.server_ip = self.get_server_ip()
-        return render_template('controller.html', hand='Right', server_ip=self.server_ip, server_port=self.websocket_port, send_interval=g.config["Controller"]["send_interval"])
+        return render_template('controller.html', hand='Right', server_ip=self.server_ip,
+                               server_port=self.websocket_port, send_interval=g.config["Controller"]["send_interval"])
 
     async def websocket_handler(self, websocket, path):
         self.websocket_clients.add(websocket)
@@ -91,11 +105,9 @@ class ControllerApp(QThread):
                 data = json.loads(message)
                 hand = data.get('hand')
                 controller = self.controllers.get(hand)
-
                 if not controller:
                     await websocket.send(json.dumps({"status": "error", "message": "Invalid controller"}))
                     continue
-
                 quaternion = data.get('quaternion', {})
                 controller.w = quaternion.get('w', 0)
                 controller.x = quaternion.get('x', 0)
@@ -103,7 +115,6 @@ class ControllerApp(QThread):
                 controller.z = quaternion.get('z', 0)
                 controller.joystick = tuple(data.get('joystick', (0, 0)))
                 controller.joystickClicked = data.get('joystickClicked', False)
-
                 for btn in controller.buttons.keys():
                     if btn in data.get('buttons', {}):
                         controller.buttons[btn] = data['buttons'][btn]
@@ -116,41 +127,33 @@ class ControllerApp(QThread):
         if g.config["Smoothing"]["enable"]:
             index_offset = 92 if hand_name == "Left" else 98
             finger_offset = 104 if hand_name == "Left" else 109
-
             g.latest_data[index_offset] = hand_position[0]
             g.latest_data[index_offset + 1] = hand_position[1]
             g.latest_data[index_offset + 2] = hand_position[2]
-
             g.latest_data[index_offset + 3] = wrist_rot[0]
             g.latest_data[index_offset + 4] = wrist_rot[1]
             g.latest_data[index_offset + 5] = wrist_rot[2]
-
             for i, finger_state in enumerate(finger_states):
                 g.latest_data[finger_offset + i] = finger_state
         else:
             for i, val in enumerate(wrist_rot):
                 g.data[f"{hand_name}ControllerRotation"][i]["v"] = val
-
             for i, val in enumerate(hand_position):
                 g.data[f"{hand_name}ControllerPosition"][i]["v"] = val
-
             for i, finger_state in enumerate(finger_states):
                 g.data[f"{hand_name}ControllerFinger"][i]["v"] = finger_state
 
     def controller_handling(self, controller, is_left):
         hand_name = "Left" if is_left else "Right"
         prev_state = self.previous_states[hand_name]
-
         # Check joystick state
         if controller.joystick != prev_state["joystick"]:
             g.controller.send_joystick(is_left, 1, controller.joystick[0], -controller.joystick[1])
             prev_state["joystick"] = controller.joystick
-
         # Check joystick click state
         if controller.joystickClicked != prev_state["joystickClicked"]:
             g.controller.send_joystick_click(is_left, 1, 1 if controller.joystickClicked else 0)
             prev_state["joystickClicked"] = controller.joystickClicked
-
         # Check button states
         for btn, state in controller.buttons.items():
             if state != prev_state["buttons"][btn]:
@@ -170,14 +173,12 @@ class ControllerApp(QThread):
     def update_controller(self, hand, controller):
         if controller.w == 0 and controller.x == 0 and controller.y == 0 and controller.z == 0:
             return
-
         if hand == "Left" and g.config["Tracking"]["LeftController"]["enable"]:
             rotation = R.from_quat([controller.x, controller.y, controller.z, controller.w])
             euler_angles = rotation.as_euler('xyz', degrees=True)
             wrist_rot = [-euler_angles[0], euler_angles[1], -euler_angles[2]]
             self.controller_handling(controller, True)
             self.update_controller_data(hand, [0.0, 0.0, 0.0], wrist_rot, [1, 1, 1, 1, 1])
-
         if hand == "Right" and g.config["Tracking"]["RightController"]["enable"]:
             rotation = R.from_quat([controller.x, controller.y, controller.z, controller.w])
             euler_angles = rotation.as_euler('xyz', degrees=True)
@@ -187,9 +188,16 @@ class ControllerApp(QThread):
 
     async def start_websocket_server(self):
         ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
-        ssl_context.load_cert_chain(certfile="./templates/ssl/cert.pem", keyfile="./templates/ssl/key.pem")  # 替换为你的证书和密钥文件路径
+        ssl_context.load_cert_chain(certfile="./templates/ssl/cert.pem",
+                                    keyfile="./templates/ssl/key.pem")
+        # 创建socket并设置SO_REUSEADDR
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        sock.bind(("0.0.0.0", self.websocket_port))
+        sock.listen()
+        # 使用该socket启动服务器
         self.websocket_server = await websockets.serve(
-            self.websocket_handler, "0.0.0.0", 8889, ssl=ssl_context
+            self.websocket_handler, sock=sock, ssl=ssl_context
         )
         return self.websocket_server
 
@@ -201,19 +209,49 @@ class ControllerApp(QThread):
         )
         self.websocket_loop.run_forever()
 
+    def setup_osc_server(self):
+        """Set up the OSC server to receive haptic feedback messages."""
+        self.osc_dispatcher = dispatcher.Dispatcher()
+        self.osc_dispatcher.map("/VMT/Out/Haptic", self.handle_haptic_feedback)
+        self.osc_server = osc_server.ThreadingOSCUDPServer(
+            ("0.0.0.0", g.config["Controller"]["osc_port"]), self.osc_dispatcher
+        )
+
+    def handle_haptic_feedback(self, address, *args):
+        """Handle incoming haptic feedback messages."""
+        if len(args) != 4:
+            print(f"Invalid haptic feedback message: {args}")
+            return
+
+        index, frequency, amplitude, duration = args
+        index = int(index)
+        frequency = float(frequency)
+        amplitude = float(amplitude)
+        duration = float(duration)
+
+        print(
+            f"Received haptic feedback: Index={index}, Frequency={frequency}, Amplitude={amplitude}, Duration={duration}")
+
     def run(self):
+        """Start the Flask server, WebSocket server, and OSC server."""
         ssl_context = ("./templates/ssl/cert.pem", "./templates/ssl/key.pem")
         self.server = make_server('0.0.0.0', self.server_port, self.app, ssl_context=ssl_context)
         self.server_thread = threading.Thread(target=self.server.serve_forever)
         self.server_thread.daemon = True
         self.server_thread.start()
 
-        # 启动WebSocket服务器
+        # Start WebSocket server
         self.websocket_thread = threading.Thread(target=self.run_websocket_server)
         self.websocket_thread.daemon = True
         self.websocket_thread.start()
 
+        # Start OSC server
+        self.osc_server_thread = threading.Thread(target=self.osc_server.serve_forever)
+        self.osc_server_thread.daemon = True
+        self.osc_server_thread.start()
+
     def stop(self):
+        """Stop all running servers."""
         self.requestInterruption()
         if hasattr(self, 'server'):
             self.server.shutdown()
@@ -230,9 +268,18 @@ class ControllerApp(QThread):
                     task.cancel()
                 await asyncio.gather(*tasks, return_exceptions=True)
                 self.websocket_loop.stop()
+
             asyncio.run_coroutine_threadsafe(shutdown(), self.websocket_loop)
         if self.websocket_thread:
             self.websocket_thread.join()
+
+        # Stop OSC server
+        if self.osc_server:
+            self.osc_server.shutdown()
+            self.osc_server.server_close()
+        if self.osc_server_thread:
+            self.osc_server_thread.join()
+
 
 if __name__ == '__main__':
     controller_app = ControllerApp()

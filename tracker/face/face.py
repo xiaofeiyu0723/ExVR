@@ -84,9 +84,9 @@ def face_pred_handling(detection_result, output_image, timestamp_ms, tongue_mode
             continue
 
         # Head Image Position
-        g.head_pos[0] = detection_result.face_landmarks[0][4].x
-        g.head_pos[1] = detection_result.face_landmarks[0][4].y
-        g.head_pos[2] = detection_result.face_landmarks[0][4].z
+        head_image_position_x = detection_result.face_landmarks[0][4].x
+        head_image_position_y = detection_result.face_landmarks[0][4].y
+        head_image_position_z = detection_result.face_landmarks[0][4].z
 
         for i in range(len(detection_result.face_blendshapes[0])):
             if g.config["Smoothing"]["enable"]:
@@ -170,6 +170,11 @@ def face_pred_handling(detection_result, output_image, timestamp_ms, tongue_mode
             g.latest_data[67] = rotation_x
             g.latest_data[68] = rotation_z
             g.latest_data[69] = rotation_y
+
+            g.latest_data[114] = head_image_position_x
+            g.latest_data[115] = head_image_position_y
+            g.latest_data[116] = head_image_position_z
+
         else:
             # Head Blendshape
             g.data["BlendShapes"][53]["v"] = 0.0
@@ -199,6 +204,12 @@ def face_pred_handling(detection_result, output_image, timestamp_ms, tongue_mode
             g.data["Rotation"][0]["v"] = rotation_x
             g.data["Rotation"][1]["v"] = rotation_z
             g.data["Rotation"][2]["v"] = rotation_y
+
+            g.data["HeadImagePosition"][0]["v"] = head_image_position_x
+            g.data["HeadImagePosition"][1]["v"] = head_image_position_y
+            g.data["HeadImagePosition"][2]["v"] = head_image_position_z
+
+
 
 
 def initialize_face(tongue_model):

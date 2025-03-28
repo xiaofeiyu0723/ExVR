@@ -3,8 +3,9 @@
         "priority": "REALTIME_PRIORITY_CLASS",
         "flip_x": false,
         "flip_y": false,
-        "camera_width": 1280,
-        "camera_height": 720
+        "camera_width": 640,
+        "camera_height": 480,
+        "camera_fps": 30
     },
     "Hotkey": {
         "enable": true
@@ -18,7 +19,8 @@
     "Controller": {
         "send_interval": 30,
         "server_port": 8888,
-        "websocket_port": 8889
+        "websocket_port": 8889,
+        "osc_port": 39571
     },
     "Tracking": {
         "LeftController": {
@@ -66,18 +68,25 @@
             "y_scalar": 1.0,
             "z_scalar": 0.5,
             "z_shifting": 1.5,
-            "hand_confidence": 0.3,
+            "hand_confidence": 0.0,
             "enable_hand_auto_reset": true,
+            "trigger_threshold": 0.6,
+            "finger_action_threshold": 10,
             "hand_detection_upper_threshold": 100,
-            "hand_detection_lower_threshold": 6,
+            "hand_detection_lower_threshold": 10,
+            "queue_length": 2,
+            "movement_threshold":0.3,
             "hand_count_threshold": 6,
             "only_front": true,
             "follow": true
         },
         "Finger": {
             "enable": true,
-            "finger_confidence": 0.7,
-            "finger_threshold": 3
+            "thumb_base": [0, 2], "thumb_tip": [3, 4],"thumb_min": 30,"thumb_max": 70,
+            "index_base": [0, 5], "index_tip": [7, 8], "index_min": 70, "index_max": 120,
+            "middle_base":[0, 9], "middle_tip": [11, 12], "middle_min": 70, "middle_max": 120,
+            "ring_base": [0, 13], "ring_tip": [15, 16], "ring_min": 70, "ring_max": 120,
+            "pinky_base": [0, 17], "pinky_tip": [19, 20], "pinky_min": 70, "pinky_max": 120
         }
     },
     "Model": {
@@ -87,9 +96,9 @@
             "min_tracking_confidence": 0.5
         },
         "Hand": {
-            "model_complexity": 1,
+            "model_complexity": 0,
             "min_hand_detection_confidence": 0.3,
-            "min_tracking_confidence": 0.3
+            "min_tracking_confidence": 0.5
         }
     }
 }

@@ -8,8 +8,7 @@ import cv2
 
 config=setup_config()
 data,default_data = setup_data()
-latest_data = [0.0] * (64 + 6 + 12 + 10 + 12 + 10)
-head_pos = [0, 0, 0]
+latest_data = [0.0] * (64 + 6 + 12 + 10 + 12 + 10 + 3)
 stop_event = Event()
 controller=setup_controller()
 hotkey_config = setup_hotkeys()
@@ -27,8 +26,7 @@ def update_configs():
     global config, data,default_data,latest_data,head_pos,controller,hotkey_config,smoothing_config
     config = setup_config()
     data,default_data=setup_data()
-    latest_data = [0.0] * (64 + 6 + 12 + 10 + 12 + 10)
-    head_pos = [0, 0, 0]
+    latest_data = [0.0] * (64 + 6 + 12 + 10 + 12 + 10 + 3)
     controller=setup_controller()
     hotkey_config=setup_hotkeys()
     smoothing_config=setup_smoothing()
