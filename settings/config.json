@@ -1,10 +1,10 @@
 {
     "Setting": {
-        "priority": "REALTIME_PRIORITY_CLASS",
+        "priority": "HIGH_PRIORITY_CLASS",
         "flip_x": false,
         "flip_y": false,
-        "camera_width": 640,
-        "camera_height": 480,
+        "camera_width": 1280,
+        "camera_height": 720,
         "camera_fps": 30
     },
     "Hotkey": {
@@ -28,14 +28,14 @@
             "base_x": -0.18,
             "base_y": -0.3,
             "base_z": -0.15,
-            "length": 0.35
+            "length": 0.4
         },
         "RightController": {
             "enable": false,
             "base_x": 0.18,
             "base_y": -0.3,
             "base_z": -0.15,
-            "length": 0.35
+            "length": 0.4
         },
         "Head": {
             "enable": true,
@@ -64,13 +64,13 @@
         },
         "Hand": {
             "enable": true,
-            "x_scalar": 1.0,
+            "x_scalar": 1.1,
             "y_scalar": 1.0,
-            "z_scalar": 0.5,
+            "z_scalar": 0.55,
             "z_shifting": 1.5,
             "hand_confidence": 0.0,
             "enable_hand_auto_reset": true,
-            "trigger_threshold": 0.6,
+            "trigger_threshold": 0.5,
             "finger_action_threshold": 10,
             "hand_detection_upper_threshold": 100,
             "hand_detection_lower_threshold": 10,

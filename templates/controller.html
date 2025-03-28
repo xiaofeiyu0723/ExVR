@@ -502,7 +502,7 @@
         })
 
         // Send the message multiple times to ensure it is received
-        for (let i = 0; i < 5; i++) {
+        for (let i = 0; i < 3; i++) {
             if (socket.readyState === WebSocket.OPEN) {
                 socket.send(message);
             }
@@ -621,8 +621,40 @@
         initDoubleClick('grab', 'grab');
     }
 
+    // function initCalibrate() {
+    //     document.getElementById('calibrate').addEventListener('click', () => {
+    //         calibQuaternion = {
+    //             w: rawQuaternion.w,
+    //             x: -rawQuaternion.x,
+    //             y: -rawQuaternion.y,
+    //             z: -rawQuaternion.z
+    //         };
+    //
+    //         // Define a quaternion for a -90 degree rotation around the X axis
+    //         const NinetyDegreesXQuaternion = {
+    //             w: Math.cos(Math.PI / 4),
+    //             x: Math.sin(Math.PI / 4),
+    //             y: 0,
+    //             z: 0
+    //         };
+    //
+    //         // Multiply the calibration quaternion with the extra -90 degree rotation quaternion
+    //         calibQuaternion = multiplyQuaternions(NinetyDegreesXQuaternion, calibQuaternion);
+    //
+    //         console.log('Calibration applied');
+    //     });
+    // }
     function initCalibrate() {
-        document.getElementById('calibrate').addEventListener('click', () => {
+        const calibrateBtn = document.getElementById('calibrate');
+
+        async function handleCalibration() {
+            if (typeof DeviceOrientationEvent.requestPermission === 'function') {
+                const permission = await DeviceOrientationEvent.requestPermission();
+                if (permission !== 'granted') {
+                    return;
+                }
+            }
+
             calibQuaternion = {
                 w: rawQuaternion.w,
                 x: -rawQuaternion.x,
@@ -630,7 +662,6 @@
                 z: -rawQuaternion.z
             };
 
-            // Define a quaternion for a -90 degree rotation around the X axis
             const NinetyDegreesXQuaternion = {
                 w: Math.cos(Math.PI / 4),
                 x: Math.sin(Math.PI / 4),
@@ -638,10 +669,12 @@
                 z: 0
             };
 
-            // Multiply the calibration quaternion with the extra -90 degree rotation quaternion
             calibQuaternion = multiplyQuaternions(NinetyDegreesXQuaternion, calibQuaternion);
+        }
 
-            console.log('Calibration applied');
+        calibrateBtn.addEventListener('touchstart', async (e) => {
+            e.preventDefault();
+            await handleCalibration();
         });
     }
 </script>

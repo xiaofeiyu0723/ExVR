@@ -7,7 +7,7 @@ from scipy.spatial.transform import Rotation as R
 from copy import deepcopy
 import utils.globals as g
 from collections import deque
-from scipy.interpolate import PchipInterpolator
+# from scipy.interpolate import PchipInterpolator
 
 left_position_queue = deque(maxlen=g.config["Tracking"]["Hand"]["queue_length"])
 right_position_queue = deque(maxlen=g.config["Tracking"]["Hand"]["queue_length"])
@@ -175,9 +175,9 @@ def hand_pred_handling(detection_result):
         for idx, (hand, hand_landmarks, hand_world_landmarks) in enumerate(
                 zip(detection_result.multi_handedness, detection_result.multi_hand_landmarks,
                     detection_result.multi_hand_world_landmarks)):
-            if hand.classification[0].score < g.config["Tracking"]["Hand"]["hand_confidence"]:
-                continue
             hand_name = "Right" if hand.classification[0].label == "Left" else "Left"
+            if hand.classification[0].score < g.config["Tracking"]["Hand"]["hand_confidence"] or (g.config["Tracking"]["LeftController"]["enable"] and hand_name=="Left") or (g.config["Tracking"]["RightController"]["enable"] and hand_name=="Right"):
+                continue
 
             if hand_name == "Left":
                 left_hand_detection_counts += 2
