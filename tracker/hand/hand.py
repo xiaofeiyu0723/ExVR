@@ -155,7 +155,7 @@ def predict_hand_position(queue):
 
     return np.array([predicted_x, predicted_y, predicted_z])
 
-finger_action_threshold = 0
+finger_action_threshold = {"Left":0,"Right":0}
 
 def hand_pred_handling(detection_result):
     global left_hand_detection_counts, right_hand_detection_counts, left_position_queue, right_position_queue
@@ -252,11 +252,11 @@ def hand_pred_handling(detection_result):
                     g.controller.send_trigger(True if hand_name=="Left" else False, 0, 1)
                 else:
                     g.controller.send_trigger(True if hand_name=="Left" else False, 0, 0)
-                if finger_1>0.5 and finger_3>0.2 and finger_4 >0.5 and finger_0<0.7 and finger_2<0.4:
-                    finger_action_threshold = g.config["Tracking"]["Hand"]["finger_action_threshold"]
+                if finger_1>0.3 and finger_3>0.3 and finger_4 >0.5 and finger_0<0.7 and finger_2<0.4:
+                    finger_action_threshold[hand_name] = g.config["Tracking"]["Hand"]["finger_action_threshold"]
                 else:
-                    finger_action_threshold = max(0,finger_action_threshold-1)
-                if finger_action_threshold != 0:
+                    finger_action_threshold[hand_name] = max(0,finger_action_threshold[hand_name]-1)
+                if finger_action_threshold[hand_name] != 0:
                     finger_1 = 1.0
                     finger_3 = 1.0
                     finger_4 = 1.0

@@ -1,6 +1,6 @@
 {
     "Setting": {
-        "priority": "HIGH_PRIORITY_CLASS",
+        "priority": "REALTIME_PRIORITY_CLASS",
         "flip_x": false,
         "flip_y": false,
         "camera_width": 1280,
