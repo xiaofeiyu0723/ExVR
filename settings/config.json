@@ -74,9 +74,9 @@
             "finger_action_threshold": 10,
             "hand_detection_upper_threshold": 100,
             "hand_detection_lower_threshold": 10,
-            "position_change_points":[0,1,5,9,13,17],
-            "position_change_threshold": 0.02,
-            "rotation_change_points":[0,1,5,9,13,17],
+            "position_change_points":[0,1,17],
+            "position_change_threshold": 0.03,
+            "rotation_change_points":[0,1,17],
             "rotation_change_threshold": 0.05,
             "queue_length": 2,
             "movement_threshold":0.3,
@@ -87,7 +87,7 @@
         "Finger": {
             "enable": true,
             "thumb_base": [0, 2], "thumb_tip": [3, 4],"thumb_min": 30,"thumb_max": 70,
-            "index_base": [0, 5], "index_tip": [7, 8], "index_min": 70, "index_max": 120,
+            "index_base": [0, 5], "index_tip": [7, 8], "index_min": 80, "index_max": 120,
             "middle_base":[0, 9], "middle_tip": [11, 12], "middle_min": 70, "middle_max": 120,
             "ring_base": [0, 13], "ring_tip": [15, 16], "ring_min": 70, "ring_max": 120,
             "pinky_base": [0, 17], "pinky_tip": [19, 20], "pinky_min": 70, "pinky_max": 120
