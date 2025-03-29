@@ -147,15 +147,15 @@ def joystick_middle_delay(value, index):
 
 
 fingers_enbale_status = {True: False, False: False}
-
-
 def enable_fingers(value=None):
     global fingers_enbale_status
     finger_side = "LeftHandFinger" if value else "RightHandFinger"
     for d in g.data[finger_side]:
         d["e"] = fingers_enbale_status[value]
+    finger_side = "LeftControllerFinger" if value else "RightControllerFinger"
+    for d in g.data[finger_side]:
+        d["e"] = fingers_enbale_status[value]
     fingers_enbale_status[value] = not fingers_enbale_status[value]
-    # print(g.data[finger_side])
 
 
 def set_finger(value=None, index=None):
@@ -166,11 +166,17 @@ def set_finger(value=None, index=None):
         g.default_data[finger_side][index]["v"] = 0.0
     else:
         g.default_data[finger_side][index]["v"] = 1.0
-    # print(g.default_data[finger_side])
+
+    finger_side = "LeftControllerFinger" if value else "RightControllerFinger"
+    for d in g.data[finger_side]:
+        d["e"] = False
+    if g.default_data[finger_side][index]["v"] != 0.0:
+        g.default_data[finger_side][index]["v"] = 0.0
+    else:
+        g.default_data[finger_side][index]["v"] = 1.0
 
 
 def set_fingers(index_str=None): # five set_finger！
-    # print(index_str)
     if "left_fingers" in index_str:
         finger_side = "LeftHandFinger"
     elif "right_fingers" in index_str:
@@ -182,6 +188,19 @@ def set_fingers(index_str=None): # five set_finger！
         d["e"] = False
     for idx, value in enumerate(handlist, start=1):  
         if 0 <= idx - 1 < len(g.default_data[finger_side]):  
+            g.default_data[finger_side][idx - 1]["v"] = value
+
+    if "left_fingers" in index_str:
+        finger_side = "LeftControllerFinger"
+    elif "right_fingers" in index_str:
+        finger_side = "RightControllerFinger"
+    else:
+        return False
+    handlist = [float(i) for i in index_str.split("_")[2:]]
+    for d in g.data[finger_side]:
+        d["e"] = False
+    for idx, value in enumerate(handlist, start=1):
+        if 0 <= idx - 1 < len(g.default_data[finger_side]):
             g.default_data[finger_side][idx - 1]["v"] = value
             # print(g.default_data[finger_side])
 

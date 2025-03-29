@@ -106,6 +106,8 @@ def handling_hand_data(data, default_data):
         get_value(v, v_d)
         for v, v_d in zip(data[f"Right{right_hand_type}Finger"], default_data[f"Right{right_hand_type}Finger"])
     )
+    # print(f"Right{right_hand_type}Finger",finger_r)
+
     g.controller.left_hand.finger = finger_l
     g.controller.right_hand.finger = finger_r
 

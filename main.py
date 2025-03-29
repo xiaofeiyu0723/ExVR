@@ -34,7 +34,8 @@ from ctypes import windll
 from cv2_enumerate_cameras import enumerate_cameras
 
 from tracker.controller.controller import *
-import numpy as np
+import pyuac
+
 
 class VideoCaptureThread(QThread):
     frame_ready = pyqtSignal(QImage)
@@ -726,7 +727,10 @@ class VideoWindow(QMainWindow):
         super().closeEvent(event)
 
 if __name__ == "__main__":
-    app = QApplication(sys.argv)
-    window = VideoWindow()
-    window.show()
-    sys.exit(app.exec_())
+    if not pyuac.isUserAdmin():
+        pyuac.runAsAdmin()
+    else:
+        app = QApplication(sys.argv)
+        window = VideoWindow()
+        window.show()
+        sys.exit(app.exec_())
