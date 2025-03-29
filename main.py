@@ -623,7 +623,16 @@ class VideoWindow(QMainWindow):
 
     def update_frame(self, image):
         if self.video_thread and self.video_thread.show_image:
-            self.image_label.setPixmap(QPixmap.fromImage(image))
+            target_width = self.image_label.width()
+            target_height = self.image_label.height()
+
+            scaled_image = image.scaled(
+                target_width,
+                target_height,
+                Qt.KeepAspectRatio,
+                Qt.SmoothTransformation
+            )
+            self.image_label.setPixmap(QPixmap.fromImage(scaled_image))
             self.image_label.setAlignment(Qt.AlignCenter)
 
     def populate_camera_list(self):
