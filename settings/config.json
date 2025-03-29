@@ -5,7 +5,8 @@
         "flip_y": false,
         "camera_width": 1280,
         "camera_height": 720,
-        "camera_fps": 30
+        "camera_fps": 30,
+        "camera_gamma": 1.0
     },
     "Hotkey": {
         "enable": true

@@ -16,7 +16,7 @@ from PyQt5.QtWidgets import (
     QScrollArea,
     QGridLayout, QSizePolicy
 )
-from PyQt5.QtCore import QThread, pyqtSignal, Qt, QTimer, QEvent
+from PyQt5.QtCore import QThread, pyqtSignal, Qt
 from PyQt5.QtGui import QImage, QPixmap, QDoubleValidator
 
 import cv2
@@ -34,6 +34,7 @@ from ctypes import windll
 from cv2_enumerate_cameras import enumerate_cameras
 
 from tracker.controller.controller import *
+import numpy as np
 
 class VideoCaptureThread(QThread):
     frame_ready = pyqtSignal(QImage)
@@ -48,6 +49,8 @@ class VideoCaptureThread(QThread):
         self.width = width
         self.height = height
         self.fps = fps
+        self.gamma = None
+        self.gamma_lut = None
 
     def run(self):
         self.video_capture = cv2.VideoCapture(self.source, cv2.CAP_ANY)
@@ -64,6 +67,11 @@ class VideoCaptureThread(QThread):
                     rgb_image = cv2.flip(rgb_image, 1)
                 if g.config["Setting"]["flip_y"]:
                     rgb_image = cv2.flip(rgb_image, 0)
+                if self.gamma_lut is None or self.gamma is None or self.gamma != g.config["Setting"]["camera_gamma"]:
+                    self.gamma = g.config["Setting"]["camera_gamma"]
+                    self.gamma_lut = np.array([((i / 255.0) ** (1.0 / g.config["Setting"]["camera_gamma"])) * 255 for i in range(256)]).astype("uint8")
+                if g.config["Setting"]["camera_gamma"]!=1.0:
+                    rgb_image = cv2.LUT(rgb_image, self.gamma_lut)
 
                 self.tracker.process_frames(rgb_image)
                 if self.show_image:
@@ -73,6 +81,7 @@ class VideoCaptureThread(QThread):
                         rgb_image = draw_tongue_position(rgb_image)
                     if g.config["Tracking"]["Hand"]["enable"]:
                         rgb_image = draw_hand_landmarks(rgb_image)
+                    rgb_image = cv2.resize(rgb_image, (640, 480))
                     h, w, ch = rgb_image.shape
                     bytes_per_line = ch * w
                     convert_to_Qt_format = QImage(
@@ -114,7 +123,7 @@ class VideoWindow(QMainWindow):
         layout = QVBoxLayout(central_widget)
         self.image_label = QLabel(self)
         layout.addWidget(self.image_label)
-        self.setMinimumSize(600, 800)  # 调整最小尺寸防止布局尺寸锁定
+        self.setMinimumSize(600, 800)
         self.image_label.setSizePolicy(
             QSizePolicy.Expanding,
             QSizePolicy.Expanding
@@ -311,39 +320,6 @@ class VideoWindow(QMainWindow):
 
         self.video_thread = None
         self.controller_thread = None
-        self.resize_timer = QTimer()
-        self.resize_timer.setSingleShot(True)
-        self.resize_timer.timeout.connect(self.resume_frame_update)
-        self.frame_update_enabled = True
-
-
-    # def create_label(self, text, color):
-    #     label = QLabel(text, self)
-    #     label.setAlignment(Qt.AlignCenter)
-    #     label.setFixedHeight(50)
-    #     label.setStyleSheet(f"background-color: {color}; border: 2px solid black;")
-    #     return label
-
-    # def set_label_state(self, label, color):
-    #     label.setStyleSheet(f"background-color: {color}; border: 2px solid black;")
-
-    def __window_visible(self):
-        return not self.isMinimized() and self.image_label.isVisible()
-
-    def changeEvent(self, event):
-        if event.type() == QEvent.WindowStateChange:
-            if not self.isMinimized() and self.video_thread:
-                self.video_thread.show_image = True  # 恢复
-                # QTimer.singleShot(100, lambda: self.image_label.update())
-        super().changeEvent(event)
-
-    def resizeEvent(self, event):
-        self.frame_update_enabled = False  # 暂停
-        self.resize_timer.start(100)
-        super().resizeEvent(event)
-
-    def resume_frame_update(self):
-        self.frame_update_enabled = True  # 恢复
 
     def save_data(self):
         for i, (key, edits) in enumerate(self.lineEdits.items()):
@@ -646,24 +622,9 @@ class VideoWindow(QMainWindow):
         return 0
 
     def update_frame(self, image):
-        if self.isMinimized() or not self.image_label.isVisible():
-            return
-        if not self.frame_update_enabled:
-            return
         if self.video_thread and self.video_thread.show_image:
-            target_width = self.image_label.width()
-            target_height = self.image_label.height()
-
-            scaled_image = image.scaled(
-                target_width,
-                target_height,
-                Qt.KeepAspectRatio,
-                Qt.SmoothTransformation
-            )
-            self.image_label.setPixmap(QPixmap.fromImage(scaled_image))
+            self.image_label.setPixmap(QPixmap.fromImage(image))
             self.image_label.setAlignment(Qt.AlignCenter)
-            QApplication.processEvents()
-
 
     def populate_camera_list(self):
         devices = enumerate_cameras(cv2.CAP_ANY)
