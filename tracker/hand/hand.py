@@ -170,7 +170,6 @@ def hand_is_changed(key, hand_name,hand_landmarks,change_points,change_threshold
     if len(change_points)==0:
         return True
     current_keypoints = [hand_landmarks.landmark[i] for i in change_points]
-    bouding_keypoints = [hand_landmarks.landmark[i] for i in [0,1,5,9,13,17]]
     if key not in prev_hand_landmarks:
         prev_hand_landmarks[key] = {}
     if hand_name in prev_hand_landmarks[key]:
@@ -178,9 +177,8 @@ def hand_is_changed(key, hand_name,hand_landmarks,change_points,change_threshold
         distances = [np.linalg.norm(np.array([current_keypoints[i].x, current_keypoints[i].y]) - np.array(
             [prev_keypoints[i].x, prev_keypoints[i].y])) for i in range(len(current_keypoints))]
         avg_distance = np.mean(distances)
-        width, height, _, _, _, _ = compute_bounding_box(bouding_keypoints)
+        width, height, _, _, _, _ = compute_bounding_box(current_keypoints)
         norm_distance = avg_distance / np.sqrt(width ** 2 + height ** 2)
-        print(norm_distance)
         if norm_distance>change_threshold:
             prev_hand_landmarks[key][hand_name] = current_keypoints
             return True
