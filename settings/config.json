@@ -5,8 +5,7 @@
         "flip_y": false,
         "camera_width": 1280,
         "camera_height": 720,
-        "camera_fps": 30,
-        "camera_gamma": 1.0
+        "camera_fps": 30
     },
     "Hotkey": {
         "enable": true
@@ -75,6 +74,10 @@
             "finger_action_threshold": 10,
             "hand_detection_upper_threshold": 100,
             "hand_detection_lower_threshold": 10,
+            "position_change_points":[0,1,5,9,13,17],
+            "position_change_threshold": 0.02,
+            "rotation_change_points":[0,1,5,9,13,17],
+            "rotation_change_threshold": 0.05,
             "queue_length": 2,
             "movement_threshold":0.3,
             "hand_count_threshold": 6,

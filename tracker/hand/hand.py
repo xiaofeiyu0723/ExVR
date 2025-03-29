@@ -155,8 +155,40 @@ def predict_hand_position(queue):
 
     return np.array([predicted_x, predicted_y, predicted_z])
 
-finger_action_threshold = {"Left":0,"Right":0}
 
+def compute_bounding_box(landmarks):
+    points = np.array([(lm.x, lm.y, lm.z) for lm in landmarks])
+    min_x, min_y = points.min(axis=0)[:2]
+    max_x, max_y = points.max(axis=0)[:2]
+    width = max_x - min_x
+    height = max_y - min_y
+    return width, height, min_x, min_y, max_x, max_y
+
+prev_hand_landmarks = {}
+def hand_is_changed(key, hand_name,hand_landmarks,change_points,change_threshold):
+    global prev_hand_landmarks
+    if len(change_points)==0:
+        return True
+    current_keypoints = [hand_landmarks.landmark[i] for i in change_points]
+    if key not in prev_hand_landmarks:
+        prev_hand_landmarks[key] = {}
+    if hand_name in prev_hand_landmarks[key]:
+        prev_keypoints = prev_hand_landmarks[key][hand_name]
+        distances = [np.linalg.norm(np.array([current_keypoints[i].x, current_keypoints[i].y]) - np.array(
+            [prev_keypoints[i].x, prev_keypoints[i].y])) for i in range(len(current_keypoints))]
+        avg_distance = np.mean(distances)
+        width, height, _, _, _, _ = compute_bounding_box(current_keypoints)
+        norm_distance = avg_distance / np.sqrt(width ** 2 + height ** 2)
+        if norm_distance>change_threshold:
+            prev_hand_landmarks[key][hand_name] = current_keypoints
+            return True
+        else:
+            return False
+    else:
+        prev_hand_landmarks[key][hand_name] = current_keypoints
+        return True
+
+finger_action_threshold = {"Left":0,"Right":0}
 def hand_pred_handling(detection_result):
     global left_hand_detection_counts, right_hand_detection_counts, left_position_queue, right_position_queue
     global finger_action_threshold
@@ -178,7 +210,6 @@ def hand_pred_handling(detection_result):
             hand_name = "Right" if hand.classification[0].label == "Left" else "Left"
             if hand.classification[0].score < g.config["Tracking"]["Hand"]["hand_confidence"] or (g.config["Tracking"]["LeftController"]["enable"] and hand_name=="Left") or (g.config["Tracking"]["RightController"]["enable"] and hand_name=="Right"):
                 continue
-
             if hand_name == "Left":
                 left_hand_detection_counts += 2
                 if left_hand_detection_counts > g.config["Tracking"]["Hand"]["hand_detection_upper_threshold"]:
@@ -210,26 +241,20 @@ def hand_pred_handling(detection_result):
                 hand_distance = np.clip(hand_distance, -0.8, 0.0)
 
             hand_position[2] = hand_distance
-
-            # 将hand_position转换为数组
             current_position = np.array([hand_position[0], hand_position[1], hand_position[2]])
-
-            # 获取对应的队列
             queue = left_position_queue if hand_name == "Left" else right_position_queue
-
-            # 检测异常移动
             if queue:
                 predicted_pos = predict_hand_position(queue)
                 if predicted_pos is not None:
                     diff = np.linalg.norm(predicted_pos - current_position)
                     threshold = g.config["Tracking"]["Hand"]["movement_threshold"]
-                    # print(diff,threshold)
                     if diff > threshold:
                         queue.append(current_position.copy())
                         continue
-
-            # 将当前位置加入队列
             queue.append(current_position.copy())
+
+            position_change_flag = hand_is_changed("position",hand_name,hand_landmarks,g.config["Tracking"]["Hand"]["position_change_points"],g.config["Tracking"]["Hand"]["position_change_threshold"])
+            rotation_change_flag = hand_is_changed("rotation",hand_name,hand_landmarks,g.config["Tracking"]["Hand"]["rotation_change_points"],g.config["Tracking"]["Hand"]["rotation_change_threshold"])
 
             z = hand_pose[0] - hand_pose[17]
             x = np.cross(hand_pose[1] - hand_pose[0], z)
@@ -268,13 +293,14 @@ def hand_pred_handling(detection_result):
 
             if hand_name == "Left":
                 if g.config["Smoothing"]["enable"]:
-                    g.latest_data[73] = wrist_rot[0]
-                    g.latest_data[74] = wrist_rot[1]
-                    g.latest_data[75] = wrist_rot[2]
-
-                    g.latest_data[70] = hand_position[0]
-                    g.latest_data[71] = hand_position[1]
-                    g.latest_data[72] = hand_position[2]
+                    if rotation_change_flag:
+                        g.latest_data[73] = wrist_rot[0]
+                        g.latest_data[74] = wrist_rot[1]
+                        g.latest_data[75] = wrist_rot[2]
+                    if position_change_flag:
+                        g.latest_data[70] = hand_position[0]
+                        g.latest_data[71] = hand_position[1]
+                        g.latest_data[72] = hand_position[2]
 
                     g.latest_data[82] = finger_0
                     g.latest_data[83] = finger_1
@@ -282,13 +308,14 @@ def hand_pred_handling(detection_result):
                     g.latest_data[85] = finger_3
                     g.latest_data[86] = finger_4
                 else:
-                    g.data["LeftHandRotation"][0]["v"] = wrist_rot[0]
-                    g.data["LeftHandRotation"][1]["v"] = wrist_rot[1]
-                    g.data["LeftHandRotation"][2]["v"] = wrist_rot[2]
-
-                    g.data["LeftHandPosition"][0]["v"] = hand_position[0]
-                    g.data["LeftHandPosition"][1]["v"] = hand_position[1]
-                    g.data["LeftHandPosition"][2]["v"] = hand_position[2]
+                    if rotation_change_flag:
+                        g.data["LeftHandRotation"][0]["v"] = wrist_rot[0]
+                        g.data["LeftHandRotation"][1]["v"] = wrist_rot[1]
+                        g.data["LeftHandRotation"][2]["v"] = wrist_rot[2]
+                    if position_change_flag:
+                        g.data["LeftHandPosition"][0]["v"] = hand_position[0]
+                        g.data["LeftHandPosition"][1]["v"] = hand_position[1]
+                        g.data["LeftHandPosition"][2]["v"] = hand_position[2]
 
                     g.data["LeftHandFinger"][0]["v"] = finger_0
                     g.data["LeftHandFinger"][1]["v"] = finger_1
@@ -298,13 +325,14 @@ def hand_pred_handling(detection_result):
 
             else:
                 if g.config["Smoothing"]["enable"]:
-                    g.latest_data[79] = wrist_rot[0]
-                    g.latest_data[80] = wrist_rot[1]
-                    g.latest_data[81] = wrist_rot[2]
-
-                    g.latest_data[76] = hand_position[0]
-                    g.latest_data[77] = hand_position[1]
-                    g.latest_data[78] = hand_position[2]
+                    if rotation_change_flag:
+                        g.latest_data[79] = wrist_rot[0]
+                        g.latest_data[80] = wrist_rot[1]
+                        g.latest_data[81] = wrist_rot[2]
+                    if position_change_flag:
+                        g.latest_data[76] = hand_position[0]
+                        g.latest_data[77] = hand_position[1]
+                        g.latest_data[78] = hand_position[2]
 
                     g.latest_data[87] = finger_0
                     g.latest_data[88] = finger_1
@@ -312,13 +340,14 @@ def hand_pred_handling(detection_result):
                     g.latest_data[90] = finger_3
                     g.latest_data[91] = finger_4
                 else:
-                    g.data["RightHandRotation"][0]["v"] = wrist_rot[0]
-                    g.data["RightHandRotation"][1]["v"] = wrist_rot[1]
-                    g.data["RightHandRotation"][2]["v"] = wrist_rot[2]
-
-                    g.data["RightHandPosition"][0]["v"] = hand_position[0]
-                    g.data["RightHandPosition"][1]["v"] = hand_position[1]
-                    g.data["RightHandPosition"][2]["v"] = hand_position[2]
+                    if rotation_change_flag:
+                        g.data["RightHandRotation"][0]["v"] = wrist_rot[0]
+                        g.data["RightHandRotation"][1]["v"] = wrist_rot[1]
+                        g.data["RightHandRotation"][2]["v"] = wrist_rot[2]
+                    if position_change_flag:
+                        g.data["RightHandPosition"][0]["v"] = hand_position[0]
+                        g.data["RightHandPosition"][1]["v"] = hand_position[1]
+                        g.data["RightHandPosition"][2]["v"] = hand_position[2]
 
                     g.data["RightHandFinger"][0]["v"] = finger_0
                     g.data["RightHandFinger"][1]["v"] = finger_1

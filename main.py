@@ -49,8 +49,8 @@ class VideoCaptureThread(QThread):
         self.width = width
         self.height = height
         self.fps = fps
-        self.gamma = None
-        self.gamma_lut = None
+        # self.gamma = None
+        # self.gamma_lut = None
 
     def run(self):
         self.video_capture = cv2.VideoCapture(self.source, cv2.CAP_ANY)
@@ -67,11 +67,12 @@ class VideoCaptureThread(QThread):
                     rgb_image = cv2.flip(rgb_image, 1)
                 if g.config["Setting"]["flip_y"]:
                     rgb_image = cv2.flip(rgb_image, 0)
-                if self.gamma_lut is None or self.gamma is None or self.gamma != g.config["Setting"]["camera_gamma"]:
-                    self.gamma = g.config["Setting"]["camera_gamma"]
-                    self.gamma_lut = np.array([((i / 255.0) ** (1.0 / g.config["Setting"]["camera_gamma"])) * 255 for i in range(256)]).astype("uint8")
-                if g.config["Setting"]["camera_gamma"]!=1.0:
-                    rgb_image = cv2.LUT(rgb_image, self.gamma_lut)
+
+                # if self.gamma_lut is None or self.gamma is None or self.gamma != g.config["Setting"]["camera_gamma"]:
+                #     self.gamma = g.config["Setting"]["camera_gamma"]
+                #     self.gamma_lut = np.array([((i / 255.0) ** (1.0 / g.config["Setting"]["camera_gamma"])) * 255 for i in range(256)]).astype("uint8")
+                # if g.config["Setting"]["camera_gamma"]!=1.0:
+                #     rgb_image = cv2.LUT(rgb_image, self.gamma_lut)
 
                 self.tracker.process_frames(rgb_image)
                 if self.show_image:
@@ -191,6 +192,17 @@ class VideoWindow(QMainWindow):
         self.show_frame_button = QPushButton("Show Frame", self)
         self.show_frame_button.clicked.connect(self.toggle_video_display)
         layout.addWidget(self.show_frame_button)
+
+        # gamma_layout = QHBoxLayout()
+        # self.gamma_slider=QSlider(Qt.Horizontal)
+        # self.gamma_slider.setRange(10, 500)
+        # self.gamma_slider.setSingleStep(1)
+        # self.gamma_label = QLabel(f"gamma {g.config['Setting']['camera_gamma']:.2f}")
+        # self.gamma_slider.valueChanged.connect(lambda value: self.set_scalar(value, "gamma"))
+        # gamma_layout.addWidget(self.gamma_label)
+        # gamma_layout.addWidget(self.gamma_slider)
+        # layout.addLayout(gamma_layout)
+
 
         separator_0 = QFrame(self)
         separator_0.setFrameShape(
@@ -427,6 +439,9 @@ class VideoWindow(QMainWindow):
 
     def set_scalar(self, value, axis):
         scalar_value = value / 100.0
+        # if axis == "gamma":
+        #     g.config["Setting"]["camera_gamma"] = scalar_value
+        #     self.gamma_label.setText(f"gamma {scalar_value:.2f}")
         if axis == "x":
             g.config["Tracking"]["Hand"]["x_scalar"] = scalar_value
             self.label1.setText(f"x {scalar_value:.2f}")
@@ -437,13 +452,17 @@ class VideoWindow(QMainWindow):
             g.config["Tracking"]["Hand"]["z_scalar"] = scalar_value
             self.label3.setText(f"z {scalar_value:.2f}")
 
+
     def update_sliders(self):
+        # camera_gamma = g.config["Setting"]["camera_gamma"]
         x_scalar = g.config["Tracking"]["Hand"]["x_scalar"]
         y_scalar = g.config["Tracking"]["Hand"]["y_scalar"]
         z_scalar = g.config["Tracking"]["Hand"]["z_scalar"]
+        # self.gamma_slider.setValue(int(camera_gamma * 100))
         self.slider1.setValue(int(x_scalar * 100))
         self.slider2.setValue(int(y_scalar * 100))
         self.slider3.setValue(int(z_scalar * 100))
+        # self.gamma_label.setText(f"gamma {camera_gamma:.2f}")
         self.label1.setText(f"x {x_scalar:.2f}")
         self.label2.setText(f"y {y_scalar:.2f}")
         self.label3.setText(f"z {z_scalar:.2f}")
