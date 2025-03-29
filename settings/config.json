@@ -75,7 +75,7 @@
             "hand_detection_upper_threshold": 100,
             "hand_detection_lower_threshold": 10,
             "position_change_points":[0,1,17],
-            "position_change_threshold": 0.03,
+            "position_change_threshold": 0.04,
             "rotation_change_points":[0,1,17],
             "rotation_change_threshold": 0.05,
             "queue_length": 2,
