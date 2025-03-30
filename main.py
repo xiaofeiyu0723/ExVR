@@ -270,14 +270,12 @@ class VideoWindow(QMainWindow):
         self.slider1.setSingleStep(1)
         self.slider2.setSingleStep(1)
         self.slider3.setSingleStep(1)
-        self.label0 = QLabel("Hand Scalar:")
         self.label1 = QLabel(f"x {g.config['Tracking']['Hand']['x_scalar']:.2f}")
         self.label2 = QLabel(f"y {g.config['Tracking']['Hand']['y_scalar']:.2f}")
         self.label3 = QLabel(f"z {g.config['Tracking']['Hand']['z_scalar']:.2f}")
         self.slider1.valueChanged.connect(lambda value: self.set_scalar(value, "x"))
         self.slider2.valueChanged.connect(lambda value: self.set_scalar(value, "y"))
         self.slider3.valueChanged.connect(lambda value: self.set_scalar(value, "z"))
-        slider_layout.addWidget(self.label0)
         slider_layout.addWidget(self.label1)
         slider_layout.addWidget(self.slider1)
         slider_layout.addWidget(self.label2)
@@ -300,18 +298,50 @@ class VideoWindow(QMainWindow):
         # label_layout.addWidget(self.right_label)
         # layout.addLayout(label_layout)
 
-        mobile_checkbox_layout = QHBoxLayout()
-        self.mobile_checkbox1 = QCheckBox("Left Controller", self)
-        self.mobile_checkbox1.clicked.connect(
-            lambda: self.set_tracking_config("LeftController", self.mobile_checkbox1.isChecked())
+        controller_checkbox_layout = QHBoxLayout()
+        self.controller_checkbox1 = QCheckBox("Left Controller", self)
+        self.controller_checkbox1.clicked.connect(
+            lambda: self.set_tracking_config("LeftController", self.controller_checkbox1.isChecked())
         )
-        self.mobile_checkbox2 = QCheckBox("Right Controller", self)
-        self.mobile_checkbox2.clicked.connect(
-            lambda: self.set_tracking_config("RightController", self.mobile_checkbox2.isChecked())
+        self.controller_checkbox2 = QCheckBox("Right Controller", self)
+        self.controller_checkbox2.clicked.connect(
+            lambda: self.set_tracking_config("RightController", self.controller_checkbox2.isChecked())
         )
-        mobile_checkbox_layout.addWidget(self.mobile_checkbox1)
-        mobile_checkbox_layout.addWidget(self.mobile_checkbox2)
-        layout.addLayout(mobile_checkbox_layout)
+        controller_checkbox_layout.addWidget(self.controller_checkbox1)
+        controller_checkbox_layout.addWidget(self.controller_checkbox2)
+        layout.addLayout(controller_checkbox_layout)
+
+        controller_slider_layout = QHBoxLayout()
+        self.controller_slider_x = QSlider(Qt.Horizontal)
+        self.controller_slider_y = QSlider(Qt.Horizontal)
+        self.controller_slider_z = QSlider(Qt.Horizontal)
+        self.controller_slider_l = QSlider(Qt.Horizontal)
+        self.controller_slider_x.setRange(-50, 50)
+        self.controller_slider_y.setRange(-50, 50)
+        self.controller_slider_z.setRange(-50, 50)
+        self.controller_slider_l.setRange(0, 100)
+        self.controller_slider_x.setSingleStep(1)
+        self.controller_slider_y.setSingleStep(1)
+        self.controller_slider_z.setSingleStep(1)
+        self.controller_slider_l.setSingleStep(1)
+        self.controller_label_x = QLabel(f"x {g.config['Tracking']['LeftController']['base_x']:.2f}")
+        self.controller_label_y = QLabel(f"y {g.config['Tracking']['LeftController']['base_y']:.2f}")
+        self.controller_label_z = QLabel(f"z {g.config['Tracking']['LeftController']['base_z']:.2f}")
+        self.controller_label_l = QLabel(f"l {g.config['Tracking']['LeftController']['length']:.2f}")
+        self.controller_slider_x.valueChanged.connect(lambda value: self.set_scalar(value, "controller_x"))
+        self.controller_slider_y.valueChanged.connect(lambda value: self.set_scalar(value, "controller_y"))
+        self.controller_slider_z.valueChanged.connect(lambda value: self.set_scalar(value, "controller_z"))
+        self.controller_slider_l.valueChanged.connect(lambda value: self.set_scalar(value, "controller_l"))
+        controller_slider_layout.addWidget(self.controller_label_x)
+        controller_slider_layout.addWidget(self.controller_slider_x)
+        controller_slider_layout.addWidget(self.controller_label_y)
+        controller_slider_layout.addWidget(self.controller_slider_y)
+        controller_slider_layout.addWidget(self.controller_label_z)
+        controller_slider_layout.addWidget(self.controller_slider_z)
+        controller_slider_layout.addWidget(self.controller_label_l)
+        controller_slider_layout.addWidget(self.controller_slider_l)
+        layout.addLayout(controller_slider_layout)
+
 
         separator_2 = QFrame(self)
         separator_2.setFrameShape(
@@ -445,24 +475,39 @@ class VideoWindow(QMainWindow):
         self.checkbox2.setChecked(g.config["Tracking"]["Face"]["enable"])
         self.checkbox3.setChecked(g.config["Tracking"]["Tongue"]["enable"])
         self.checkbox4.setChecked(g.config["Tracking"]["Hand"]["enable"])
-        self.mobile_checkbox1.setChecked(g.config["Tracking"]["LeftController"]["enable"])
-        self.mobile_checkbox2.setChecked(g.config["Tracking"]["RightController"]["enable"])
+        self.controller_checkbox1.setChecked(g.config["Tracking"]["LeftController"]["enable"])
+        self.controller_checkbox2.setChecked(g.config["Tracking"]["RightController"]["enable"])
 
     def set_scalar(self, value, axis):
-        scalar_value = value / 100.0
+        slider_value = value / 100.0
         # if axis == "gamma":
-        #     g.config["Setting"]["camera_gamma"] = scalar_value
-        #     self.gamma_label.setText(f"gamma {scalar_value:.2f}")
+        #     g.config["Setting"]["camera_gamma"] = slider_value
+        #     self.gamma_label.setText(f"gamma {slider_value:.2f}")
         if axis == "x":
-            g.config["Tracking"]["Hand"]["x_scalar"] = scalar_value
-            self.label1.setText(f"x {scalar_value:.2f}")
+            g.config["Tracking"]["Hand"]["x_scalar"] = slider_value
+            self.label1.setText(f"x {slider_value:.2f}")
         elif axis == "y":
-            g.config["Tracking"]["Hand"]["y_scalar"] = scalar_value
-            self.label2.setText(f"y {scalar_value:.2f}")
+            g.config["Tracking"]["Hand"]["y_scalar"] = slider_value
+            self.label2.setText(f"y {slider_value:.2f}")
         elif axis == "z":
-            g.config["Tracking"]["Hand"]["z_scalar"] = scalar_value
-            self.label3.setText(f"z {scalar_value:.2f}")
-
+            g.config["Tracking"]["Hand"]["z_scalar"] = slider_value
+            self.label3.setText(f"z {slider_value:.2f}")
+        elif axis == "controller_x":
+            g.config["Tracking"]["LeftController"]["base_x"] = slider_value
+            g.config["Tracking"]["RightController"]["base_x"] = -slider_value
+            self.controller_label_x.setText(f"x {slider_value:.2f}")
+        elif axis == "controller_y":
+            g.config["Tracking"]["LeftController"]["base_y"] = slider_value
+            g.config["Tracking"]["RightController"]["base_y"] = slider_value
+            self.controller_label_y.setText(f"y {slider_value:.2f}")
+        elif axis == "controller_z":
+            g.config["Tracking"]["LeftController"]["base_z"] = slider_value
+            g.config["Tracking"]["RightController"]["base_z"] = slider_value
+            self.controller_label_z.setText(f"z {slider_value:.2f}")
+        elif axis == "controller_l":
+            g.config["Tracking"]["LeftController"]["length"] = slider_value
+            g.config["Tracking"]["RightController"]["length"] = slider_value
+            self.controller_label_l.setText(f"l {slider_value:.2f}")
 
     def update_sliders(self):
         # camera_gamma = g.config["Setting"]["camera_gamma"]
@@ -477,6 +522,20 @@ class VideoWindow(QMainWindow):
         self.label1.setText(f"x {x_scalar:.2f}")
         self.label2.setText(f"y {y_scalar:.2f}")
         self.label3.setText(f"z {z_scalar:.2f}")
+
+        controller_x = g.config["Tracking"]["LeftController"]["base_x"]
+        controller_y = g.config["Tracking"]["LeftController"]["base_y"]
+        controller_z = g.config["Tracking"]["LeftController"]["base_z"]
+        controller_l = g.config["Tracking"]["LeftController"]["length"]
+        self.controller_slider_x.setValue(int(controller_x * 100))
+        self.controller_slider_y.setValue(int(controller_y * 100))
+        self.controller_slider_z.setValue(int(controller_z * 100))
+        self.controller_slider_l.setValue(int(controller_l * 100))
+        self.controller_label_x.setText(f"x {controller_x:.2f}")
+        self.controller_label_y.setText(f"y {controller_y:.2f}")
+        self.controller_label_z.setText(f"z {controller_z:.2f}")
+        self.controller_label_l.setText(f"l {controller_l:.2f}")
+
 
     def reset_hotkeys(self):
         stop_hotkeys()

@@ -9,13 +9,19 @@ import time
 from werkzeug.serving import make_server
 from scipy.spatial.transform import Rotation as R
 import utils.globals as g
+from utils.json_manager import load_json
 import websockets
 import ssl
 import netifaces
 from pythonosc import dispatcher
 from pythonosc import osc_server
 import socket
+from copy import deepcopy
 
+
+def setup_gestures():
+    gesture_config = load_json("./settings/gestures.json")
+    return gesture_config
 
 @dataclass
 class ControllerState:
@@ -23,9 +29,14 @@ class ControllerState:
     x: float = 0
     y: float = 0
     z: float = 0
+    slider: float = 0
+    sliderClicked: bool = False
+    dial: tuple = (0, 0)
+    dialClicked: bool = False
     joystick: tuple = (0, 0)
     joystickClicked: bool = False
     buttons: dict = None
+    fingers: list = None
 
 
 class ControllerApp(QThread):
@@ -40,9 +51,9 @@ class ControllerApp(QThread):
         }
         # Initialize previous button states
         self.previous_states = {
-            "Left": {"joystick": (0, 0), "joystickClicked": False,
+            "Left": {"fingers":[1,1,1,1,1],"slider": 0, "sliderClicked":False, "dial": (0, 0),"dialClicked": False , "joystick": (0, 0), "joystickClicked": False,
                      "buttons": {btn: False for btn in self.controllers["Left"].buttons}},
-            "Right": {"joystick": (0, 0), "joystickClicked": False,
+            "Right": {"fingers":[1,1,1,1,1],"slider": 0, "sliderClicked":False, "dial": (0, 0), "dialClicked": False, "joystick": (0, 0), "joystickClicked": False,
                       "buttons": {btn: False for btn in self.controllers["Right"].buttons}}
         }
         self.setup_routes()
@@ -91,12 +102,12 @@ class ControllerApp(QThread):
     def left_controller(self):
         self.server_ip = self.get_server_ip()
         return render_template('controller.html', hand='Left', server_ip=self.server_ip,
-                               server_port=self.websocket_port, send_interval=g.config["Controller"]["send_interval"])
+                               server_port=self.websocket_port, send_interval=g.config["Controller"]["send_interval"],gestures=g.gesture_config["Gestures"])
 
     def right_controller(self):
         self.server_ip = self.get_server_ip()
         return render_template('controller.html', hand='Right', server_ip=self.server_ip,
-                               server_port=self.websocket_port, send_interval=g.config["Controller"]["send_interval"])
+                               server_port=self.websocket_port, send_interval=g.config["Controller"]["send_interval"],gestures=g.gesture_config["Gestures"])
 
     async def websocket_handler(self, websocket, path):
         self.websocket_clients.add(websocket)
@@ -113,8 +124,13 @@ class ControllerApp(QThread):
                 controller.x = quaternion.get('x', 0)
                 controller.y = quaternion.get('y', 0)
                 controller.z = quaternion.get('z', 0)
+                controller.slider = data.get('slider', (0, 0))
+                controller.sliderClicked = data.get('sliderClicked', False)
+                controller.dial = tuple(data.get('dial', (0, 0)))
+                controller.dialClicked = data.get('dialClicked', False)
                 controller.joystick = tuple(data.get('joystick', (0, 0)))
                 controller.joystickClicked = data.get('joystickClicked', False)
+                controller.fingers = data.get('fingers', [1,1,1,1,1])
                 for btn in controller.buttons.keys():
                     if btn in data.get('buttons', {}):
                         controller.buttons[btn] = data['buttons'][btn]
@@ -146,7 +162,30 @@ class ControllerApp(QThread):
     def controller_handling(self, controller, is_left):
         hand_name = "Left" if is_left else "Right"
         prev_state = self.previous_states[hand_name]
-        # Check joystick state
+
+        if controller.fingers != prev_state['fingers']:
+            for d in g.data[f"{hand_name}ControllerFinger"]:
+                d["e"]=False
+            for d in g.data[f"{hand_name}HandFinger"]:
+                d["e"]=False
+            for idx, value in enumerate(controller.fingers):
+                g.default_data[f"{hand_name}ControllerFinger"][idx]["v"] = value
+            prev_state["fingers"] = deepcopy(controller.fingers)
+
+        if controller.slider != 0:
+            temp = g.data["Rotation"][1]["s"]
+            temp += controller.slider * g.config["Controller"]["pitch_scalar"]
+            g.data["Rotation"][1]["s"] = temp % 360
+        if controller.sliderClicked:
+            g.data["Rotation"][1]["s"] = g.default_data["Rotation"][1]["s"]
+
+        if controller.dial[0]!=0 or controller.dial[1]!=0:
+            g.data["Position"][0]["s"] +=  controller.dial[0] * g.config["Controller"]["movement_scalar"]
+            g.data["Position"][2]["s"] += -controller.dial[1] * g.config["Controller"]["movement_scalar"]
+        if controller.dialClicked:
+            g.data["Position"][0]["s"] = g.default_data["Position"][0]["s"]
+            g.data["Position"][2]["s"] = g.default_data["Position"][2]["s"]
+
         if controller.joystick != prev_state["joystick"]:
             g.controller.send_joystick(is_left, 1, controller.joystick[0], -controller.joystick[1])
             prev_state["joystick"] = controller.joystick

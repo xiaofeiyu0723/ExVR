@@ -20,7 +20,9 @@
         "send_interval": 30,
         "server_port": 8888,
         "websocket_port": 8889,
-        "osc_port": 39571
+        "osc_port": 39571,
+        "pitch_scalar": 2.5,
+        "movement_scalar": 5.0
     },
     "Tracking": {
         "LeftController": {

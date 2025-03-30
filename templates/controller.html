@@ -12,6 +12,7 @@
             margin: 0;
             padding: 0;
             background: #000;
+            overflow: hidden;
             touch-action: none;
             height: 100vh;
             display: flex;
@@ -20,23 +21,79 @@
             align-items: center;
             position: relative;
         }
-        {% if hand == 'Right' %}
+
+        .gesture-panel {
+            position: absolute;
+            {% if hand == 'Right' %}
+            right: 18%;
+            {% else %}
+            left: 18%;
+            {% endif %}
+            bottom: 5%;
+            transform: translateY(-50%);
+            width: 60vw;
+            height: 5vh;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 2vw;
+            padding: 1vw;
+            box-shadow: 0 0.5vw 2vw rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            display: flex;
+            {% if hand == 'Right' %}
+            flex-direction: row-reverse;
+            {% else %}
+            flex-direction: row;
+            {% endif %}
+            justify-content: flex-start;
+            overflow-x: auto;
+            padding-bottom: 1vw;
+            padding-left: 1vw;
+        }
+
+        .gesture-grid {
+            display: flex;
+            gap: 0.7vh;
+            height: 100%;
+            justify-content: flex-start;
+            align-items: center;
+            padding: 0 0.5vw;
+        }
+
+        .gesture-item {
+            width: 10vw;
+            height: 10vw;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 1.5vw;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 5vw;
+            color: white;
+            user-select: none;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            -webkit-touch-callout: none;
+            transition: all 0.1s ease;
+            position: relative;
+            flex-shrink: 0;
+        }
+
+        .gesture-item.active {
+            background: rgba(33, 150, 243, 0.3);
+            border-color: var(--primary-color);
+            box-shadow: 0 0 1.5vw rgba(33, 150, 243, 0.3);
+            transform: scale(0.95);
+        }
+
         .joystick-area {
             position: absolute;
+            {% if hand == 'Right' %}
             right: 27%;
-            bottom: 30%;
-            width: 45vw; /* Use viewport width for joystick area size */
-            height: 45vw; /* Keep aspect ratio consistent */
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 50%;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-        {% else %}
-        .joystick-area {
-            position: absolute;
+            {% else %}
             left: 27%;
+            {% endif %}
             bottom: 30%;
             width: 45vw; /* Use viewport width for joystick area size */
             height: 45vw; /* Keep aspect ratio consistent */
@@ -46,7 +103,6 @@
             justify-content: center;
             align-items: center;
         }
-        {% endif %}
         .joystick-thumb {
             width: 12vw; /* Use viewport width for thumb size */
             height: 12vw; /* Keep aspect ratio consistent */
@@ -60,6 +116,59 @@
         }
         .joystick-thumb.active {
             background: red;
+        }
+        .dial-area {
+            position: absolute;
+            {% if hand == 'Right' %}
+            right: 3%;
+            {% else %}
+            left: 3%;
+            {% endif %}
+            top: 28%;
+            width: 28vw;
+            height: 28vw;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .dial-thumb {
+            width: 7vw;
+            height: 7vw;
+            background: #FFFFFF;
+            border-radius: 50%;
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            transition: transform 0.1s, background 0.1s;
+        }
+        .slider-area {
+            position: absolute;
+            {% if hand == 'Right' %}
+            right: 13%;
+            {% else %}
+            left: 13%;
+            {% endif %}
+            top: 10%;
+            width: 8vw;
+            height: 28vw;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4vw;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+        }
+
+        .slider-thumb {
+            width: 8vw;
+            height: 3vw;
+            background: #FFFFFF;
+            border-radius: 4vw;
+            position: absolute;
+            transition: transform 0.1s;
+            touch-action: none;
         }
         .vr-button {
             width: var(--button-size);
@@ -177,7 +286,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            transition: all 0.2s;
+            transition: all 0.1s;
             z-index: 100;
         }
         .edit-button.active {
@@ -220,6 +329,37 @@
 
 <div class="edit-button" id="resetBtn">
     <div class="edit-button-label">RST</div>
+</div>
+
+<div class="gesture-panel">
+    <div class="gesture-grid">
+        {% if hand == 'Right' %}
+            {% for gesture in gestures|reverse %}
+                <div class="gesture-item"
+                     data-fingers="{{ gesture.fingers | tojson | forceescape }}"
+                     ontouchstart="handleGestureSelect(this)">
+                    {{ gesture.key }}
+                </div>
+            {% endfor %}
+        {% else %}
+            {% for gesture in gestures %}
+                <div class="gesture-item"
+                     data-fingers="{{ gesture.fingers | tojson | forceescape }}"
+                     ontouchstart="handleGestureSelect(this)">
+                    {{ gesture.key }}
+                </div>
+            {% endfor %}
+        {% endif %}
+    </div>
+</div>
+
+
+<div class="slider-area" id="slider-area">
+    <div class="slider-thumb" id="slider"></div>
+</div>
+
+<div class="dial-area" id="dial-area">
+    <div class="dial-thumb" id="dial"></div>
 </div>
 
 <!-- CAL Button at the top center -->
@@ -308,6 +448,10 @@
     };
 
     let state = {
+        slider: 0,
+        sliderClicked: false,
+        dial: [0, 0],
+        dialClicked: false,
         joystick: [0, 0],
         joystickClicked: false,
         buttons: {
@@ -316,7 +460,8 @@
             button1: false,
             trigger: false,
             grab: false
-        }
+        },
+        fingers:[1, 1, 1, 1, 1]
     };
 
     let rawQuaternion = { w: 1, x: 0, y: 0, z: 0 };
@@ -339,7 +484,7 @@
         isEditMode = !isEditMode;
         this.classList.toggle('active');
 
-        document.querySelectorAll('.vr-button, .trigger, .joystick-area, .cube-container').forEach(el => {
+        document.querySelectorAll('.vr-button, .trigger, .joystick-area, .cube-container, .dial-area, .slider-area, .gesture-panel').forEach(el => {
             el.classList.toggle('draggable', isEditMode);
         });
 
@@ -416,9 +561,17 @@
                 }
             });
         }
+        const firstGestureItem = document.querySelector('.gesture-item');
+        if (firstGestureItem) {
+            setTimeout(() => {
+                handleGestureSelect(firstGestureItem);
+            }, 100);
+        }
     });
 
     initJoystick();
+    initDial();
+    initSlider();
     initButtons();
     initTriggers();
     initCalibrate();
@@ -531,14 +684,14 @@
             if (!touchId) {
                 touchId = e.changedTouches[0].identifier;
                 updateJoystick(e);
-                sendState();
+                // sendState();
             }
         });
 
         area.addEventListener('touchmove', e => {
             if (touchId !== null) {
                 updateJoystick(e);
-                sendState();
+                // sendState();
             }
         });
 
@@ -546,7 +699,7 @@
             touchId = null;
             joystick.style.transform = 'translate(-50%, -50%)';
             state.joystick = [0, 0];
-            sendState();
+            // sendState();
         });
 
         joystick.addEventListener('dblclick', () => {
@@ -570,6 +723,125 @@
             const y = (touch.clientY - rect.top - centerY) / centerY;
             updatePosition(x, y);
         }
+    }
+    function initDial() {
+        const dial = document.getElementById('dial');
+        const area = document.getElementById('dial-area');
+        let touchId = null;
+
+        const updatePosition = (x, y) => {
+            const distance = Math.sqrt(x * x + y * y);
+            if (distance > 1) {
+                x /= distance;
+                y /= distance;
+            }
+            state.dial = [
+                Math.abs(x) > CONFIG.deadZone ? x : 0,
+                Math.abs(y) > CONFIG.deadZone ? y : 0
+            ];
+            dial.style.transform = `translate(${x * 200}%, ${y * 200}%) translate(-50%, -50%)`;
+        };
+
+        area.addEventListener('touchstart', e => {
+            if (!touchId) {
+                touchId = e.changedTouches[0].identifier;
+                updateDialPosition(e);
+                // sendState();
+            }
+        });
+
+        area.addEventListener('touchmove', e => {
+            if (touchId !== null) {
+                updateDialPosition(e);
+                // sendState();
+            }
+        });
+
+        area.addEventListener('touchend', () => {
+            touchId = null;
+            dial.style.transform = 'translate(-50%, -50%)';
+            state.dial = [0, 0];
+            // sendState();
+        });
+        dial.addEventListener('dblclick', () => {
+            state.dialClicked = true;
+            sendState();
+            state.dialClicked = false;
+        });
+        function updateDialPosition(e) {
+            const touch = Array.from(e.touches).find(t => t.identifier === touchId);
+            if (!touch) return;
+            const rect = area.getBoundingClientRect();
+            const centerX = rect.width / 2;
+            const centerY = rect.height / 2;
+            const x = (touch.clientX - rect.left - centerX) / centerX;
+            const y = (touch.clientY - rect.top - centerY) / centerY;
+            updatePosition(x, y);
+        }
+    }
+
+    function initSlider() {
+        const slider = document.getElementById('slider');
+        const area = document.getElementById('slider-area');
+        let touchId = null;
+        let isDragging = false;
+
+        const getCenterPosition = () => {
+            const moveRange = area.offsetHeight - slider.offsetHeight;
+            return moveRange / 2;
+        };
+
+        const resetToCenter = () => {
+            slider.style.transition = 'transform 0.1s cubic-bezier(0.25, 0.1, 0.25, 1)';
+            slider.style.transform = `translateY(${getCenterPosition()}px)`;
+            state.slider = 0;
+            sendState();
+        };
+
+        resetToCenter();
+
+        const updatePosition = (clientY) => {
+            const rect = area.getBoundingClientRect();
+            const sliderHeight = slider.offsetHeight;
+            const minY = rect.top + sliderHeight/2;
+            const maxY = rect.bottom - sliderHeight/2;
+            const clampedY = Math.min(Math.max(clientY, minY), maxY);
+            const yPosition = (clampedY - minY) / (maxY - minY);
+            const value = Number(((yPosition * 2) - 1));
+            state.slider = -value;
+            const moveRange = rect.height - sliderHeight;
+            const translateY = yPosition * moveRange;
+            slider.style.transition = 'none';
+            slider.style.transform = `translateY(${translateY}px)`;
+        };
+        area.addEventListener('touchstart', e => {
+            if (!touchId) {
+                isDragging = true;
+                touchId = e.changedTouches[0].identifier;
+                updatePosition(e.touches[0].clientY);
+                // sendState();
+            }
+        });
+        area.addEventListener('touchmove', e => {
+            if (touchId !== null && isDragging) {
+                updatePosition(e.touches[0].clientY);
+                // sendState();
+            }
+        });
+        slider.addEventListener('dblclick', () => {
+            state.sliderClicked = true;
+            sendState();
+            state.sliderClicked = false;
+        });
+        const handleTouchEnd = () => {
+            if (isDragging) {
+                isDragging = false;
+                touchId = null;
+                resetToCenter();
+            }
+        };
+        area.addEventListener('touchend', handleTouchEnd);
+        area.addEventListener('touchcancel', handleTouchEnd);
     }
 
     function initDoubleClick(elementId, stateKey) {
@@ -621,34 +893,10 @@
         initDoubleClick('grab', 'grab');
     }
 
-    // function initCalibrate() {
-    //     document.getElementById('calibrate').addEventListener('click', () => {
-    //         calibQuaternion = {
-    //             w: rawQuaternion.w,
-    //             x: -rawQuaternion.x,
-    //             y: -rawQuaternion.y,
-    //             z: -rawQuaternion.z
-    //         };
-    //
-    //         // Define a quaternion for a -90 degree rotation around the X axis
-    //         const NinetyDegreesXQuaternion = {
-    //             w: Math.cos(Math.PI / 4),
-    //             x: Math.sin(Math.PI / 4),
-    //             y: 0,
-    //             z: 0
-    //         };
-    //
-    //         // Multiply the calibration quaternion with the extra -90 degree rotation quaternion
-    //         calibQuaternion = multiplyQuaternions(NinetyDegreesXQuaternion, calibQuaternion);
-    //
-    //         console.log('Calibration applied');
-    //     });
-    // }
     function initCalibrate() {
         const calibrateBtn = document.getElementById('calibrate');
 
         async function requestIOSPermissions() {
-            // iOS 13+ 需要先检测 DeviceMotionEvent / DeviceOrientationEvent 上是否有 requestPermission
             if (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') {
                 try {
                     const response = await DeviceMotionEvent.requestPermission();
@@ -671,10 +919,8 @@
         calibrateBtn.addEventListener('click', async (e) => {
             e.preventDefault();
 
-            // 第一步：如果在 iOS，需要在用户点击行为里请求权限
             await requestIOSPermissions();
 
-            // 第二步：完成校准
             calibQuaternion = {
                 w: rawQuaternion.w,
                 x: -rawQuaternion.x,
@@ -682,7 +928,6 @@
                 z: -rawQuaternion.z
             };
 
-            // 定义 -90 度绕 X 轴旋转的四元数
             const NinetyDegreesXQuaternion = {
                 w: Math.cos(Math.PI / 4),
                 x: Math.sin(Math.PI / 4),
@@ -690,12 +935,26 @@
                 z: 0
             };
 
-            // 将校准四元数乘以 -90 度绕 X 轴的额外四元数
             calibQuaternion = multiplyQuaternions(NinetyDegreesXQuaternion, calibQuaternion);
 
             console.log('Calibration applied');
         });
     }
+    let activeGesture = null;
+
+    function handleGestureSelect(element) {
+        document.querySelectorAll('.gesture-item').forEach(item => {
+            item.classList.remove('active');
+        });
+
+        element.classList.add('active');
+        activeGesture = element;
+
+        const fingers = JSON.parse(element.dataset.fingers);
+        state.fingers = [fingers[0],fingers[1],fingers[2],fingers[3],fingers[4]];
+        sendState();
+    }
+
 </script>
 </body>
 </html>
