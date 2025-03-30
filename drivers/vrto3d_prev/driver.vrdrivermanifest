@@ -1,0 +1,10 @@
+{
+	"alwaysActivate": true,
+	"name" : "vrto3d",
+	"directory" : "",
+	"resourceOnly" : false,
+	"hmd_presence" :
+	[
+		"*.*"
+	]
+}
