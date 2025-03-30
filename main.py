@@ -32,8 +32,8 @@ from tracker.face.tongue import draw_tongue_position
 from tracker.hand.hand import draw_hand_landmarks
 from ctypes import windll
 from cv2_enumerate_cameras import enumerate_cameras
-
 from tracker.controller.controller import *
+import numpy as np
 import pyuac
 
 
@@ -47,8 +47,16 @@ class VideoCaptureThread(QThread):
         self.is_running = True
         self.show_image = False
         self.tracker = utils.tracking.Tracker()
-        self.width = width
-        self.height = height
+        if width < 640 or height < 480:
+            aspect_ratio = width / height
+            if aspect_ratio == 1280 / 720:
+                self.width, self.height = 1280, 720
+            elif aspect_ratio == 640 / 480:
+                self.width, self.height = 640, 480
+            else:
+                self.width, self.height = width, height
+        else:
+            self.width, self.height = width, height
         self.fps = fps
         # self.gamma = None
         # self.gamma_lut = None
@@ -64,6 +72,8 @@ class VideoCaptureThread(QThread):
             ret, frame = self.video_capture.read()
             if ret:
                 rgb_image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                if g.config["Setting"]["camera_width"]<640 or g.config["Setting"]["camera_height"]<480:
+                    rgb_image = cv2.resize(rgb_image, (g.config["Setting"]["camera_width"], g.config["Setting"]["camera_height"]))
                 if g.config["Setting"]["flip_x"]:
                     rgb_image = cv2.flip(rgb_image, 1)
                 if g.config["Setting"]["flip_y"]:
@@ -667,14 +677,23 @@ class VideoWindow(QMainWindow):
 
     def populate_resolution_list(self):
         resolutions = [
+            (160, 90),
+            (160, 120),
+            (320, 180),
+            (320, 240),
+            (640, 360),
             (640, 480),
+            (800, 450),
+            (800, 600),
             (1280, 720),
             (1920, 1080),
             (2560, 1440),
             (3840, 2160)
         ]
         for width, height in resolutions:
-            self.camera_resolution_selection.addItem(f"{width} x {height}", (width, height))
+            gcd = np.gcd(width, height)
+            aspect_ratio = f"{width // gcd}:{height // gcd}"
+            self.camera_resolution_selection.addItem(f"{width} x {height} ({aspect_ratio})", (width, height))
         config_width = int(g.config["Setting"]["camera_width"])
         config_height = int(g.config["Setting"]["camera_height"])
         config_resolution = (config_width, config_height)
