@@ -29,8 +29,7 @@
             {% else %}
             left: 18%;
             {% endif %}
-            bottom: 5%;
-            transform: translateY(-50%);
+            bottom: 8.5%;
             width: 60vw;
             height: 5vh;
             background: rgba(255, 255, 255, 0.1);
@@ -299,6 +298,7 @@
         .draggable {
             transition: none !important;
             cursor: move;
+            touch-action: none;
         }
 
         {% if hand == 'Right' %}
@@ -592,19 +592,23 @@
 
     document.addEventListener('touchstart', function(e) {
         if (!isEditMode) return;
-
-        selectedElement = e.target.closest('.draggable');
-        if (!selectedElement) return;
-
+        const newSelected = e.target.closest('.draggable');
+        if (!newSelected) return;
         e.preventDefault();
-        const rect = selectedElement.getBoundingClientRect();
 
+        if (selectedElement && selectedElement !== newSelected) {
+            selectedElement.style.transition = '';
+            selectedElement.style.boxShadow = '';
+            const prevId = selectedElement.id || selectedElement.className.match(/[\w-]+/)[0];
+            const prevRect = selectedElement.getBoundingClientRect();
+            positions[prevId] = { x: prevRect.left, y: prevRect.top };
+        }
+        selectedElement = newSelected;
+        const rect = selectedElement.getBoundingClientRect();
         initialX = e.touches[0].clientX - rect.left;
         initialY = e.touches[0].clientY - rect.top;
-
         currentX = rect.left;
         currentY = rect.top;
-
         selectedElement.style.transition = 'none';
         selectedElement.style.boxShadow = '0 0 15px orange';
     });
@@ -778,6 +782,7 @@
         };
 
         area.addEventListener('touchstart', e => {
+            if (isEditMode) return;
             if (!touchId) {
                 touchId = e.changedTouches[0].identifier;
                 updateJoystick(e);
@@ -786,6 +791,8 @@
         });
 
         area.addEventListener('touchmove', e => {
+            if (isEditMode) return;
+
             if (touchId !== null) {
                 updateJoystick(e);
                 // sendState();
@@ -793,6 +800,7 @@
         });
 
         area.addEventListener('touchend', () => {
+            if (isEditMode) return;
             touchId = null;
             joystick.style.transform = 'translate(-50%, -50%)';
             state.joystick = [0, 0];
@@ -800,6 +808,7 @@
         });
 
         joystick.addEventListener('dblclick', () => {
+            if (isEditMode) return;
             state.joystickClicked = !state.joystickClicked;
 
             if (state.joystickClicked) {
@@ -840,6 +849,7 @@
         };
 
         area.addEventListener('touchstart', e => {
+            if (isEditMode) return;
             if (!touchId) {
                 touchId = e.changedTouches[0].identifier;
                 updateDialPosition(e);
@@ -848,6 +858,7 @@
         });
 
         area.addEventListener('touchmove', e => {
+            if (isEditMode) return;
             if (touchId !== null) {
                 updateDialPosition(e);
                 // sendState();
@@ -855,12 +866,14 @@
         });
 
         area.addEventListener('touchend', () => {
+            if (isEditMode) return;
             touchId = null;
             dial.style.transform = 'translate(-50%, -50%)';
             state.dial = [0, 0];
             // sendState();
         });
         dial.addEventListener('dblclick', () => {
+            if (isEditMode) return;
             state.dialClicked = true;
             sendState();
             state.dialClicked = false;
@@ -912,6 +925,7 @@
             slider.style.transform = `translateY(${translateY}px)`;
         };
         area.addEventListener('touchstart', e => {
+            if (isEditMode) return;
             if (!touchId) {
                 isDragging = true;
                 touchId = e.changedTouches[0].identifier;
@@ -920,17 +934,20 @@
             }
         });
         area.addEventListener('touchmove', e => {
+            if (isEditMode) return;
             if (touchId !== null && isDragging) {
                 updatePosition(e.touches[0].clientY);
                 // sendState();
             }
         });
         slider.addEventListener('dblclick', () => {
+            if (isEditMode) return;
             state.sliderClicked = true;
             sendState();
             state.sliderClicked = false;
         });
         const handleTouchEnd = () => {
+            if (isEditMode) return;
             if (isDragging) {
                 isDragging = false;
                 touchId = null;
@@ -944,6 +961,7 @@
     function initDoubleClick(elementId, stateKey) {
         const element = document.getElementById(elementId);
         element.addEventListener('dblclick', () => {
+            if (isEditMode) return;
             state.buttons[stateKey] = !state.buttons[stateKey];
             if (state.buttons[stateKey]) {
                 element.classList.add('active');
@@ -956,12 +974,14 @@
     function initButtons() {
         document.querySelectorAll('.vr-button').forEach(btn => {
             btn.addEventListener('touchstart', () => {
+                if (isEditMode) return;
                 btn.classList.add('active');
                 state.buttons[btn.id] = true;
                 sendState();
             });
 
             btn.addEventListener('touchend', () => {
+                if (isEditMode) return;
                 btn.classList.remove('active');
                 state.buttons[btn.id] = false;
                 sendState();
@@ -973,12 +993,14 @@
         const initTrigger = (id, stateKey) => {
             const trigger = document.getElementById(id);
             trigger.addEventListener('touchstart', () => {
+                if (isEditMode) return;
                 trigger.classList.add('active');
                 state.buttons[stateKey] = true;
                 sendState();
             });
 
             trigger.addEventListener('touchend', () => {
+                if (isEditMode) return;
                 trigger.classList.remove('active');
                 state.buttons[stateKey] = false;
                 sendState();
@@ -1036,6 +1058,7 @@
         }
 
         calibrateBtn.addEventListener('click', async (e) => {
+            if (isEditMode) return;
             e.preventDefault();
 
             await requestIOSPermissions();
@@ -1063,6 +1086,7 @@
     let activeGesture = null;
 
     function handleGestureSelect(element) {
+        if (isEditMode) return;
         document.querySelectorAll('.gesture-item').forEach(item => {
             item.classList.remove('active');
         });
