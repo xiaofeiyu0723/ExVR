@@ -229,12 +229,10 @@ class ControllerApp(QThread):
         ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
         ssl_context.load_cert_chain(certfile="./templates/ssl/cert.pem",
                                     keyfile="./templates/ssl/key.pem")
-        # 创建socket并设置SO_REUSEADDR
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         sock.bind(("0.0.0.0", self.websocket_port))
         sock.listen()
-        # 使用该socket启动服务器
         self.websocket_server = await websockets.serve(
             self.websocket_handler, sock=sock, ssl=ssl_context
         )
@@ -256,21 +254,33 @@ class ControllerApp(QThread):
             ("0.0.0.0", g.config["Controller"]["osc_port"]), self.osc_dispatcher
         )
 
+    async def send_haptic_feedback(self, hand, duration):
+        message = json.dumps({
+            "type": "haptic",
+            "hand": hand,
+            "duration": duration
+        })
+        print(message)
+        for client in self.websocket_clients:
+            try:
+                await client.send(message)
+            except Exception as e:
+                print(f"Error sending haptic feedback: {e}")
+
     def handle_haptic_feedback(self, address, *args):
-        """Handle incoming haptic feedback messages."""
         if len(args) != 4:
-            print(f"Invalid haptic feedback message: {args}")
             return
 
         index, frequency, amplitude, duration = args
-        index = int(index)
-        frequency = float(frequency)
-        amplitude = float(amplitude)
-        duration = float(duration)
-
-        print(
-            f"Received haptic feedback: Index={index}, Frequency={frequency}, Amplitude={amplitude}, Duration={duration}")
-
+        hand = "Left" if index == 1 else "Right"
+        intensity = min(max(amplitude, g.config["Controller"]["haptic_min_amplitude"]), g.config["Controller"]["haptic_max_amplitude"])
+        duration = int(duration * 1000000)
+        duration_ms = intensity * duration * g.config["Controller"]["haptic_strength"]
+        print(duration_ms,intensity,duration)
+        asyncio.run_coroutine_threadsafe(
+            self.send_haptic_feedback(hand, duration_ms),
+            self.websocket_loop
+        )
     def run(self):
         """Start the Flask server, WebSocket server, and OSC server."""
         ssl_context = ("./templates/ssl/cert.pem", "./templates/ssl/key.pem")
