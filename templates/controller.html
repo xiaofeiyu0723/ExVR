@@ -310,6 +310,14 @@
             top: 5%;
             left: 15%;
         }
+        #hapticBtn {
+            top: 5%;
+            left: 25%;
+        }
+        #soundBtn {
+            top: 5%;
+            left: 35%;
+        }
         {% else %}
         .edit-button {
             top: 5%;
@@ -318,6 +326,14 @@
         #resetBtn {
             top: 5%;
             right: 15%;
+        }
+        #hapticBtn {
+            top: 5%;
+            right: 25%;
+        }
+        #soundBtn {
+            top: 5%;
+            right: 35%;
         }
         {% endif %}
     </style>
@@ -330,6 +346,15 @@
 <div class="edit-button" id="resetBtn">
     <div class="edit-button-label">RST</div>
 </div>
+
+<div class="edit-button" id="hapticBtn">
+    <div class="edit-button-label">VIB</div>
+</div>
+
+<div class="edit-button" id="soundBtn">
+    <div class="edit-button-label">SND</div>
+</div>
+
 
 <div class="gesture-panel">
     <div class="gesture-grid">
@@ -430,14 +455,67 @@
 
     const socket = new WebSocket(websocketUrl);
 
+    let audioContext = null;
+
     socket.onopen = function() {
         console.log('WebSocket connection established');
     };
 
     socket.onmessage = function(event) {
         const data = JSON.parse(event.data);
-        console.log('Message received:', data);
+        if (data.type === 'haptic' && data.hand === CONFIG.hand) {
+            if (isHapticMode){
+                triggerHapticFeedback(data.duration);
+            }
+            if (isSoundMode){
+                playVabrationSound(data.duration);
+            }
+        }
     };
+    let isPlaying = false;
+   function playVabrationSound(duration = 100) {
+       if (isPlaying) {
+           console.log('Sound is already playing. Please wait.');
+           return;
+       }
+       if (duration<100 && duration >0){
+          duration = 100;
+       }
+       if (!audioContext) return;
+       try {
+           isPlaying = true;
+
+           const oscillator = audioContext.createOscillator();
+           const gainNode = audioContext.createGain();
+           oscillator.connect(gainNode);
+           gainNode.connect(audioContext.destination);
+           oscillator.type = 'sine';
+           oscillator.frequency.setValueAtTime(140, audioContext.currentTime);
+           gainNode.gain.setValueAtTime(1.0, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration/1000);
+
+           oscillator.start();
+           oscillator.stop(audioContext.currentTime + duration / 1000);
+           oscillator.onended = () => {
+               gainNode.disconnect();
+               oscillator.disconnect();
+               isPlaying = false;
+           };
+       } catch (error) {
+           console.error('Sound playback failed:', error);
+           isPlaying = false;
+       }
+   }
+
+    function triggerHapticFeedback(duration) {
+        try {
+            if (navigator.vibrate) {
+                navigator.vibrate(duration);
+            }
+        } catch (e) {
+            console.warn('Vibration failed:', e);
+        }
+    }
 
     socket.onclose = function() {
         console.log('WebSocket connection closed');
@@ -471,6 +549,8 @@
     const cube = document.getElementById('cube');
 
     let isEditMode = false;
+    let isHapticMode = true;
+    let isSoundMode = false;
     let selectedElement = null;
     let initialX = 0;
     let initialY = 0;
@@ -482,7 +562,7 @@
 
     document.getElementById('editBtn').addEventListener('touchstart', function(e) {
         isEditMode = !isEditMode;
-        this.classList.toggle('active');
+        this.classList.toggle('active', isEditMode);
 
         document.querySelectorAll('.vr-button, .trigger, .joystick-area, .cube-container, .dial-area, .slider-area, .gesture-panel').forEach(el => {
             el.classList.toggle('draggable', isEditMode);
@@ -498,6 +578,17 @@
         localStorage.removeItem(storageKey);
         window.location.reload(); // Reload the page to reset positions
     });
+
+    document.getElementById('hapticBtn').addEventListener('touchstart', function(e) {
+        isHapticMode = !isHapticMode;
+        this.classList.toggle('active', isHapticMode);
+    });
+
+    document.getElementById('soundBtn').addEventListener('touchstart', function(e) {
+        isSoundMode = !isSoundMode;
+        this.classList.toggle('active', isSoundMode);
+    });
+
 
     document.addEventListener('touchstart', function(e) {
         if (!isEditMode) return;
@@ -561,11 +652,16 @@
                 }
             });
         }
-        const firstGestureItem = document.querySelector('.gesture-item');
-        if (firstGestureItem) {
-            setTimeout(() => {
-                handleGestureSelect(firstGestureItem);
-            }, 100);
+
+        document.getElementById('hapticBtn').classList.toggle('active', isHapticMode); // [!code ++]
+
+        const gestureItems = document.querySelectorAll('.gesture-item');
+        if (gestureItems.length > 0) {
+            let selectedGestureItem = gestureItems[0];
+            if (CONFIG.hand=="Right") {
+                selectedGestureItem = gestureItems[gestureItems.length - 1];
+            }
+            handleGestureSelect(selectedGestureItem);
         }
     });
 
@@ -661,6 +757,7 @@
             }
         }
     }
+
 
     function initJoystick() {
         const joystick = document.getElementById('joystick');
@@ -896,6 +993,18 @@
     function initCalibrate() {
         const calibrateBtn = document.getElementById('calibrate');
 
+        async function initAudio() {
+            if (!audioContext) {
+                try {
+                    const AudioContext = window.AudioContext || window.webkitAudioContext;
+                    audioContext = new AudioContext();
+                    console.log('AudioContext initialized');
+                } catch (error) {
+                    console.error('AudioContext initialization failed:', error);
+                }
+            }
+        }
+
         async function requestIOSPermissions() {
             if (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') {
                 try {
@@ -915,12 +1024,23 @@
                 }
             }
         }
+        async function requestVibrationPermission() {
+            try {
+                if (navigator.vibrate && navigator.permissions) {
+                    const status = await navigator.permissions.query({ name: 'vibrate' });
+                    console.log('Vibration permission status:', status.state);
+                }
+            } catch (e) {
+                console.warn('Vibration permission check failed:', e);
+            }
+        }
 
         calibrateBtn.addEventListener('click', async (e) => {
             e.preventDefault();
 
             await requestIOSPermissions();
-
+            await requestVibrationPermission();
+            await initAudio();
             calibQuaternion = {
                 w: rawQuaternion.w,
                 x: -rawQuaternion.x,
