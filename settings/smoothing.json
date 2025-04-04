@@ -5,8 +5,6 @@
             "is_rotation": false,
             "indices": [],
             "shifting": 0,
-            "max_delta": null,
-            "deadzone": null,
             "dt_multiplier": 50
         },
         "EyeBlink": {
@@ -14,8 +12,6 @@
             "is_rotation": false,
             "indices": [9, 10, 19, 20, 21, 22],
             "shifting": 0,
-            "max_delta": 0.2,
-            "deadzone": 0.05,
             "dt_multiplier": 50
         },
         "EyeLook": {
@@ -23,8 +19,6 @@
             "is_rotation": false,
             "indices": [56, 57, 58, 59, 60, 61],
             "shifting": 0,
-            "max_delta": null,
-            "deadzone": null,
             "dt_multiplier": 100
         },
         "TongueOut": {
@@ -32,8 +26,6 @@
             "is_rotation": false,
             "indices": [52],
             "shifting": 0,
-            "max_delta": null,
-            "deadzone": null,
             "dt_multiplier": 20
         },
         "TongueMove": {
@@ -41,8 +33,6 @@
             "is_rotation": false,
             "indices": [62, 63],
             "shifting": 0,
-            "max_delta": 0.5,
-            "deadzone": 0.05,
             "dt_multiplier": 50
         },
         "HeadPosition": {
@@ -50,8 +40,6 @@
             "is_rotation": false,
             "indices": [64, 65, 66],
             "shifting": 64,
-            "max_delta": 15,
-            "deadzone": 1.0,
             "dt_multiplier": 20
         },
         "HeadRotation": {
@@ -59,8 +47,6 @@
             "is_rotation": true,
             "indices": [67, 68, 69],
             "shifting": 67,
-            "max_delta": 20,
-            "deadzone": 2.0,
             "dt_multiplier": 20
         },
         "LeftHandRotation": {
@@ -68,8 +54,6 @@
             "is_rotation": true,
             "indices": [73, 74, 75],
             "shifting": 73,
-            "max_delta": null,
-            "deadzone": null,
             "dt_multiplier": 100,
               "kalman_params": {
                 "q_process": 0.02,
@@ -81,8 +65,6 @@
             "is_rotation": true,
             "indices": [79, 80, 81],
             "shifting": 79,
-            "max_delta": null,
-            "deadzone": null,
             "dt_multiplier": 100,
               "kalman_params": {
                 "q_process": 0.02,
@@ -94,8 +76,6 @@
             "is_rotation": false,
             "indices": [70, 71, 72],
             "shifting": 70,
-            "max_delta": 0.1,
-            "deadzone": 0.01,
             "dt_multiplier": 100,
               "kalman_params": {
                 "q_process": 0.01,
@@ -107,8 +87,6 @@
             "is_rotation": false,
             "indices": [76, 77, 78],
             "shifting": 76,
-            "max_delta": null,
-            "deadzone": null,
             "dt_multiplier": 100,
               "kalman_params": {
                 "q_process": 0.01,
@@ -120,8 +98,6 @@
             "is_rotation": false,
             "indices": [82, 83, 84, 85, 86],
             "shifting": 82,
-            "max_delta": null,
-            "deadzone": null,
             "dt_multiplier": 20
         },
         "RightHandFinger": {
@@ -129,8 +105,6 @@
             "is_rotation": false,
             "indices": [87, 88, 89, 90, 91],
             "shifting": 87,
-            "max_delta": null,
-            "deadzone": null,
             "dt_multiplier": 20
         },
 
@@ -139,8 +113,6 @@
             "is_rotation": true,
             "indices": [95, 96, 97],
             "shifting": 95,
-            "max_delta": null,
-            "deadzone": null,
             "dt_multiplier": 100
         },
         "RightControllerRotation": {
@@ -148,8 +120,6 @@
             "is_rotation": true,
             "indices": [101, 102, 103],
             "shifting": 101,
-            "max_delta": null,
-            "deadzone": null,
             "dt_multiplier": 100
         },
         "LeftControllerPosition": {
@@ -157,8 +127,6 @@
             "is_rotation": false,
             "indices": [92, 93, 94],
             "shifting": 92,
-            "max_delta": 0.1,
-            "deadzone": 0.01,
             "dt_multiplier": 100
         },
         "RightControllerPosition": {
@@ -166,8 +134,6 @@
             "is_rotation": false,
             "indices": [98, 99, 100],
             "shifting": 98,
-            "max_delta": 0.1,
-            "deadzone": 0.01,
             "dt_multiplier": 100
         },
         "LeftControllerFinger": {
@@ -175,8 +141,6 @@
             "is_rotation": false,
             "indices": [104, 105, 106, 107, 108],
             "shifting": 104,
-            "max_delta": null,
-            "deadzone": null,
             "dt_multiplier": 20
         },
         "RightControllerFinger": {
@@ -184,8 +148,6 @@
             "is_rotation": false,
             "indices": [109, 110, 111, 112, 113],
             "shifting": 109,
-            "max_delta": null,
-            "deadzone": null,
             "dt_multiplier": 20
         },
         "HeadImagePosition": {
@@ -193,8 +155,6 @@
             "is_rotation": false,
             "indices": [114, 115, 116],
             "shifting": 114,
-            "max_delta": null,
-            "deadzone": null,
             "dt_multiplier": 100
         }
     }

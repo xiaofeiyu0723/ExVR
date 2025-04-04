@@ -77,15 +77,13 @@ def apply_smoothing():
 
             target_key = config_params["key"]
             shifting = config_params.get("shifting", 0)
-            max_delta = config_params.get("max_delta")
-            deadzone = config_params.get("deadzone")
             is_rotation = config_params.get("is_rotation", False)
             dt = dt_base * config_params.get("dt_multiplier", 20)
 
             if i in g.kalman_filters:
                 kf = g.kalman_filters[i]
                 kf.predict(dt_base)
-                filtered_data = kf.update(current_data,is_rotation)
+                filtered_data = kf.update(current_data, is_rotation)
             else:
                 filtered_data = current_data
 
@@ -96,14 +94,8 @@ def apply_smoothing():
                 else filtered_data - target["v"]
             )
 
-            if (
-                    max_delta is not None
-                    and deadzone is not None
-                    and np.abs(delta) > deadzone
-            ):
-                smoothed_delta = np.clip(delta, -max_delta, max_delta) * dt
-            else:
-                smoothed_delta = delta * dt
+            # Only use Kalman filter's output as smoothed value
+            smoothed_delta = delta * dt
 
             update_target_value(target, smoothed_delta, is_rotation)
 
