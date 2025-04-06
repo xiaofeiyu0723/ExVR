@@ -1,0 +1,20 @@
+[
+    {
+        "name": "iteration",
+        "min": 0,
+        "max": 8,
+        "value": 1
+    },
+    {
+        "name": "delta_time",
+        "min": 0.001,
+        "max": 0.033,
+        "value": 0.015
+    },
+    {
+        "name": "speed",
+        "min": 0,
+        "max": 7200,
+        "value": 2800
+    }
+]

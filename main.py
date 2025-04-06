@@ -20,12 +20,15 @@ from PyQt5.QtCore import QThread, pyqtSignal, Qt
 from PyQt5.QtGui import QImage, QPixmap, QDoubleValidator
 
 import cv2
+from pubsub import pub
 from pygrabber.dshow_graph import FilterGraph
 import sys, os, winreg, shutil
 import utils.tracking
+from SlimeVRServer_Simple.SlimeVRServer import SlimeVRServer
+from utils import GUITemplate
 from utils.actions import *
 import utils.globals as g
-from utils.data import setup_data,save_data
+from utils.data import setup_data, save_data
 from utils.hotkeys import stop_hotkeys, apply_hotkeys
 from tracker.face.face import draw_face_landmarks
 from tracker.face.tongue import draw_tongue_position
@@ -40,7 +43,7 @@ import pyuac
 class VideoCaptureThread(QThread):
     frame_ready = pyqtSignal(QImage)
 
-    def __init__(self, source,width=1280, height=720, fps=30):
+    def __init__(self, source, width=1280, height=720, fps=30):
         super().__init__()
         self.source = source
         self.video_capture = None
@@ -66,14 +69,16 @@ class VideoCaptureThread(QThread):
         self.video_capture.set(cv2.CAP_PROP_FRAME_WIDTH, self.width)
         self.video_capture.set(cv2.CAP_PROP_FRAME_HEIGHT, self.height)
         self.video_capture.set(cv2.CAP_PROP_FPS, 60)
-        print(self.video_capture.get(cv2.CAP_PROP_FRAME_WIDTH), self.video_capture.get(cv2.CAP_PROP_FRAME_HEIGHT),self.video_capture.get(cv2.CAP_PROP_FPS))
+        print(self.video_capture.get(cv2.CAP_PROP_FRAME_WIDTH), self.video_capture.get(cv2.CAP_PROP_FRAME_HEIGHT),
+              self.video_capture.get(cv2.CAP_PROP_FPS))
         self.video_capture.set(cv2.CAP_PROP_BUFFERSIZE, 1)
         while self.is_running:
             ret, frame = self.video_capture.read()
             if ret:
                 rgb_image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-                if g.config["Setting"]["camera_width"]<640 or g.config["Setting"]["camera_height"]<480:
-                    rgb_image = cv2.resize(rgb_image, (g.config["Setting"]["camera_width"], g.config["Setting"]["camera_height"]))
+                if g.config["Setting"]["camera_width"] < 640 or g.config["Setting"]["camera_height"] < 480:
+                    rgb_image = cv2.resize(rgb_image,
+                                           (g.config["Setting"]["camera_width"], g.config["Setting"]["camera_height"]))
                 if g.config["Setting"]["flip_x"]:
                     rgb_image = cv2.flip(rgb_image, 1)
                 if g.config["Setting"]["flip_y"]:
@@ -113,6 +118,7 @@ class VideoCaptureThread(QThread):
 
 class VideoWindow(QMainWindow):
     def __init__(self):
+        self.slimeVR_server=None
         super().__init__()
         screen = QApplication.screens()[0]
         screen_size = screen.size()
@@ -172,7 +178,9 @@ class VideoWindow(QMainWindow):
         layout.addLayout(camera_layout)
 
         self.priority_selection = QComboBox(self)
-        self.priority_selection.addItems(["IDLE_PRIORITY_CLASS", "BELOW_NORMAL_PRIORITY_CLASS", "NORMAL_PRIORITY_CLASS", "ABOVE_NORMAL_PRIORITY_CLASS", "HIGH_PRIORITY_CLASS", "REALTIME_PRIORITY_CLASS"])
+        self.priority_selection.addItems(["IDLE_PRIORITY_CLASS", "BELOW_NORMAL_PRIORITY_CLASS", "NORMAL_PRIORITY_CLASS",
+                                          "ABOVE_NORMAL_PRIORITY_CLASS", "HIGH_PRIORITY_CLASS",
+                                          "REALTIME_PRIORITY_CLASS"])
         self.priority_selection.currentIndexChanged.connect(self.set_process_priority)
         layout.addWidget(self.priority_selection)
         self.priority_selection.setCurrentIndex(self.priority_selection.findText(g.config["Setting"]["priority"]))
@@ -213,7 +221,6 @@ class VideoWindow(QMainWindow):
         # gamma_layout.addWidget(self.gamma_label)
         # gamma_layout.addWidget(self.gamma_slider)
         # layout.addLayout(gamma_layout)
-
 
         separator_0 = QFrame(self)
         separator_0.setFrameShape(
@@ -311,6 +318,52 @@ class VideoWindow(QMainWindow):
         controller_checkbox_layout.addWidget(self.controller_checkbox2)
         layout.addLayout(controller_checkbox_layout)
 
+        separator_1.setFrameShadow(QFrame.Sunken)  # Give it a sunken shadow effect
+        layout.addWidget(separator_1)
+
+        mobile_checkbox_layout = QHBoxLayout()
+        self.slimeVRSwitch_button = QPushButton("Switch SlimeVR Server", self)
+        self.slimeVRSwitch_button.clicked.connect(lambda: self.SlimeVRServerSwitch())
+        self.slimeVRSwitch_button.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        self.slimeVRSwitch_button.setStyleSheet(
+            "QPushButton { background-color: purple; color: white; }"
+        )
+        mobile_checkbox_layout.addWidget(self.slimeVRSwitch_button)
+        layout.addLayout(mobile_checkbox_layout)
+        mobile_checkbox_layout = QHBoxLayout()
+        self.DevicesShowerL = GUITemplate.CustomRow("left",
+                                                    lambda: (
+                                                        self.slimeVR_server.link_slimeVR_device(
+                                                            "Left"),
+                                                        self.DevicesShowerL.SetText("Searching")),
+                                                    lambda: (
+                                                        self.slimeVR_server.remove_device("Left"),
+                                                        self.DevicesShowerL.SetText("None"))
+                                                    )
+        pub.subscribe(self.DevicesShowerL.SetText, "Left_find_device")
+        self.DevicesShowerR = GUITemplate.CustomRow("right",
+                                                    lambda: (
+                                                        self.slimeVR_server.link_slimeVR_device(
+                                                            "Right"),
+                                                        self.DevicesShowerR.SetText("Searching")),
+                                                    lambda: (
+                                                        self.slimeVR_server.remove_device("Right"),
+                                                        self.DevicesShowerR.SetText("None"))
+                                                    )
+        pub.subscribe(self.DevicesShowerR.SetText, "Right_find_device")
+        self.DevicesShowerR.hide()
+        self.DevicesShowerL.hide()
+        mobile_checkbox_layout.addWidget(self.DevicesShowerL)
+        mobile_checkbox_layout.addWidget(self.DevicesShowerR)
+        layout.addLayout(mobile_checkbox_layout)
+
+        separator_2 = QFrame(self)
+        separator_2.setFrameShape(
+            QFrame.HLine
+        )  # Set the frame to be a horizontal line
+        separator_2.setFrameShadow(QFrame.Sunken)  # Give it a sunken shadow effect
+        layout.addWidget(separator_2)
+
         controller_slider_layout = QHBoxLayout()
         self.controller_slider_x = QSlider(Qt.Horizontal)
         self.controller_slider_y = QSlider(Qt.Horizontal)
@@ -342,7 +395,6 @@ class VideoWindow(QMainWindow):
         controller_slider_layout.addWidget(self.controller_slider_l)
         layout.addLayout(controller_slider_layout)
 
-
         separator_2 = QFrame(self)
         separator_2.setFrameShape(
             QFrame.HLine
@@ -361,7 +413,8 @@ class VideoWindow(QMainWindow):
         self.set_face_button.clicked.connect(self.face_dialog)
         config_layout.addWidget(self.set_face_button)
         self.update_config_button = QPushButton("Update Config", self)
-        self.update_config_button.clicked.connect(lambda:(g.update_configs(),self.update_checkboxes(), self.update_sliders()))
+        self.update_config_button.clicked.connect(
+            lambda: (g.update_configs(), self.update_checkboxes(), self.update_sliders()))
         config_layout.addWidget(self.update_config_button)
         self.save_config_button = QPushButton("Save Config", self)
         self.save_config_button.clicked.connect(g.save_configs)
@@ -376,7 +429,7 @@ class VideoWindow(QMainWindow):
 
     def save_data(self):
         for i, (key, edits) in enumerate(self.lineEdits.items()):
-            idx=i+1
+            idx = i + 1
             v = float(edits[0].text())
             s = float(edits[1].text())
             w = float(edits[2].text())
@@ -419,16 +472,16 @@ class VideoWindow(QMainWindow):
 
         # Create input fields for each blend shape
         double_validator = QDoubleValidator()
-        blendshape_data,_=setup_data()
+        blendshape_data, _ = setup_data()
         for i, blendshape in enumerate(blendshape_data["BlendShapes"][1:], start=1):  # Start from row 1
             key = blendshape["k"]
-            v_edit = QLineEdit(str(round(blendshape["v"],2)))
+            v_edit = QLineEdit(str(round(blendshape["v"], 2)))
             v_edit.setValidator(double_validator)
-            s_edit = QLineEdit(str(round(blendshape["s"],2)))
+            s_edit = QLineEdit(str(round(blendshape["s"], 2)))
             s_edit.setValidator(double_validator)
-            w_edit = QLineEdit(str(round(blendshape["w"],2)))
+            w_edit = QLineEdit(str(round(blendshape["w"], 2)))
             w_edit.setValidator(double_validator)
-            max_edit = QLineEdit(str(round(blendshape["max"],2)))
+            max_edit = QLineEdit(str(round(blendshape["max"], 2)))
             max_edit.setValidator(double_validator)
             e_check = QCheckBox()
             e_check.setChecked(blendshape["e"])
@@ -536,7 +589,6 @@ class VideoWindow(QMainWindow):
         self.controller_label_z.setText(f"z {controller_z:.2f}")
         self.controller_label_l.setText(f"l {controller_l:.2f}")
 
-
     def reset_hotkeys(self):
         stop_hotkeys()
         apply_hotkeys()
@@ -551,10 +603,10 @@ class VideoWindow(QMainWindow):
         # Open registry key to get Steam installation path
         try:
             with winreg.OpenKey(
-                winreg.HKEY_LOCAL_MACHINE,
-                r"SOFTWARE\WOW6432Node\Valve\Steam",
-                0,
-                winreg.KEY_READ,
+                    winreg.HKEY_LOCAL_MACHINE,
+                    r"SOFTWARE\WOW6432Node\Valve\Steam",
+                    0,
+                    winreg.KEY_READ,
             ) as reg_key:
                 steam_path, _ = winreg.QueryValueEx(reg_key, "InstallPath")
             steamvr_driver_path = os.path.join(
@@ -594,7 +646,7 @@ class VideoWindow(QMainWindow):
         }
         # Check if the index is valid
         if priority_key not in priority_classes:
-            self.display_message("Error","Invalid priority index")
+            self.display_message("Error", "Invalid priority index")
             return False
         priority_class = priority_classes[priority_key]
         current_pid = os.getpid()  # Get the current process ID
@@ -603,7 +655,7 @@ class VideoWindow(QMainWindow):
         windll.kernel32.CloseHandle(handle)
         print("Finished setting priority")
 
-    def display_message(self,title,message,style=""):
+    def display_message(self, title, message, style=""):
         msg_box = QMessageBox()
         msg_box.setIcon(QMessageBox.Critical)
         msg_box.setText(message)
@@ -673,14 +725,15 @@ class VideoWindow(QMainWindow):
                 if ip_camera_url != ""
                 else self.get_camera_source(selected_camera_name)
             )
-            self.video_thread = VideoCaptureThread(source,g.config["Setting"]["camera_width"],g.config["Setting"]["camera_height"],g.config["Setting"]["camera_fps"])
+            self.video_thread = VideoCaptureThread(source, g.config["Setting"]["camera_width"],
+                                                   g.config["Setting"]["camera_height"],
+                                                   g.config["Setting"]["camera_fps"])
             self.video_thread.frame_ready.connect(self.update_frame)
             self.video_thread.start()
 
             # controller
             self.controller_thread = ControllerApp()
             self.controller_thread.start()
-
 
         self.show_frame_button.setText("Show Frame")
 
@@ -763,7 +816,7 @@ class VideoWindow(QMainWindow):
             self.camera_resolution_selection.setCurrentIndex(0)
 
     def populate_fps_list(self):
-        fps_list = [30,60]
+        fps_list = [30, 60]
         for fps in fps_list:
             self.camera_fps_selection.addItem(f"{fps} FPS")
         config_fps = int(g.config["Setting"]["camera_fps"])
@@ -790,6 +843,9 @@ class VideoWindow(QMainWindow):
             print(f"FPS updated to: {current_fps}")
 
     def thread_stopped(self):
+        if self.slimeVR_server:
+            self.slimeVR_server.stop()
+            self.slimeVR_server=None
         if self.video_thread:
             self.video_thread.stop()
             self.video_thread.wait()
@@ -803,6 +859,26 @@ class VideoWindow(QMainWindow):
     def closeEvent(self, event):
         self.thread_stopped()
         super().closeEvent(event)
+
+    def SlimeVRServerSwitch(self):
+        print(self.slimeVR_server)
+        if self.slimeVR_server is None:
+            self.slimeVRSwitch_button.setStyleSheet(
+                "QPushButton { background-color: red; color: white; }"
+            )
+            self.slimeVR_server = SlimeVRServer()
+            self.slimeVR_server.start()
+            self.DevicesShowerR.show()
+            self.DevicesShowerL.show()
+        else:
+            self.slimeVRSwitch_button.setStyleSheet(
+                "QPushButton { background-color: purple; color: white; }"
+            )
+            self.slimeVR_server.stop()
+            self.slimeVR_server.join()
+            self.slimeVR_server = None
+            self.DevicesShowerR.hide()
+            self.DevicesShowerL.hide()
 
 if __name__ == "__main__":
     if not pyuac.isUserAdmin():

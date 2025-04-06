@@ -81,5 +81,11 @@
     "LeftControllerFinger": [{"k": "0", "v": 1.0, "s": 0.0,"e":true}, {"k": "1", "v": 1.0, "s": 0.0,"e":true}, {"k": "2", "v": 1.0, "s": 0.0,"e":true}, {"k": "3", "v": 1.0, "s": 0.0,"e":true}, {"k": "4", "v": 1.0, "s": 0.0,"e":true}],
     "RightControllerFinger": [{"k": "0", "v": 1.0, "s": 0.0,"e":true}, {"k": "1", "v": 1.0, "s": 0.0,"e":true}, {"k": "2", "v": 1.0, "s": 0.0,"e":true}, {"k": "3", "v": 1.0, "s": 0.0,"e":true}, {"k": "4", "v": 1.0, "s": 0.0,"e":true}],
 
+    "SlimePosition0": [{"k": "x", "v": 0.0, "s": 0.0,"e":true}, {"k": "y", "v": 0.0, "s": 0.0,"e":true}, {"k": "z", "v": 0.0, "s": 0.0,"e":true}],
+    "SlimeRotation0": [{"k": "x", "v": 0.0, "s": 140,"e":true}, {"k": "y", "v": 0.0, "s": 0.0,"e":true}, {"k": "z", "v": 0.0, "s": 0.0,"e":true},{"k": "w", "v": 0.0, "s": 0.0,"e":true}],
+
+    "SlimePosition1": [{"k": "x", "v": 0.0, "s": 0.0,"e":true}, {"k": "y", "v": 0.0, "s": 0.0,"e":true}, {"k": "z", "v": 0.0, "s": 0.0,"e":true}],
+    "SlimeRotation1": [{"k": "x", "v": 0.0, "s": 140,"e":true}, {"k": "y", "v": 0.0, "s": 0.0,"e":true}, {"k": "z", "v": 0.0, "s": 0.0,"e":true},{"k": "w", "v": 0.0, "s": 0.0,"e":true}],
+
     "HeadImagePosition":[{"k": "x", "v": 0.0, "s": 0.0,"e":true}, {"k": "y", "v": 0.0, "s": 0.0,"e":true}, {"k": "z", "v": 0.0, "s": 0.0,"e":true}]
 }
