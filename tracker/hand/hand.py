@@ -208,6 +208,7 @@ def hand_pred_handling(detection_result):
                 zip(detection_result.multi_handedness, detection_result.multi_hand_landmarks,
                     detection_result.multi_hand_world_landmarks)):
             hand_name = "Right" if hand.classification[0].label == "Left" else "Left"
+            g.get_hand_video_track[hand_name]=False
             if hand.classification[0].score < g.config["Tracking"]["Hand"]["hand_confidence"] or (g.config["Tracking"]["LeftController"]["enable"] and hand_name=="Left") or (g.config["Tracking"]["RightController"]["enable"] and hand_name=="Right"):
                 continue
             if hand_name == "Left":
@@ -223,6 +224,7 @@ def hand_pred_handling(detection_result):
                 if right_hand_detection_counts <= g.config["Tracking"]["Hand"]["hand_detection_lower_threshold"]:
                     continue
 
+            g.get_hand_video_track[hand_name] = True
             world_landmarks = hand_world_landmarks.landmark
             hand_pose = get_hand_pose(world_landmarks)
             image_landmarks = hand_landmarks.landmark

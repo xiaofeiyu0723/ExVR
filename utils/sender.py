@@ -64,7 +64,7 @@ def handling_hand_data(data, default_data):
         length_l=g.config["Tracking"]["LeftController"]["length"]
         data[f"Left{left_hand_type}Position"][0]["v"],data[f"Left{left_hand_type}Position"][1]["v"],data[f"Left{left_hand_type}Position"][2]["v"] = calculate_endpoint([base_x_l,base_y_l,base_z_l], length_l, [yaw_l-40,pitch_l,roll_l])
 
-    if g.has_combo(0):
+    if g.has_combo(0) and not g.get_hand_video_track["Left"]:
         x_l=get_value(data["SlimePosition0"][0],default_data["SlimePosition0"][0])
         y_l=get_value(data["SlimePosition0"][1],default_data["SlimePosition0"][1])
         z_l=get_value( data["SlimePosition0"][2],default_data["SlimePosition0"][2])
@@ -97,7 +97,7 @@ def handling_hand_data(data, default_data):
         length_r=g.config["Tracking"]["RightController"]["length"]
         data[f"Right{right_hand_type}Position"][0]["v"],data[f"Right{right_hand_type}Position"][1]["v"],data[f"Right{right_hand_type}Position"][2]["v"] = calculate_endpoint([base_x_r,base_y_r,base_z_r], length_r, [yaw_r-40,pitch_r,roll_r])
 
-    if g.has_combo(1):
+    if g.has_combo(1) and not g.get_hand_video_track["Right"]:
         x_r = get_value(data["SlimePosition1"][0], default_data["SlimePosition1"][0])
         y_r = get_value(data["SlimePosition1"][1], default_data["SlimePosition1"][1])
         z_r = get_value(data["SlimePosition1"][2], default_data["SlimePosition1"][2])

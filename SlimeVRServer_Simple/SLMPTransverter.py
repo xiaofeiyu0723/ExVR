@@ -24,6 +24,8 @@ def GetPosition(rotmats):
     joint_positions = output.joints.detach().cpu().numpy()
     left_wrist = joint_positions[0, 21]
     right_wrist = joint_positions[0, 20]
+    left_wrist[1]-=0.2
+    right_wrist[1]-=0.2
     return left_wrist, right_wrist
 
 def compute_hand_positions_from_rotmat(rot_mats, joint_offsets, joint_parents):

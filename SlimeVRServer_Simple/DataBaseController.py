@@ -5,13 +5,13 @@ from pathlib import Path
 import numpy as np
 import torch
 import smplx
-
+from scipy.spatial.transform import Rotation as R
 from SlimeVRServer_Simple.SLMPTransverter import GetPosition
 from mobileposer.articulate.math import quaternion_to_rotation_matrix, rotation_matrix_to_axis_angle
 from mobileposer.utils.model_utils import load_model
 import utils.globals as g
 
-
+rotateOffset=(0, -90, 0)
 class DataBaseController(threading.Thread):
     def __init__(self, device_handlers):
         self.lock = threading.Lock()
