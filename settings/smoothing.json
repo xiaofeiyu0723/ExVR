@@ -156,6 +156,20 @@
             "indices": [114, 115, 116],
             "shifting": 114,
             "dt_multiplier": 100
+        },
+        "LeftSlimeControllerPosition": {
+            "key": "SlimePosition0",
+            "is_rotation": false,
+            "indices": [117, 118, 119],
+            "shifting": 117,
+            "dt_multiplier": 20
+        },
+        "RightSlimeControllerPosition": {
+            "key": "SlimePosition1",
+            "is_rotation": false,
+            "indices": [120, 121, 122],
+            "shifting": 120,
+            "dt_multiplier": 20
         }
     }
 }

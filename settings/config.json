@@ -162,5 +162,8 @@
             "min_hand_detection_confidence": 0.3,
             "min_tracking_confidence": 0.5
         }
+    },
+    "SlimeVRServer": {
+        "server_port": 6868
     }
 }

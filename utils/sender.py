@@ -64,10 +64,21 @@ def handling_hand_data(data, default_data):
         length_l=g.config["Tracking"]["LeftController"]["length"]
         data[f"Left{left_hand_type}Position"][0]["v"],data[f"Left{left_hand_type}Position"][1]["v"],data[f"Left{left_hand_type}Position"][2]["v"] = calculate_endpoint([base_x_l,base_y_l,base_z_l], length_l, [yaw_l-40,pitch_l,roll_l])
 
-    x_l = get_value(data[f"Left{left_hand_type}Position"][0], default_data[f"Left{left_hand_type}Position"][0])
-    y_l = get_value(data[f"Left{left_hand_type}Position"][1], default_data[f"Left{left_hand_type}Position"][1])
-    z_l = get_value(data[f"Left{left_hand_type}Position"][2], default_data[f"Left{left_hand_type}Position"][2])
-    quat_l = R.from_euler("xyz", [yaw_l, pitch_l, roll_l], degrees=True).as_quat()
+    if g.has_combo(0) and not g.get_hand_video_track["Left"]:
+        x_l=get_value(data["SlimePosition0"][0],default_data["SlimePosition0"][0])
+        y_l=get_value(data["SlimePosition0"][1],default_data["SlimePosition0"][1])
+        z_l=get_value( data["SlimePosition0"][2],default_data["SlimePosition0"][2])
+        quat_l=(
+            data["SlimeRotation0"][0]['v'],
+            data["SlimeRotation0"][1]['v'],
+            data["SlimeRotation0"][2]['v'],
+            data["SlimeRotation0"][3]['v']
+        )
+    else:
+        x_l = get_value(data[f"Left{left_hand_type}Position"][0], default_data[f"Left{left_hand_type}Position"][0])
+        y_l = get_value(data[f"Left{left_hand_type}Position"][1], default_data[f"Left{left_hand_type}Position"][1])
+        z_l = get_value(data[f"Left{left_hand_type}Position"][2], default_data[f"Left{left_hand_type}Position"][2])
+        quat_l = R.from_euler("xyz", [yaw_l, pitch_l, roll_l], degrees=True).as_quat()
 
     # Process right hand data
     yaw_r = get_value(
@@ -86,10 +97,21 @@ def handling_hand_data(data, default_data):
         length_r=g.config["Tracking"]["RightController"]["length"]
         data[f"Right{right_hand_type}Position"][0]["v"],data[f"Right{right_hand_type}Position"][1]["v"],data[f"Right{right_hand_type}Position"][2]["v"] = calculate_endpoint([base_x_r,base_y_r,base_z_r], length_r, [yaw_r-40,pitch_r,roll_r])
 
-    x_r = get_value(data[f"Right{right_hand_type}Position"][0], default_data[f"Right{right_hand_type}Position"][0])
-    y_r = get_value(data[f"Right{right_hand_type}Position"][1], default_data[f"Right{right_hand_type}Position"][1])
-    z_r = get_value(data[f"Right{right_hand_type}Position"][2], default_data[f"Right{right_hand_type}Position"][2])
-    quat_r = R.from_euler("xyz", [yaw_r, pitch_r, roll_r], degrees=True).as_quat()
+    if g.has_combo(1) and not g.get_hand_video_track["Right"]:
+        x_r = get_value(data["SlimePosition1"][0], default_data["SlimePosition1"][0])
+        y_r = get_value(data["SlimePosition1"][1], default_data["SlimePosition1"][1])
+        z_r = get_value(data["SlimePosition1"][2], default_data["SlimePosition1"][2])
+        quat_r = (
+            data["SlimeRotation1"][0]['v'],
+            data["SlimeRotation1"][1]['v'],
+            data["SlimeRotation1"][2]['v'],
+            data["SlimeRotation1"][3]['v']
+        )
+    else:
+        x_r = get_value(data[f"Right{right_hand_type}Position"][0], default_data[f"Right{right_hand_type}Position"][0])
+        y_r = get_value(data[f"Right{right_hand_type}Position"][1], default_data[f"Right{right_hand_type}Position"][1])
+        z_r = get_value(data[f"Right{right_hand_type}Position"][2], default_data[f"Right{right_hand_type}Position"][2])
+        quat_r = R.from_euler("xyz", [yaw_r, pitch_r, roll_r], degrees=True).as_quat()
 
     wrist_position_l = (x_l, y_l, z_l)
     g.controller.left_hand.position = wrist_position_l
