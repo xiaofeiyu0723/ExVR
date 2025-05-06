@@ -189,10 +189,9 @@ def hand_is_changed(key, hand_name,hand_landmarks,change_points,change_threshold
         return True
 
 finger_action_threshold = {"Left":0,"Right":0}
-index=0
 def hand_pred_handling(detection_result):
     global left_hand_detection_counts, right_hand_detection_counts, left_position_queue, right_position_queue
-    global finger_action_threshold,index
+    global finger_action_threshold
 
     g.hand_landmarks = detection_result.multi_hand_landmarks
     g.handedness = detection_result.multi_handedness
