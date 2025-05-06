@@ -35,6 +35,8 @@ from cv2_enumerate_cameras import enumerate_cameras
 from tracker.controller.controller import *
 import numpy as np
 import pyuac
+import warnings
+warnings.filterwarnings("ignore")
 
 
 class VideoCaptureThread(QThread):

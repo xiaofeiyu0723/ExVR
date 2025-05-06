@@ -166,8 +166,6 @@ class ControllerApp(QThread):
         if controller.fingers != prev_state['fingers']:
             for d in g.data[f"{hand_name}ControllerFinger"]:
                 d["e"]=False
-            for d in g.data[f"{hand_name}HandFinger"]:
-                d["e"]=False
             for idx, value in enumerate(controller.fingers):
                 g.default_data[f"{hand_name}ControllerFinger"][idx]["v"] = value
             prev_state["fingers"] = deepcopy(controller.fingers)

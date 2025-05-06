@@ -3,7 +3,7 @@ import cv2
 import mediapipe as mp
 from tracker.face.tongue import initialize_tongue_model
 from tracker.face.face import initialize_face,face_pred_handling
-from tracker.hand.hand import initialize_hand,hand_pred_handling
+from tracker.hand.hand import initialize_hand,hand_pred_handling,initialize_hand_depth
 from utils.sender import data_send_thread
 from utils.hotkeys import stop_hotkeys,apply_hotkeys
 from utils.smoothing import apply_smoothing
@@ -21,6 +21,7 @@ class Tracker:
             print("Initializing MediaPipe")
             g.face_detector = initialize_face(g.tongue_model)
             g.hand_detector = initialize_hand()
+            g.hand_feature_model, g.hand_regression_model = initialize_hand_depth()
 
         # Start data send thread
         self.data_thread = threading.Thread(

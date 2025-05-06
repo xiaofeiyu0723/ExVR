@@ -22,6 +22,8 @@ handedness=None
 tongue_model=None
 face_detector=None
 hand_detector=None
+hand_feature_model=None
+hand_regression_model=None
 start_time=cv2.getTickCount()
 
 def update_configs():

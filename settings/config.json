@@ -93,7 +93,6 @@
             "rotation_change_threshold": 0.05,
             "queue_length": 2,
             "movement_threshold": 0.3,
-            "hand_count_threshold": 6,
             "only_front": true,
             "follow": true
         },

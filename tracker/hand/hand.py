@@ -7,7 +7,7 @@ from scipy.spatial.transform import Rotation as R
 from copy import deepcopy
 import utils.globals as g
 from collections import deque
-# from scipy.interpolate import PchipInterpolator
+import joblib
 
 left_position_queue = deque(maxlen=g.config["Tracking"]["Hand"]["queue_length"])
 right_position_queue = deque(maxlen=g.config["Tracking"]["Hand"]["queue_length"])
@@ -189,9 +189,10 @@ def hand_is_changed(key, hand_name,hand_landmarks,change_points,change_threshold
         return True
 
 finger_action_threshold = {"Left":0,"Right":0}
+index=0
 def hand_pred_handling(detection_result):
     global left_hand_detection_counts, right_hand_detection_counts, left_position_queue, right_position_queue
-    global finger_action_threshold
+    global finger_action_threshold,index
 
     g.hand_landmarks = detection_result.multi_hand_landmarks
     g.handedness = detection_result.multi_handedness
@@ -231,12 +232,32 @@ def hand_pred_handling(detection_result):
                              g.data["HeadImagePosition"][2]["v"]] - image_hand_pose[2]
             hand_position[:2] *= [g.config["Tracking"]["Hand"]["x_scalar"], g.config["Tracking"]["Hand"]["y_scalar"]]
 
-            hand_distance = np.linalg.norm(
-                np.array(image_hand_pose[1][:2]) - np.array(image_hand_pose[2][:2])) / np.clip(
-                g.data["HeadImagePosition"][2]["v"], None, -1e-8)
+            # hand_distance_temp=np.linalg.norm(np.array(image_hand_pose[1][:2]) - np.array(image_hand_pose[2][:2]))
+            # import keyboard
+            # import pickle
+            # if keyboard.is_pressed('a'):
+            #     filename = f'./depth_dataset/image_hand_pose_{hand_name}_{index}.pkl'
+            #     with open(filename, 'wb') as f:
+            #         pickle.dump(image_hand_pose, f)
+            #     print(f"image_hand_pose {filename}")
+            #     index += 1
+
+            keypoints = [1, 2, 5, 9, 13, 17]
+            data = image_hand_pose - image_hand_pose[0]
+            data = data[keypoints].flatten()
+            data = np.array(data)
+            data = data.reshape(1, -1)  # Reshape to 2D array
+            data_transformed = g.hand_feature_model.transform(data)
+            pred_distance = g.hand_regression_model.predict(data_transformed)
+            hand_distance_temp=pred_distance[0]
+            rounded_value = np.round(g.data["HeadImagePosition"][2]["v"], 2)
+            clipped_value = np.clip(rounded_value, None, -1e-8)
+            hand_distance = hand_distance_temp/clipped_value
+
             hand_distance += g.config["Tracking"]["Hand"]["z_shifting"]
             hand_distance *= g.config["Tracking"]["Hand"]["z_scalar"]
             hand_distance = np.interp(hand_distance, [-2, 2], [-1.2, 1])
+            # print(hand_distance)
             if g.config["Tracking"]["Hand"]["only_front"]:
                 hand_distance = np.clip(hand_distance, -0.8, 0.0)
 
@@ -378,6 +399,9 @@ def hand_pred_handling(detection_result):
             g.data["LeftHandFinger"] = deepcopy(g.default_data["LeftHandFinger"])
         if g.config["Tracking"]["Hand"]["follow"]:
             g.controller.left_hand.follow = False
+        else:
+            g.controller.left_hand.follow = True
+
     else:
         g.controller.left_hand.follow = True
 
@@ -404,6 +428,9 @@ def hand_pred_handling(detection_result):
             g.data["RightHandFinger"] = deepcopy(g.default_data["RightHandFinger"])
         if g.config["Tracking"]["Hand"]["follow"]:
             g.controller.right_hand.follow = False
+        else:
+            g.controller.right_hand.follow = True
+
     else:
         g.controller.right_hand.follow = True
 
@@ -413,3 +440,7 @@ def initialize_hand():
     return mp_hands.Hands(model_complexity=g.config["Model"]["Hand"]["model_complexity"], max_num_hands=2,
                           min_detection_confidence=g.config["Model"]["Hand"]["min_hand_detection_confidence"],
                           min_tracking_confidence=g.config["Model"]["Hand"]["min_tracking_confidence"])
+def initialize_hand_depth():
+    feature_model = joblib.load('./model/hand_feature_model.pkl')
+    regression_model = joblib.load('./model/regression_model.pkl')
+    return feature_model, regression_model
