@@ -1,5 +1,3 @@
-import time
-
 import utils.globals as g
 from threading import Timer
 
@@ -51,30 +49,52 @@ def right():
     g.data["Position"][0]["s"] += 5
 
 
-def head_pitch(flag=True):
+def head_pitch(flag=True,value=5):
     temp=g.data["Rotation"][1]["s"]
     if flag:
-        temp += 5
+        temp += value
     else:
-        temp -= 5
+        temp -= value
     g.data["Rotation"][1]["s"] = temp % 360
 
-head_yaw_timer = None
-def head_yaw(flag=True):
-    global head_yaw_timer
+
+def head_yaw(flag=True,value=5):
+    temp_0 = g.data["Rotation"][0]["s"]
+    temp_1 = g.config["Tracking"]["Head"]["pitch_calibration"]
     if flag:
-        g.controller.send_joystick(False, 1, -1.0, 0.0)
+        temp_0 -= value
+        temp_1 += value
     else:
-        g.controller.send_joystick(False, 1, 1.0, 0.0)
-    def head_move(flag):
-        global head_yaw_timer
-        g.controller.send_joystick(False, 1, 0.0, 0.0)
-        if head_yaw_timer is not None:
-            head_yaw_timer.cancel()
-            head_yaw_timer = None
-    if head_yaw_timer is None:
-        head_yaw_timer = Timer(0.05, head_move,args=[flag])
-        head_yaw_timer.start()
+        temp_0 += value
+        temp_1 -= value
+    g.data["Rotation"][0]["s"] = temp_0 % 360
+    g.config["Tracking"]["Head"]["pitch_calibration"] = temp_1 % 360
+
+def set_head_pitch(value):
+    g.data["Rotation"][1]["s"] = value % 360
+
+
+def set_head_yaw(value):
+    g.data["Rotation"][0]["s"] = value % 360
+    g.config["Tracking"]["Head"]["pitch_calibration"] = -value % 360
+
+
+# head_yaw_timer = None
+# def head_yaw(flag=True):
+    # global head_yaw_timer
+    # if flag:
+    #     g.controller.send_joystick(False, 1, -1.0, 0.0)
+    # else:
+    #     g.controller.send_joystick(False, 1, 1.0, 0.0)
+    # def head_move(flag):
+    #     global head_yaw_timer
+    #     g.controller.send_joystick(False, 1, 0.0, 0.0)
+    #     if head_yaw_timer is not None:
+    #         head_yaw_timer.cancel()
+    #         head_yaw_timer = None
+    # if head_yaw_timer is None:
+    #     head_yaw_timer = Timer(0.05, head_move,args=[flag])
+    #     head_yaw_timer.start()
 
 grab_status = {True: False, False: False}
 def grab(value, index):
@@ -265,5 +285,5 @@ def set_tongue():
     g.data["BlendShapes"][52]["v"] = tongue_status
     g.data["BlendShapes"][62]["v"] = 0.0
     g.data["BlendShapes"][63]["v"] = 0.0
-        
+
     

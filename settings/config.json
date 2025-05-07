@@ -10,6 +10,13 @@
     "Hotkey": {
         "enable": true
     },
+    "Mouse": {
+        "enable": true,
+        "scalar_x": 150,
+        "scalar_y": 100,
+        "bound_threshold": 0.48,
+        "dx": 0.1
+    },
     "Sending": {
         "address": "127.0.0.1"
     },

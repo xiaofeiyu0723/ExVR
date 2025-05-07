@@ -2,9 +2,9 @@ import keyboard
 from pynput import mouse
 from utils.actions import *
 from utils.json_manager import load_json
-
+import screeninfo
 mouse_listener = None
-
+monitor = None
 def toggle_hotkeys():
     g.config["Hotkey"]["enable"] = not g.config["Hotkey"]["enable"]
     print("Hotkey:",g.config["Hotkey"]["enable"])
@@ -122,9 +122,9 @@ def apply_hotkeys():
                 for action in action_list:
                     if isinstance(action, tuple):
                         if pressed:
-                            action[0](None)  # 执行按下操作
+                            action[0](None)
                         else:
-                            action[1](None)  # 执行释放操作
+                            action[1](None)
                     else:
                         if pressed:
                             action()
@@ -147,16 +147,39 @@ def apply_hotkeys():
                     elif action:
                         action()
 
+    def get_current_monitor(x,y):
+        monitors = screeninfo.get_monitors()
+        for m in monitors:
+            if m.x <= x <= m.x + m.width and m.y <= y <= m.y + m.height:
+                return m
+        return None
+
+    def on_move(x, y):
+        global monitor
+        if g.config['Mouse']["enable"]:
+            if monitor is None:
+                monitor = get_current_monitor(x, y)
+            x_normalized = (x / monitor.width - 0.5)
+            y_normalized = -(y / monitor.height - 0.5)
+            if g.config["Smoothing"]["enable"]:
+                g.latest_data[117] = x_normalized
+                g.latest_data[118] = y_normalized
+            else:
+                g.data["MousePosition"][0]["v"] = x_normalized
+                g.data["MousePosition"][1]["v"] = y_normalized
+
+
     if mouse_actions:
-        mouse_listener = mouse.Listener(on_click=on_click, on_scroll=on_scroll)
+        mouse_listener = mouse.Listener(on_click=on_click, on_scroll=on_scroll, on_move=on_move)
         mouse_listener.start()
     print("Start Hotkey")
 
 def stop_hotkeys():
-    global mouse_listener
+    global mouse_listener,monitor
     if mouse_listener is not None:
         mouse_listener.stop()
         mouse_listener = None
+        monitor = None
     keyboard.unhook_all()
     for item in g.hotkey_config["Hotkeys"]:
         if item["action"] == "toggle_hotkeys":

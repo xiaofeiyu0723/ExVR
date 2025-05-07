@@ -242,6 +242,8 @@ def hand_pred_handling(detection_result):
             #     index += 1
 
             keypoints = [1, 2, 5, 9, 13, 17]
+            # image_hand_pose_temp=image_hand_pose[:,:2]
+            # data = image_hand_pose_temp - image_hand_pose_temp[0]
             data = image_hand_pose - image_hand_pose[0]
             data = data[keypoints].flatten()
             data = np.array(data)
@@ -282,13 +284,16 @@ def hand_pred_handling(detection_result):
             x = x / np.linalg.norm(x)
             y = y / np.linalg.norm(y)
             z = z / np.linalg.norm(z)
+
+            yaw_calibration = g.config["Tracking"]["Head"]["yaw_calibration"]
+            pitch_calibration = g.config["Tracking"]["Head"]["pitch_calibration"]
+            roll_calibration = g.config["Tracking"]["Head"]["roll_calibration"]
+            calibration_rot = R.from_euler("xyz", [-yaw_calibration, pitch_calibration, -roll_calibration],degrees=True)
+            calibration_matrix=calibration_rot.as_matrix()
             wrist_matrix = np.vstack((x, y, z)).T
-
+            wrist_matrix = calibration_matrix @ wrist_matrix
             wrist_rot = R.from_matrix(wrist_matrix).as_euler("xyz", degrees=True)
-
-            wrist_rot[0] += -g.config["Tracking"]["Head"]["yaw_calibration"]
-            wrist_rot[1] += g.config["Tracking"]["Head"]["pitch_calibration"]
-            wrist_rot[2] += -g.config["Tracking"]["Head"]["roll_calibration"]
+            hand_position= calibration_matrix @ hand_position
 
             if g.config["Tracking"]["Finger"]["enable"]:
                 finger_curl=finger_handling(hand_pose)
@@ -441,5 +446,7 @@ def initialize_hand():
                           min_tracking_confidence=g.config["Model"]["Hand"]["min_tracking_confidence"])
 def initialize_hand_depth():
     feature_model = joblib.load('./model/hand_feature_model.pkl')
-    regression_model = joblib.load('./model/regression_model.pkl')
-    return feature_model, regression_model
+    hand_regression_model = joblib.load('./model/hand_regression_model.pkl')
+    # feature_model = joblib.load('./model/hand_feature_model_2d.pkl')
+    # hand_regression_model = joblib.load('./model/hand_regression_model_2d.pkl')
+    return feature_model, hand_regression_model

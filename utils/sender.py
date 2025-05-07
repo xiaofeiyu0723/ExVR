@@ -1,9 +1,11 @@
+import math
 import socket
 import struct
 import time
 import utils.globals as g
 from scipy.spatial.transform import Rotation as R
 import numpy as np
+from utils.actions import set_head_yaw, set_head_pitch
 
 def get_value(value, value_d):
     if value["e"]:
@@ -111,11 +113,24 @@ def handling_hand_data(data, default_data):
     g.controller.left_hand.finger = finger_l
     g.controller.right_hand.finger = finger_r
 
+def send_mouse_position(data, default_data):
+    x = data["MousePosition"][0]["v"]
+    y = data["MousePosition"][1]["v"]
+    if abs(x)>=g.config["Mouse"]["bound_threshold"]:
+        data["MousePosition"][0]["s"]+=math.copysign(1,x)*g.config["Mouse"]["dx"]/10
+        data["MousePosition"][0]["s"]=data["MousePosition"][0]["s"]%360
+    x = get_value(data["MousePosition"][0],default_data["MousePosition"][0])
+    y = get_value(data["MousePosition"][1],default_data["MousePosition"][1])
+    set_head_yaw(x * g.config['Mouse']["scalar_x"])
+    set_head_pitch(y * g.config['Mouse']["scalar_y"])
+
 
 def data_send_thread(target_ip):
     frame_duration = 1.0 / 60.0
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     while not g.stop_event.is_set():
+        if g.config['Mouse']["enable"]:
+            send_mouse_position(g.data, g.default_data)
         if g.config["Tracking"]["Head"]["enable"]:
             packed_hmd_data = pack_hmd_data(g.data, g.default_data)
             sock.sendto(packed_hmd_data, (target_ip, 4242))

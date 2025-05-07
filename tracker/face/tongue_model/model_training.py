@@ -24,24 +24,24 @@ class AddRandomNoise:
 
 class KeypointDataset(Dataset):
     def __init__(
-        self,
-        image_dir,
-        keypoints_dir,
-        transform=None,
-        output_size=(32, 32),
-        num_copies=10,
+            self,
+            image_dir,
+            keypoints_dir,
+            transform=None,
+            output_size=(32, 32),
+            num_copies=10,
     ):
         self.image_dir = image_dir
         self.keypoints_dir = keypoints_dir
         self.transform = transform
         self.output_size = output_size
         self.image_paths = [
-            os.path.join(image_dir, img) for img in os.listdir(image_dir)
-        ] * num_copies
+                               os.path.join(image_dir, img) for img in os.listdir(image_dir)
+                           ] * num_copies
         self.keypoints_paths = [
-            os.path.join(keypoints_dir, f"{os.path.splitext(img)[0]}.txt")
-            for img in os.listdir(image_dir)
-        ] * num_copies
+                                   os.path.join(keypoints_dir, f"{os.path.splitext(img)[0]}.txt")
+                                   for img in os.listdir(image_dir)
+                               ] * num_copies
 
     def __len__(self):
         return len(self.image_paths)
@@ -82,50 +82,77 @@ class KeypointDataset(Dataset):
         return image_tensor, heatmap_tensor
 
 
+# Define the LightDoubleConv block
+class LightDoubleConv(nn.Module):
+    """(Convolution => [BN] => ReLU) * 2"""
+
+    def __init__(self, in_channels, out_channels):
+        super(LightDoubleConv, self).__init__()
+        self.double_conv = nn.Sequential(
+            nn.Conv2d(in_channels, out_channels, kernel_size=3, padding=1),
+            nn.BatchNorm2d(out_channels),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(out_channels, out_channels, kernel_size=3, padding=1),
+            nn.BatchNorm2d(out_channels),
+            nn.ReLU(inplace=True)
+        )
+
+    def forward(self, x):
+        return self.double_conv(x)
+
+
 class KeypointCNN(nn.Module):
     def __init__(self, num_keypoints=1):
         super(KeypointCNN, self).__init__()
-        self.conv1 = nn.Conv2d(1, 16, kernel_size=3, padding=1)
-        self.bn1 = nn.BatchNorm2d(16)
-        self.pool = nn.MaxPool2d(2, 2)
-        self.conv2 = nn.Conv2d(16, 32, kernel_size=3, padding=1)
-        self.bn2 = nn.BatchNorm2d(32)
-        self.conv3 = nn.Conv2d(32, 64, kernel_size=3, padding=1)
-        self.bn3 = nn.BatchNorm2d(64)
-        self.fc1 = nn.Linear(
-            64 * 8 * 8, 256
-        )  # Adjust the input size according to pooling and input dimensions
 
-        # Keypoint heatmaps output layer: Outputs heatmaps instead of direct coordinates
-        # Assuming the output size to be 32x32, which should be adjusted according to your needs
-        self.heatmap_conv = nn.Conv2d(64, num_keypoints, kernel_size=3, padding=1)
-        self.upsample = nn.Upsample(size=(32, 32), mode="bilinear", align_corners=False)
+        # 编码器部分（共享特征）
+        self.inc = LightDoubleConv(1, 32)
+        self.down1 = nn.Sequential(
+            nn.MaxPool2d(2),
+            LightDoubleConv(32, 64)
+        )
+        self.down2 = nn.Sequential(
+            nn.MaxPool2d(2),
+            LightDoubleConv(64, 128)
+        )
 
-        self.fc_classifier = nn.Linear(256, 1)  # Classification layer
+        self.keypoint_features = nn.Conv2d(128, 128, kernel_size=3, padding=1)
+
+        self.classification_features = nn.Conv2d(128, 128, kernel_size=3, padding=1)
+
+        self.heatmap_conv = nn.Conv2d(128, num_keypoints, kernel_size=1)
+
+        self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
+        self.fc_classifier = nn.Linear(128, 1)
 
     def forward(self, x):
-        x1 = self.pool(F.relu(self.bn1(self.conv1(x))))
-        x2 = self.pool(F.relu(self.bn2(self.conv2(x1))))
-        x3 = F.relu(self.bn3(self.conv3(x2)))
+        # 编码器特征（共享部分）
+        x1 = self.inc(x)
+        x2 = self.down1(x1)
+        x3 = self.down2(x2)
 
-        # Keypoint heatmap output
-        keypoints_heatmap = self.upsample(self.heatmap_conv(x3))
+        keypoint_features = F.relu(self.keypoint_features(x3))
+        keypoints_heatmap = self.heatmap_conv(keypoint_features)
+        keypoints_heatmap = F.interpolate(
+            keypoints_heatmap, size=x.size()[2:], mode='bilinear', align_corners=False
+        )
 
-        x_flat = x3.view(x3.size(0), -1)
-        features = F.relu(self.fc1(x_flat))
+        classification_features = F.relu(self.classification_features(x3))
+        x_flat = self.avgpool(classification_features)
+        x_flat = torch.flatten(x_flat, 1)
+        classification = torch.sigmoid(self.fc_classifier(x_flat))
 
-        classification = torch.sigmoid(self.fc_classifier(features))
         return keypoints_heatmap, classification
 
 
 def train(
-    model,
-    data_loader,
-    optimizer,
-    criterion_regression,
-    criterion_classification,
-    epochs,
-    device,
+        model,
+        data_loader,
+        optimizer,
+        criterion_regression,
+        criterion_classification,
+        epochs,
+        device,
 ):
     model.train()
     for epoch in range(epochs):
@@ -137,19 +164,17 @@ def train(
             labels = (
                 (heatmaps.sum(dim=[1, 2, 3]) > 0).float().reshape(-1, 1)
             )  # Assuming heatmap dimensions are [B, 1, H, W]
-            # out_keypoints = out_keypoints*out_classification.reshape(-1,1,1,1)
             loss_1 = criterion_regression(
-                out_keypoints * out_classification.reshape(-1, 1, 1, 1), heatmaps
+                out_keypoints, heatmaps
             )
             loss_2 = criterion_classification(out_classification, labels)
-            # binary_reg = torch.mean(out_classification * (1 - out_classification))
             loss = loss_1 + loss_2
             loss.backward()
             optimizer.step()
             total_loss += loss.item()
-        print(f"Epoch {epoch+1}: Loss = {total_loss / len(data_loader)}")
+        print(f"Epoch {epoch + 1}: Loss = {total_loss / len(data_loader)}")
         # Save model after each epoch
-        torch.save(model.state_dict(), f"./model_output_3/model_epoch_{epoch+1}.pth")
+        torch.save(model.state_dict(), f"./model_output_2_1/model_epoch_{epoch + 1}.pth")
 
 
 def max_average_point(heatmap, window_size=3):
@@ -160,7 +185,7 @@ def max_average_point(heatmap, window_size=3):
     return best_point
 
 
-def test(model, data_loader, device, output_folder="./result_3", window_size=3):
+def test(model, data_loader, device, output_folder="./result_2_1", window_size=3):
     model.eval()
     os.makedirs(output_folder, exist_ok=True)
     with torch.no_grad():
@@ -168,7 +193,8 @@ def test(model, data_loader, device, output_folder="./result_3", window_size=3):
         for batch_idx, (images, heatmaps) in enumerate(data_loader):
             images, heatmaps = images.to(device), heatmaps.to(device)
             out_keypoints, out_classification = model(images)
-            outputs = out_keypoints * out_classification.reshape(-1, 1, 1, 1)
+            # outputs = out_keypoints * out_classification.reshape(-1, 1, 1, 1)
+            outputs = out_keypoints
             loss = F.mse_loss(outputs, heatmaps)
             total_loss += loss.item()
 
@@ -245,8 +271,8 @@ def main():
         epochs=200,
         device=device,
     )
-    model.load_state_dict(torch.load("./model_output_3/model_epoch_200.pth"))
-    test(model, test_loader, device)
+    model.load_state_dict(torch.load("./model_output_2_1/model_epoch_196.pth"))
+    test(model, train_loader, device)
 
 
 if __name__ == "__main__":

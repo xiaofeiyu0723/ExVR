@@ -351,6 +351,39 @@ class VideoWindow(QMainWindow):
         )  # Set the frame to be a horizontal line
         separator_2.setFrameShadow(QFrame.Sunken)  # Give it a sunken shadow effect
         layout.addWidget(separator_2)
+        mouse_layout = QHBoxLayout()
+        self.mouse_checkbox = QCheckBox("Mouse", self)
+        self.mouse_checkbox.clicked.connect(lambda: self.toggle_mouse(self.mouse_checkbox.isChecked()))
+        self.mouse_slider_x = QSlider(Qt.Horizontal)
+        self.mouse_slider_y = QSlider(Qt.Horizontal)
+        self.mouse_slider_dx = QSlider(Qt.Horizontal)
+        self.mouse_slider_x.setRange(0, 360)
+        self.mouse_slider_y.setRange(0, 360)
+        self.mouse_slider_dx.setRange(0, 20)
+        self.mouse_slider_x.setSingleStep(1)
+        self.mouse_slider_y.setSingleStep(1)
+        self.mouse_slider_dx.setSingleStep(1)
+        self.mouse_label_x = QLabel(f"x {g.config['Mouse']['scalar_x']:d}")
+        self.mouse_label_y = QLabel(f"y {g.config['Mouse']['scalar_y']:d}")
+        self.mouse_label_dx = QLabel(f"dx {g.config['Mouse']['dx']:.2f}")
+        self.mouse_slider_x.valueChanged.connect(lambda value: self.set_scalar(value, "mouse_x"))
+        self.mouse_slider_y.valueChanged.connect(lambda value: self.set_scalar(value, "mouse_y"))
+        self.mouse_slider_dx.valueChanged.connect(lambda value: self.set_scalar(value, "mouse_dx"))
+        mouse_layout.addWidget(self.mouse_checkbox)
+        mouse_layout.addWidget(self.mouse_label_x)
+        mouse_layout.addWidget(self.mouse_slider_x)
+        mouse_layout.addWidget(self.mouse_label_y)
+        mouse_layout.addWidget(self.mouse_slider_y)
+        mouse_layout.addWidget(self.mouse_label_dx)
+        mouse_layout.addWidget(self.mouse_slider_dx)
+        layout.addLayout(mouse_layout)
+
+        separator_3 = QFrame(self)
+        separator_3.setFrameShape(
+            QFrame.HLine
+        )  # Set the frame to be a horizontal line
+        separator_3.setFrameShadow(QFrame.Sunken)  # Give it a sunken shadow effect
+        layout.addWidget(separator_3)
 
         config_layout = QHBoxLayout()
         self.reset_hotkey_button = QPushButton("Reset Hotkey", self)
@@ -479,6 +512,7 @@ class VideoWindow(QMainWindow):
         self.checkbox4.setChecked(g.config["Tracking"]["Hand"]["enable"])
         self.controller_checkbox1.setChecked(g.config["Tracking"]["LeftController"]["enable"])
         self.controller_checkbox2.setChecked(g.config["Tracking"]["RightController"]["enable"])
+        self.mouse_checkbox.setChecked(g.config["Mouse"]["enable"])
 
     def set_scalar(self, value, axis):
         slider_value = value / 100.0
@@ -510,6 +544,16 @@ class VideoWindow(QMainWindow):
             g.config["Tracking"]["LeftController"]["length"] = slider_value
             g.config["Tracking"]["RightController"]["length"] = slider_value
             self.controller_label_l.setText(f"l {slider_value:.2f}")
+        elif axis == "mouse_x":
+            g.config["Mouse"]["scalar_x"]=slider_value*100
+            self.mouse_label_x.setText(f"x {int(slider_value*100)}")
+        elif axis == "mouse_y":
+            g.config["Mouse"]["scalar_y"]=slider_value*100
+            self.mouse_label_y.setText(f"y {int(slider_value*100)}")
+        elif axis == "mouse_dx":
+            g.config["Mouse"]["dx"]=slider_value
+            self.mouse_label_dx.setText(f"dx {slider_value:.2f}")
+
 
     def update_sliders(self):
         # camera_gamma = g.config["Setting"]["camera_gamma"]
@@ -538,6 +582,17 @@ class VideoWindow(QMainWindow):
         self.controller_label_z.setText(f"z {controller_z:.2f}")
         self.controller_label_l.setText(f"l {controller_l:.2f}")
 
+        mouse_x=g.config["Mouse"]["scalar_x"]
+        mouse_y=g.config["Mouse"]["scalar_y"]
+        mouse_dx=g.config["Mouse"]["dx"]
+        self.mouse_slider_x.setValue(int(mouse_x))
+        self.mouse_slider_y.setValue(int(mouse_y))
+        self.mouse_slider_dx.setValue(int(mouse_dx * 100))
+        self.mouse_label_x.setText(f"x {int(mouse_x)}")
+        self.mouse_label_y.setText(f"y {int(mouse_y)}")
+        self.mouse_label_dx.setText(f"dx {mouse_dx:.2f}")
+
+
 
     def reset_hotkeys(self):
         stop_hotkeys()
@@ -548,6 +603,9 @@ class VideoWindow(QMainWindow):
     def set_tracking_config(self, key, value):
         if key in g.config["Tracking"]:
             g.config["Tracking"][key]["enable"] = value
+
+    def toggle_mouse(self, value):
+        g.config["Mouse"]["enable"] = value
 
     def install_checking(self):
         # Open registry key to get Steam installation path

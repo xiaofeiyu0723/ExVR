@@ -156,6 +156,13 @@
             "indices": [114, 115, 116],
             "shifting": 114,
             "dt_multiplier": 100
+        },
+        "MousePosition": {
+            "key": "MousePosition",
+            "is_rotation": false,
+            "indices": [117, 118],
+            "shifting": 117,
+            "dt_multiplier": 100
         }
     }
 }
