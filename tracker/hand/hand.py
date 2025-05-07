@@ -293,7 +293,6 @@ def hand_pred_handling(detection_result):
             calibration_rot = R.from_euler("xyz", [-yaw_calibration, pitch_calibration, -roll_calibration],degrees=True)
             calibration_matrix=calibration_rot.as_matrix()
             wrist_matrix = np.vstack((x, y, z)).T
-            print(wrist_matrix)
             wrist_matrix = calibration_matrix @ wrist_matrix
             wrist_rot = R.from_matrix(wrist_matrix).as_euler("xyz", degrees=True)
             hand_position= calibration_matrix @ hand_position
