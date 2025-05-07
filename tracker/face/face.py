@@ -5,7 +5,8 @@ from tracker.face.tongue import mouth_roi_on_image, detect_tongue
 import utils.globals as g
 from mediapipe.framework.formats import landmark_pb2
 from mediapipe import solutions
-import cv2
+from scipy.spatial.transform import Rotation as R
+
 def draw_face_landmarks(rgb_image):
     face_landmarks_list = g.face_landmarks
 
@@ -72,9 +73,11 @@ def is_hand_in_face():
         return True, normalized_area
     return False, 0.0
 
-
+head_position_prev=None
+head_position=None
 def face_pred_handling(detection_result, output_image, timestamp_ms, tongue_model):
     # For each face detected
+    global head_position_prev,head_position
     for idx in range(len(detection_result.face_landmarks)):
         g.face_landmarks = detection_result.face_landmarks
 
@@ -117,8 +120,23 @@ def face_pred_handling(detection_result, output_image, timestamp_ms, tongue_mode
         position_x = -mat[0][3] * g.config["Tracking"]["Head"]["x_scalar"]
         position_y = mat[1][3] * g.config["Tracking"]["Head"]["y_scalar"]
         position_z = -mat[2][3] * g.config["Tracking"]["Head"]["z_scalar"]
+        head_position_temp=np.array([position_x, position_y,position_z])
+        if head_position_prev is None:
+            head_position_prev = head_position_temp.copy()
+            head_position = head_position_temp.copy()
+        else:
+            head_position_diff = head_position_temp - head_position_prev
+            head_position_prev = head_position_temp.copy()
 
-        # Head Rotation
+            yaw_calibration = g.config["Tracking"]["Head"]["yaw_calibration"]
+            pitch_calibration = g.config["Tracking"]["Head"]["pitch_calibration"]
+            roll_calibration = g.config["Tracking"]["Head"]["roll_calibration"]
+            calibration_rot = R.from_euler("xyz", [-yaw_calibration, pitch_calibration, -roll_calibration],
+                                           degrees=True)
+            calibration_matrix = calibration_rot.as_matrix()
+            calibrated_diff = calibration_matrix @ head_position_diff
+            head_position += calibrated_diff
+
         rotation_x = (
             -(
                 np.arctan2(-mat[2, 0], np.sqrt(mat[2, 1] ** 2 + mat[2, 2] ** 2))
@@ -161,15 +179,16 @@ def face_pred_handling(detection_result, output_image, timestamp_ms, tongue_mode
                 g.latest_data[62] = tongue_x
                 g.latest_data[63] = tongue_y
 
-            # Head Position
-            g.latest_data[64] = position_x
-            g.latest_data[65] = position_z
-            g.latest_data[66] = position_y
+            if g.config["Tracking"]["Head"]["enable"]:
+                # Head Position
+                g.latest_data[64] = head_position[0]
+                g.latest_data[65] = head_position[2]
+                g.latest_data[66] = head_position[1]
 
-            # Head Rotation
-            g.latest_data[67] = rotation_x
-            g.latest_data[68] = rotation_z
-            g.latest_data[69] = rotation_y
+                # Head Rotation
+                g.latest_data[67] = rotation_x
+                g.latest_data[68] = rotation_z
+                g.latest_data[69] = rotation_y
 
             g.latest_data[114] = head_image_position_x
             g.latest_data[115] = head_image_position_y
@@ -194,16 +213,16 @@ def face_pred_handling(detection_result, output_image, timestamp_ms, tongue_mode
                 g.data["BlendShapes"][52]["v"] = tongue_out
                 g.data["BlendShapes"][62]["v"] = tongue_x
                 g.data["BlendShapes"][63]["v"] = tongue_y
+            if g.config["Tracking"]["Head"]["enable"]:
+                # Head Position
+                g.data["Position"][0]["v"] = head_position[0]
+                g.data["Position"][1]["v"] = head_position[2]
+                g.data["Position"][2]["v"] = head_position[1]
 
-            # Head Position
-            g.data["Position"][0]["v"] = position_x
-            g.data["Position"][1]["v"] = position_z
-            g.data["Position"][2]["v"] = position_y
-
-            # Head Rotation
-            g.data["Rotation"][0]["v"] = rotation_x
-            g.data["Rotation"][1]["v"] = rotation_z
-            g.data["Rotation"][2]["v"] = rotation_y
+                # Head Rotation
+                g.data["Rotation"][0]["v"] = rotation_x
+                g.data["Rotation"][1]["v"] = rotation_z
+                g.data["Rotation"][2]["v"] = rotation_y
 
             g.data["HeadImagePosition"][0]["v"] = head_image_position_x
             g.data["HeadImagePosition"][1]["v"] = head_image_position_y

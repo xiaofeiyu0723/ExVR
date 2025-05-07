@@ -73,7 +73,6 @@ def head_yaw(flag=True,value=5):
 def set_head_pitch(value):
     g.data["Rotation"][1]["s"] = value % 360
 
-
 def set_head_yaw(value):
     g.data["Rotation"][0]["s"] = value % 360
     g.config["Tracking"]["Head"]["pitch_calibration"] = -value % 360

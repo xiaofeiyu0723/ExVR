@@ -131,7 +131,7 @@ def data_send_thread(target_ip):
     while not g.stop_event.is_set():
         if g.config['Mouse']["enable"]:
             send_mouse_position(g.data, g.default_data)
-        if g.config["Tracking"]["Head"]["enable"]:
+        if g.config["Tracking"]["Head"]["enable"] or g.config["Mouse"]["enable"]:
             packed_hmd_data = pack_hmd_data(g.data, g.default_data)
             sock.sendto(packed_hmd_data, (target_ip, 4242))
         if g.config["Tracking"]["Face"]["enable"]:

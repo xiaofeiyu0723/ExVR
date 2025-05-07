@@ -57,9 +57,9 @@
             "x_rotation_scalar": 1.0,
             "y_rotation_scalar": 1.0,
             "z_rotation_scalar": 1.0,
-            "yaw_calibration": 4.2710160984110015,
-            "pitch_calibration": 5.759464844224408,
-            "roll_calibration": 359.8285352373267
+            "yaw_calibration": 0,
+            "pitch_calibration": 0,
+            "roll_calibration": 0
         },
         "Face": {
             "enable": true,
@@ -164,7 +164,7 @@
             "min_tracking_confidence": 0.5
         },
         "Hand": {
-            "model_complexity": 0,
+            "model_complexity": 1,
             "min_hand_detection_confidence": 0.3,
             "min_tracking_confidence": 0.5
         }

@@ -2,7 +2,6 @@ import os
 import pickle
 import pandas as pd
 
-
 keypoints = [1, 2, 5, 9, 13, 17]
 directories = [d for d in os.listdir('.') if os.path.isdir(d) and d.startswith('depth_dataset')]
 all_data = []
