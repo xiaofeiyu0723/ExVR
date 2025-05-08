@@ -871,4 +871,10 @@ if __name__ == "__main__":
         app = QApplication(sys.argv)
         window = VideoWindow()
         window.show()
+        # TODO
+        thread = windll.kernel32.GetCurrentThread()
+        THREAD_PRIORITY_TIME_CRITICAL = 15
+        windll.kernel32.SetThreadPriority(thread, THREAD_PRIORITY_TIME_CRITICAL)
+        windll.kernel32.SetThreadPriorityBoost(thread, True)
+
         sys.exit(app.exec_())

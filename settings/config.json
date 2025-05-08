@@ -98,8 +98,6 @@
                 17
             ],
             "rotation_change_threshold": 0.05,
-            "queue_length": 2,
-            "movement_threshold": 0.3,
             "only_front": true,
             "follow": true
         },
@@ -164,7 +162,7 @@
             "min_tracking_confidence": 0.5
         },
         "Hand": {
-            "model_complexity": 1,
+            "model_complexity": 0,
             "min_hand_detection_confidence": 0.3,
             "min_tracking_confidence": 0.5
         }

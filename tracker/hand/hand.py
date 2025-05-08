@@ -11,9 +11,6 @@ import joblib
 from sklearn.linear_model import LinearRegression
 from sklearn.preprocessing import PolynomialFeatures
 
-left_position_queue = deque(maxlen=g.config["Tracking"]["Hand"]["queue_length"])
-right_position_queue = deque(maxlen=g.config["Tracking"]["Hand"]["queue_length"])
-
 def draw_hand_landmarks(rgb_image):
     MARGIN = 10  # pixels
     FONT_SIZE = 1
@@ -78,19 +75,6 @@ def calc_angle(vec1, vec2):
         cross = np.linalg.norm(np.cross(vec1, vec2))
         dot = np.dot(vec1, vec2)
         return np.degrees(np.abs(np.arctan2(cross, dot)))
-
-# def create_spline_mapping(control_points):
-#     x, y = zip(*control_points)
-#     x, y = np.array(x), np.array(y)
-#     return PchipInterpolator(x, y)
-# finger_mapper = {"thumb":{"points":[(0, 0),(0.3, 0.1),(0.7, 0.3),(1, 1)],"mapper":None},
-#     "index":{"points":[(0, 0),(0.1, 0.3),(0.7, 0.5),(1, 1)],"mapper":None},
-#     "middle":{"points":[(0, 0),(0.1, 0.3),(0.7, 0.5),(1, 1)],"mapper":None},
-#     "ring":{"points":[(0, 0),(0.1, 0.3),(0.7, 0.5),(1, 1)],"mapper":None},
-#     "pinky":{"points":[(0, 0),(0.1, 0.3),(0.7, 0.5),(1, 1)],"mapper":None}
-# }
-# for name in ["thumb", "index", "middle", "ring", "pinky"]:
-#     finger_mapper[name]["mapper"] = create_spline_mapping(finger_mapper[name]["points"])
 
 def finger_handling(hand_pose):
     global finger_mapper
@@ -167,7 +151,7 @@ def compute_bounding_box(landmarks):
     return width, height, min_x, min_y, max_x, max_y
 
 prev_hand_landmarks = {}
-def hand_is_changed(key, hand_name,hand_landmarks,change_points,change_threshold):
+def hand_is_changed(key, hand_name,hand_landmarks,change_points,change_threshold, update_flag=True):
     global prev_hand_landmarks
     if len(change_points)==0:
         return True
@@ -181,14 +165,15 @@ def hand_is_changed(key, hand_name,hand_landmarks,change_points,change_threshold
         avg_distance = np.mean(distances)
         width, height, _, _, _, _ = compute_bounding_box(current_keypoints)
         norm_distance = avg_distance / np.sqrt(width ** 2 + height ** 2)
-        if norm_distance>change_threshold:
-            prev_hand_landmarks[key][hand_name] = current_keypoints
-            return True
+        if norm_distance>=change_threshold:
+            if update_flag:
+                prev_hand_landmarks[key][hand_name] = current_keypoints
+            return True, norm_distance
         else:
-            return False
+            return False, norm_distance
     else:
         prev_hand_landmarks[key][hand_name] = current_keypoints
-        return True
+        return True, 0
 
 finger_action_threshold = {"Left":0,"Right":0}
 def hand_pred_handling(detection_result):
@@ -206,10 +191,32 @@ def hand_pred_handling(detection_result):
         left_hand_detection_counts = 0
 
     if detection_result.multi_hand_landmarks is not None and detection_result.multi_handedness is not None and detection_result.multi_hand_world_landmarks is not None:
+        same_hand_flag=None
+        if len(detection_result.multi_handedness)==2:
+            hands=detection_result.multi_handedness
+            if hands[0].classification[0].label == hands[1].classification[0].label:
+                hand_name = "Right" if hands[0].classification[0].label == "Left" else "Left"
+                _,avg_distance_0 = hand_is_changed("hand_change", hand_name, detection_result.multi_hand_landmarks[0],
+                                                       [0,1,17],
+                                                       0, False)
+                _,avg_distance_1 = hand_is_changed("hand_change", hand_name, detection_result.multi_hand_landmarks[1],
+                                                       [0,1,17],
+                                                       0, False)
+                if avg_distance_0<=avg_distance_1:
+                    same_hand_flag=1
+                else:
+                    same_hand_flag=0
+
         for idx, (hand, hand_landmarks, hand_world_landmarks) in enumerate(
                 zip(detection_result.multi_handedness, detection_result.multi_hand_landmarks,
                     detection_result.multi_hand_world_landmarks)):
             hand_name = "Right" if hand.classification[0].label == "Left" else "Left"
+            if same_hand_flag == idx:
+                continue
+            else:
+                _,_ = hand_is_changed("hand_change", hand_name, hand_landmarks,
+                                                       [0,1,17],
+                                                       0)
             if hand.classification[0].score < g.config["Tracking"]["Hand"]["hand_confidence"] or (g.config["Tracking"]["LeftController"]["enable"] and hand_name=="Left") or (g.config["Tracking"]["RightController"]["enable"] and hand_name=="Right"):
                 continue
             if hand_name == "Left":
@@ -243,9 +250,7 @@ def hand_pred_handling(detection_result):
             #     print(f"image_hand_pose {filename}")
             #     index += 1
 
-            keypoints = [1, 2, 5, 9, 13, 17]
-            # image_hand_pose_temp=image_hand_pose[:,:2]
-            # data = image_hand_pose_temp - image_hand_pose_temp[0]
+            keypoints = [5, 9, 13]
             data = image_hand_pose - image_hand_pose[0]
             data = data[keypoints].flatten()
             data = np.array(data)
@@ -265,20 +270,9 @@ def hand_pred_handling(detection_result):
                 hand_distance = np.clip(hand_distance, -0.8, 0.0)
 
             hand_position[2] = hand_distance
-            current_position = np.array([hand_position[0], hand_position[1], hand_position[2]])
-            queue = left_position_queue if hand_name == "Left" else right_position_queue
-            if queue:
-                predicted_pos = predict_hand_position(queue)
-                if predicted_pos is not None:
-                    diff = np.linalg.norm(predicted_pos - current_position)
-                    threshold = g.config["Tracking"]["Hand"]["movement_threshold"]
-                    if diff > threshold:
-                        queue.append(current_position.copy())
-                        continue
-            queue.append(current_position.copy())
 
-            position_change_flag = hand_is_changed("position",hand_name,hand_landmarks,g.config["Tracking"]["Hand"]["position_change_points"],g.config["Tracking"]["Hand"]["position_change_threshold"])
-            rotation_change_flag = hand_is_changed("rotation",hand_name,hand_landmarks,g.config["Tracking"]["Hand"]["rotation_change_points"],g.config["Tracking"]["Hand"]["rotation_change_threshold"])
+            position_change_flag,_ = hand_is_changed("position",hand_name,hand_landmarks,g.config["Tracking"]["Hand"]["position_change_points"],g.config["Tracking"]["Hand"]["position_change_threshold"])
+            rotation_change_flag,_ = hand_is_changed("rotation",hand_name,hand_landmarks,g.config["Tracking"]["Hand"]["rotation_change_points"],g.config["Tracking"]["Hand"]["rotation_change_threshold"])
 
             z = hand_pose[0] - hand_pose[17]
             x = np.cross(hand_pose[1] - hand_pose[0], z)
@@ -449,6 +443,4 @@ def initialize_hand():
 def initialize_hand_depth():
     feature_model = joblib.load('./model/hand_feature_model.pkl')
     hand_regression_model = joblib.load('./model/hand_regression_model.pkl')
-    # feature_model = joblib.load('./model/hand_feature_model_2d.pkl')
-    # hand_regression_model = joblib.load('./model/hand_regression_model_2d.pkl')
     return feature_model, hand_regression_model
