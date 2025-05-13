@@ -64,7 +64,8 @@
         "Face": {
             "enable": true,
             "block": true,
-            "block_threshold": 0.05
+            "position_block_threshold": 0.00,
+            "rotation_block_threshold": 0.00
         },
         "Tongue": {
             "enable": true,

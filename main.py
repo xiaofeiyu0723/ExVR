@@ -715,6 +715,7 @@ class VideoWindow(QMainWindow):
         self.update_camera_resolution()
         self.update_camera_fps()
         if self.video_thread and self.video_thread.isRunning():
+            stop_hotkeys()
             self.toggle_button.setText("Start Tracking")
             self.toggle_button.setStyleSheet(
                 "QPushButton { background-color: green; color: white; }"
@@ -865,16 +866,16 @@ class VideoWindow(QMainWindow):
         super().closeEvent(event)
 
 if __name__ == "__main__":
-    if not pyuac.isUserAdmin():
-        pyuac.runAsAdmin()
-    else:
-        app = QApplication(sys.argv)
-        window = VideoWindow()
-        window.show()
-        # TODO
-        thread = windll.kernel32.GetCurrentThread()
-        THREAD_PRIORITY_TIME_CRITICAL = 15
-        windll.kernel32.SetThreadPriority(thread, THREAD_PRIORITY_TIME_CRITICAL)
-        windll.kernel32.SetThreadPriorityBoost(thread, True)
+    # if not pyuac.isUserAdmin():
+    #     pyuac.runAsAdmin()
+    # else:
+    app = QApplication(sys.argv)
+    window = VideoWindow()
+    window.show()
+    # TODO
+    thread = windll.kernel32.GetCurrentThread()
+    THREAD_PRIORITY_TIME_CRITICAL = 15
+    windll.kernel32.SetThreadPriority(thread, THREAD_PRIORITY_TIME_CRITICAL)
+    windll.kernel32.SetThreadPriorityBoost(thread, True)
 
-        sys.exit(app.exec_())
+    sys.exit(app.exec_())

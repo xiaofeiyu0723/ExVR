@@ -45,7 +45,7 @@ def draw_face_landmarks(rgb_image):
 def is_hand_in_face():
 
     if not g.config["Tracking"]["Face"]["block"] or not g.face_landmarks or not g.hand_landmarks:
-        return False, 0.0
+        return 0.0
 
     face_x = [f.x for f in g.face_landmarks[0]]
     face_y = [f.y for f in g.face_landmarks[0]]
@@ -56,7 +56,8 @@ def is_hand_in_face():
 
     blocked_area = 0.0
 
-    target_indices = [0, 1, 2, 5, 9, 13, 17, 6, 10, 14, 18]
+    # target_indices = [0, 1, 2, 5, 9, 13, 17, 6, 10, 14, 18]
+    target_indices = [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20]
 
     for hand in g.hand_landmarks:
         hand_points = [(h.x, h.y) for i, h in enumerate(hand.landmark) if
@@ -70,8 +71,8 @@ def is_hand_in_face():
 
     if blocked_area > 0:
         normalized_area = blocked_area / face_area
-        return True, normalized_area
-    return False, 0.0
+        return normalized_area
+    return 0.0
 
 head_position_prev=None
 head_position=None
@@ -82,9 +83,7 @@ def face_pred_handling(detection_result, output_image, timestamp_ms, tongue_mode
         g.face_landmarks = detection_result.face_landmarks
 
         # Block handling
-        block_flag, coverage_ratio = is_hand_in_face()
-        if block_flag and coverage_ratio > g.config["Tracking"]["Face"]["block_threshold"]:
-            continue
+        coverage_ratio = is_hand_in_face()
 
         # Head Image Position
         head_image_position_x = detection_result.face_landmarks[0][4].x
@@ -180,19 +179,21 @@ def face_pred_handling(detection_result, output_image, timestamp_ms, tongue_mode
                 g.latest_data[63] = tongue_y
 
             if g.config["Tracking"]["Head"]["enable"]:
-                # Head Position
-                g.latest_data[64] = head_position[0]
-                g.latest_data[65] = head_position[2]
-                g.latest_data[66] = head_position[1]
+                if not coverage_ratio > g.config["Tracking"]["Face"]["position_block_threshold"]:
+                    # Head Position
+                    g.latest_data[64] = head_position[0]
+                    g.latest_data[65] = head_position[2]
+                    g.latest_data[66] = head_position[1]
 
-                # Head Rotation
-                g.latest_data[67] = rotation_x
-                g.latest_data[68] = rotation_z
-                g.latest_data[69] = rotation_y
-
-            g.latest_data[114] = head_image_position_x
-            g.latest_data[115] = head_image_position_y
-            g.latest_data[116] = head_image_position_z
+                if not coverage_ratio > g.config["Tracking"]["Face"]["rotation_block_threshold"]:
+                    # Head Rotation
+                    g.latest_data[67] = rotation_x
+                    g.latest_data[68] = rotation_z
+                    g.latest_data[69] = rotation_y
+            if not coverage_ratio > g.config["Tracking"]["Face"]["position_block_threshold"]:
+                g.latest_data[114] = head_image_position_x
+                g.latest_data[115] = head_image_position_y
+                g.latest_data[116] = head_image_position_z
 
         else:
             # Head Blendshape
@@ -214,19 +215,20 @@ def face_pred_handling(detection_result, output_image, timestamp_ms, tongue_mode
                 g.data["BlendShapes"][62]["v"] = tongue_x
                 g.data["BlendShapes"][63]["v"] = tongue_y
             if g.config["Tracking"]["Head"]["enable"]:
-                # Head Position
-                g.data["Position"][0]["v"] = head_position[0]
-                g.data["Position"][1]["v"] = head_position[2]
-                g.data["Position"][2]["v"] = head_position[1]
-
-                # Head Rotation
-                g.data["Rotation"][0]["v"] = rotation_x
-                g.data["Rotation"][1]["v"] = rotation_z
-                g.data["Rotation"][2]["v"] = rotation_y
-
-            g.data["HeadImagePosition"][0]["v"] = head_image_position_x
-            g.data["HeadImagePosition"][1]["v"] = head_image_position_y
-            g.data["HeadImagePosition"][2]["v"] = head_image_position_z
+                if not coverage_ratio > g.config["Tracking"]["Face"]["position_block_threshold"]:
+                    # Head Position
+                    g.data["Position"][0]["v"] = head_position[0]
+                    g.data["Position"][1]["v"] = head_position[2]
+                    g.data["Position"][2]["v"] = head_position[1]
+                if not coverage_ratio > g.config["Tracking"]["Face"]["rotation_block_threshold"]:
+                    # Head Rotation
+                    g.data["Rotation"][0]["v"] = rotation_x
+                    g.data["Rotation"][1]["v"] = rotation_z
+                    g.data["Rotation"][2]["v"] = rotation_y
+            if not coverage_ratio > g.config["Tracking"]["Face"]["position_block_threshold"]:
+                g.data["HeadImagePosition"][0]["v"] = head_image_position_x
+                g.data["HeadImagePosition"][1]["v"] = head_image_position_y
+                g.data["HeadImagePosition"][2]["v"] = head_image_position_z
 
 
 

@@ -17,3 +17,6 @@ Werkzeug==3.1.3
 netifaces==0.11.0
 pyuac==0.0.3
 pywin32==310
+screeninfo==0.8.1
+joblib==1.5.0
+scikit-learn==1.6.1
