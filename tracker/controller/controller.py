@@ -17,6 +17,7 @@ from pythonosc import dispatcher
 from pythonosc import osc_server
 import socket
 from copy import deepcopy
+from utils.actions import head_yaw,head_pitch
 
 
 def setup_gestures():
@@ -171,9 +172,7 @@ class ControllerApp(QThread):
             prev_state["fingers"] = deepcopy(controller.fingers)
 
         if controller.slider != 0:
-            temp = g.data["Rotation"][1]["s"]
-            temp += controller.slider * g.config["Controller"]["pitch_scalar"]
-            g.data["Rotation"][1]["s"] = temp % 360
+            head_pitch(True,controller.slider * g.config["Controller"]["pitch_scalar"])
         if controller.sliderClicked:
             g.data["Rotation"][1]["s"] = g.default_data["Rotation"][1]["s"]
 

@@ -31,9 +31,9 @@ def pack_data(data, default_data):
     return packed_data
 
 def pack_hmd_data(data, default_data):
-    x = get_value(data["Position"][0], default_data["Position"][0])
-    y = get_value(data["Position"][1], default_data["Position"][1])
-    z = get_value(data["Position"][2], default_data["Position"][2])
+    x = get_value_without_shifting(data["Position"][0], default_data["Position"][0])
+    y = get_value_without_shifting(data["Position"][1], default_data["Position"][1])
+    z = get_value_without_shifting(data["Position"][2], default_data["Position"][2])
     yaw = get_value_without_shifting(data["Rotation"][0], default_data["Rotation"][0])
     pitch = get_value_without_shifting(data["Rotation"][1], default_data["Rotation"][1])
     roll = get_value_without_shifting(data["Rotation"][2], default_data["Rotation"][2])

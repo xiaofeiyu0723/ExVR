@@ -26,9 +26,9 @@ def disable_eye():
 
 def reset_head():
     for i in range(0, 3):
-        g.data["Position"][i]["s"] = -g.data["Position"][i]["v"]
+        g.data["Position"][i]["s"] = g.default_data["Position"][i]["s"]
     for i in range(0, 3):
-        g.data["Rotation"][i]["s"] = -g.data["Rotation"][i]["v"]
+        g.data["Rotation"][i]["s"] = g.default_data["Rotation"][i]["s"]
 
 def up():
     g.data["Position"][2]["s"] += 5

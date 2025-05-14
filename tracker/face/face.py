@@ -117,9 +117,9 @@ def face_pred_handling(detection_result, output_image, timestamp_ms, tongue_mode
 
         # Head Position
         mat = np.array(detection_result.facial_transformation_matrixes[0])
-        position_x = -mat[0][3] * g.config["Tracking"]["Head"]["x_scalar"]
-        position_y = -mat[2][3] * g.config["Tracking"]["Head"]["z_scalar"]
-        position_z = mat[1][3] * g.config["Tracking"]["Head"]["y_scalar"]
+        position_x = -mat[0][3] * g.config["Tracking"]["Head"]["x_scalar"]+g.data["Position"][0]["s"]
+        position_y = -mat[2][3] * g.config["Tracking"]["Head"]["z_scalar"]+g.data["Position"][1]["s"]
+        position_z = mat[1][3] * g.config["Tracking"]["Head"]["y_scalar"]+g.data["Position"][2]["s"]
         head_position_temp=np.array([position_x, position_y,position_z])
         if head_position_prev is None:
             head_position_prev = head_position_temp.copy()
@@ -128,9 +128,9 @@ def face_pred_handling(detection_result, output_image, timestamp_ms, tongue_mode
             head_position_diff = head_position_temp - head_position_prev
             head_position_prev = head_position_temp.copy()
             yaw_calibration = g.data["Rotation"][0]["s"]
-            pitch_calibration = g.data["Rotation"][1]["s"]
+            # pitch_calibration = g.data["Rotation"][1]["s"]
             # roll_calibration = g.data["Rotation"][2]["s"]
-            calibration_rot = R.from_euler("zy", [-yaw_calibration,pitch_calibration], degrees=True)
+            calibration_rot = R.from_euler("z", -yaw_calibration, degrees=True)
             calibration_matrix = calibration_rot.as_matrix()
             calibrated_diff = calibration_matrix @ head_position_diff
             head_position += calibrated_diff
