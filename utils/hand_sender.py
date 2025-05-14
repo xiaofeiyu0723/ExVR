@@ -104,7 +104,7 @@ class GloveControllerSender:
             self.send_hand(True, self.left_hand)
             self.send_finger(True, self.left_hand)
 
-        if not self.right_hand.enable and g.config["Tracking"]["Hand"]["enable_hand_down"] and not self.right_hand  .force_enable:
+        if not self.right_hand.enable and g.config["Tracking"]["Hand"]["enable_hand_down"] and not self.right_hand.force_enable:
             self.disable_hand(False)
         else:
             self.send_hand(False, self.right_hand)

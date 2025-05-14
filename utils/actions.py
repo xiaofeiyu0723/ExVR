@@ -106,10 +106,12 @@ def trigger_press(value, index):
 
     def hand_disablement(value):
         global controller_enablement_timer
-        if value:
-            g.controller.left_hand.force_enable = False
-        else:
-            g.controller.right_hand.force_enable = False
+        if (not g.config["Tracking"]["LeftController"]["enable"] and value) or (
+                not g.config["Tracking"]["RightController"]["enable"] and not value):
+            if value:
+                g.controller.left_hand.force_enable = False
+            else:
+                g.controller.right_hand.force_enable = False
         if controller_enablement_timer[value] is not None:
             controller_enablement_timer[value].cancel()
             controller_enablement_timer[value]  = None

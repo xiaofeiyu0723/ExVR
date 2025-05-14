@@ -863,10 +863,10 @@ class VideoWindow(QMainWindow):
         super().closeEvent(event)
 
 if __name__ == "__main__":
-    if not pyuac.isUserAdmin():
-        pyuac.runAsAdmin()
-    else:
-        app = QApplication(sys.argv)
-        window = VideoWindow()
-        window.show()
-        sys.exit(app.exec_())
+    # if not pyuac.isUserAdmin():
+    #     pyuac.runAsAdmin()
+    # else:
+    app = QApplication(sys.argv)
+    window = VideoWindow()
+    window.show()
+    sys.exit(app.exec_())
