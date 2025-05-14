@@ -74,29 +74,29 @@ TODO
 
 #### Tracking设置  
 
-| **项目**  | **参数**                     | **描述**              |                                                                
-|----------------|------------------------------------|------------------------------------------------------------|
-| **Head**       | enable                            | 激活头部追踪 (`true` / `false`)                              |
-|                | x_scalar, y_scalar, z_scalar       | 调整各个轴上头部位置的灵敏度                                 |         
-|                | x_rotation_scalar, y_rotation_scalar, z_rotation_scalar | 调整头部的旋转灵敏度 |
-| **Face**       | enable                            | 启用面捕                                           |
-| **Tongue**     | enable                            | 启用舌头动态捕捉                        |
-|                | tougue_confidence                 | 舌头动态捕捉的置信度阈值 |
-|                | tongue_threshold                  | 识别舌头运动的阈值 |
-|                | tongue_x_scalar, tongue_y_scalar  | 调整舌头动态捕捉的灵敏度 |
-| **Mouth**      | enable                            | 启用嘴部动态捕捉                        |
-|                | mouth_close_threshold             | 嘴部闭合阈值 |
-| **Hand**       | enable                            | 启用手部追踪 (`true` / `false`)                              |
-|                | x_scalar, y_scalar, z_scalar       | 调整各个轴上手部位置的灵敏度                                 |
-|                | hand_confidence                   | 手部追踪的置信度阈值 |
-|                | enable_hand_auto_reset            | 自动重置手部位置 (`true` / `false`) |
-|                | hand_detection_upper_threshold    | 手部检测的上限阈值 |
-|                | hand_detection_lower_threshold    | 手部检测的下限阈值 |
-|                | hand_count_threshold              | 手部的计数阈值 |
-|                | only_front                        | 仅允许手在前方移动  |
-| **Finger**     | enable                            | 启用手指追踪 (`true` / `false`)                              |
-|                | finger_confidence                 | 手指检测的最低置信度 |
-|                | finger_threshold                  | 手指状态（张开/收紧）的阈值 |
+| **项目**  | **参数**                                                    | **描述**              |                                                                
+|----------------|-----------------------------------------------------------|------------------------------------------------------------|
+| **Head**       | enable                                                    | 激活头部追踪 (`true` / `false`)                              |
+|                | x_scalar, y_scalar, z_scalar                              | 调整各个轴上头部位置的灵敏度                                 |         
+|                | yaw_rotation_scalar, pitch_rotation_scalar, roll_rotation_scalar | 调整头部的旋转灵敏度 |
+| **Face**       | enable                                                    | 启用面捕                                           |
+| **Tongue**     | enable                                                    | 启用舌头动态捕捉                        |
+|                | tougue_confidence                                         | 舌头动态捕捉的置信度阈值 |
+|                | tongue_threshold                                          | 识别舌头运动的阈值 |
+|                | tongue_x_scalar, tongue_y_scalar                          | 调整舌头动态捕捉的灵敏度 |
+| **Mouth**      | enable                                                    | 启用嘴部动态捕捉                        |
+|                | mouth_close_threshold                                     | 嘴部闭合阈值 |
+| **Hand**       | enable                                                    | 启用手部追踪 (`true` / `false`)                              |
+|                | x_scalar, y_scalar, z_scalar                              | 调整各个轴上手部位置的灵敏度                                 |
+|                | hand_confidence                                           | 手部追踪的置信度阈值 |
+|                | enable_hand_auto_reset                                    | 自动重置手部位置 (`true` / `false`) |
+|                | hand_detection_upper_threshold                            | 手部检测的上限阈值 |
+|                | hand_detection_lower_threshold                            | 手部检测的下限阈值 |
+|                | hand_count_threshold                                      | 手部的计数阈值 |
+|                | only_front                                                | 仅允许手在前方移动  |
+| **Finger**     | enable                                                    | 启用手指追踪 (`true` / `false`)                              |
+|                | finger_confidence                                         | 手指检测的最低置信度 |
+|                | finger_threshold                                          | 手指状态（张开/收紧）的阈值 |
 
 
 

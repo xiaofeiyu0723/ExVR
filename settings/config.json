@@ -12,8 +12,8 @@
     },
     "Mouse": {
         "enable": true,
-        "scalar_x": 150,
-        "scalar_y": 100,
+        "scalar_x": 150.0,
+        "scalar_y": 100.0,
         "bound_threshold": 0.48,
         "dx": 0.15
     },
@@ -54,18 +54,16 @@
             "x_scalar": 2.0,
             "y_scalar": 3.0,
             "z_scalar": 3.0,
-            "x_rotation_scalar": 1.0,
-            "y_rotation_scalar": 1.0,
-            "z_rotation_scalar": 1.0,
-            "yaw_calibration": 0,
-            "pitch_calibration": 0,
-            "roll_calibration": 0
+            "yaw_rotation_scalar": 1.0,
+            "pitch_rotation_scalar": 1.0,
+            "roll_rotation_scalar": 1.0
         },
         "Face": {
             "enable": true,
             "block": true,
-            "position_block_threshold": 0.00,
-            "rotation_block_threshold": 0.00
+            "face_block_threshold": 0.1,
+            "position_block_threshold": 0.0,
+            "rotation_block_threshold": 0.0
         },
         "Tongue": {
             "enable": true,
@@ -83,8 +81,11 @@
             "z_shifting": 1.5,
             "hand_confidence": 0.0,
             "enable_hand_auto_reset": true,
+            "enable_hand_down":true,
+            "enable_hand_time": 5,
             "trigger_threshold": 0.5,
             "finger_action_threshold": 10,
+            "enable_finger_action": true,
             "hand_detection_upper_threshold": 100,
             "hand_detection_lower_threshold": 10,
             "position_change_points": [
@@ -164,8 +165,8 @@
         },
         "Hand": {
             "model_complexity": 0,
-            "min_hand_detection_confidence": 0.3,
-            "min_tracking_confidence": 0.5
+            "min_hand_detection_confidence": 0.8,
+            "min_tracking_confidence": 0.4
         }
     }
 }

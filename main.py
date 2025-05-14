@@ -262,6 +262,19 @@ class VideoWindow(QMainWindow):
         checkbox_layout.addWidget(self.checkbox4)
         layout.addLayout(checkbox_layout)
 
+        checkbox_layout_1 = QHBoxLayout()
+        self.checkbox5 = QCheckBox("Hand Down", self)
+        self.checkbox5.clicked.connect(
+            lambda: self.toggle_hand_down(self.checkbox5.isChecked())
+        )
+        checkbox_layout_1.addWidget(self.checkbox5)
+        self.checkbox6 = QCheckBox("Finger Action", self)
+        self.checkbox6.clicked.connect(
+            lambda: self.toggle_finger_action(self.checkbox6.isChecked())
+        )
+        checkbox_layout_1.addWidget(self.checkbox6)
+        layout.addLayout(checkbox_layout_1)
+
         slider_layout = QHBoxLayout()
         self.slider1 = QSlider(Qt.Horizontal)
         self.slider2 = QSlider(Qt.Horizontal)
@@ -363,8 +376,8 @@ class VideoWindow(QMainWindow):
         self.mouse_slider_x.setSingleStep(1)
         self.mouse_slider_y.setSingleStep(1)
         self.mouse_slider_dx.setSingleStep(1)
-        self.mouse_label_x = QLabel(f"x {g.config['Mouse']['scalar_x']:d}")
-        self.mouse_label_y = QLabel(f"y {g.config['Mouse']['scalar_y']:d}")
+        self.mouse_label_x = QLabel(f"x {int(g.config['Mouse']['scalar_x']*100)}")
+        self.mouse_label_y = QLabel(f"y {int(g.config['Mouse']['scalar_y']*100)}")
         self.mouse_label_dx = QLabel(f"dx {g.config['Mouse']['dx']:.2f}")
         self.mouse_slider_x.valueChanged.connect(lambda value: self.set_scalar(value, "mouse_x"))
         self.mouse_slider_y.valueChanged.connect(lambda value: self.set_scalar(value, "mouse_y"))
@@ -510,6 +523,8 @@ class VideoWindow(QMainWindow):
         self.checkbox2.setChecked(g.config["Tracking"]["Face"]["enable"])
         self.checkbox3.setChecked(g.config["Tracking"]["Tongue"]["enable"])
         self.checkbox4.setChecked(g.config["Tracking"]["Hand"]["enable"])
+        self.checkbox5.setChecked(g.config["Tracking"]["Hand"]["enable_hand_down"])
+        self.checkbox6.setChecked(g.config["Tracking"]["Hand"]["enable_finger_action"])
         self.controller_checkbox1.setChecked(g.config["Tracking"]["LeftController"]["enable"])
         self.controller_checkbox2.setChecked(g.config["Tracking"]["RightController"]["enable"])
         self.mouse_checkbox.setChecked(g.config["Mouse"]["enable"])
@@ -592,8 +607,6 @@ class VideoWindow(QMainWindow):
         self.mouse_label_y.setText(f"y {int(mouse_y)}")
         self.mouse_label_dx.setText(f"dx {mouse_dx:.2f}")
 
-
-
     def reset_hotkeys(self):
         stop_hotkeys()
         apply_hotkeys()
@@ -606,6 +619,12 @@ class VideoWindow(QMainWindow):
 
     def toggle_mouse(self, value):
         g.config["Mouse"]["enable"] = value
+
+    def toggle_hand_down(self, value):
+        g.config["Tracking"]["Hand"]["enable_hand_down"] = value
+
+    def toggle_finger_action(self, value):
+        g.config["Tracking"]["Hand"]["enable_finger_action"] = value
 
     def install_checking(self):
         # Open registry key to get Steam installation path
@@ -866,16 +885,16 @@ class VideoWindow(QMainWindow):
         super().closeEvent(event)
 
 if __name__ == "__main__":
-    # if not pyuac.isUserAdmin():
-    #     pyuac.runAsAdmin()
-    # else:
-    app = QApplication(sys.argv)
-    window = VideoWindow()
-    window.show()
-    # TODO
-    thread = windll.kernel32.GetCurrentThread()
-    THREAD_PRIORITY_TIME_CRITICAL = 15
-    windll.kernel32.SetThreadPriority(thread, THREAD_PRIORITY_TIME_CRITICAL)
-    windll.kernel32.SetThreadPriorityBoost(thread, True)
+    if not pyuac.isUserAdmin():
+        pyuac.runAsAdmin()
+    else:
+        app = QApplication(sys.argv)
+        window = VideoWindow()
+        window.show()
+        # TODO
+        thread = windll.kernel32.GetCurrentThread()
+        THREAD_PRIORITY_TIME_CRITICAL = 15
+        windll.kernel32.SetThreadPriority(thread, THREAD_PRIORITY_TIME_CRITICAL)
+        windll.kernel32.SetThreadPriorityBoost(thread, True)
 
-    sys.exit(app.exec_())
+        sys.exit(app.exec_())

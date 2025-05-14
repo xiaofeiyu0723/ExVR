@@ -13,6 +13,11 @@ def get_value(value, value_d):
     else:
         return value_d["v"] + value_d["s"]
 
+def get_value_without_shifting(value, value_d):
+    if value["e"]:
+        return value["v"]
+    else:
+        return value_d["v"]
 
 def pack_data(data, default_data):
     packed_data = b""
@@ -26,14 +31,18 @@ def pack_data(data, default_data):
     return packed_data
 
 def pack_hmd_data(data, default_data):
-    yaw = get_value(data["Rotation"][0], default_data["Rotation"][0])
-    pitch = get_value(data["Rotation"][1], default_data["Rotation"][1])
-    roll = get_value(data["Rotation"][2], default_data["Rotation"][2])
-
     x = get_value(data["Position"][0], default_data["Position"][0])
     y = get_value(data["Position"][1], default_data["Position"][1])
     z = get_value(data["Position"][2], default_data["Position"][2])
-    packed_hmd_data = struct.pack("6d", x, y, z, yaw, pitch, roll)
+    yaw = get_value_without_shifting(data["Rotation"][0], default_data["Rotation"][0])
+    pitch = get_value_without_shifting(data["Rotation"][1], default_data["Rotation"][1])
+    roll = get_value_without_shifting(data["Rotation"][2], default_data["Rotation"][2])
+    yaw_shifting=data["Rotation"][0]["s"]
+    pitch_shifting=data["Rotation"][1]["s"]
+    roll_shifting=data["Rotation"][2]["s"]
+    # packed_hmd_data = struct.pack("6d", x, y, z, yaw, pitch, roll)
+    packed_hmd_data = struct.pack("9d", x, y, z, yaw, pitch, roll, yaw_shifting, pitch_shifting, roll_shifting)
+
     return packed_hmd_data
 
 def calculate_endpoint(start_point, length, euler_angles):

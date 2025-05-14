@@ -13,6 +13,8 @@ class Transform:
     rotation: tuple  # (x, y, z, w)
     finger: tuple  # (0,1,2,3,4)
     follow: bool
+    enable: bool
+    force_enable: bool
 
 # GloveControllerSender equivalent in Python
 class GloveControllerSender:
@@ -20,8 +22,8 @@ class GloveControllerSender:
         # Initialize OSC client
         self.client = udp_client.SimpleUDPClient(osc_ip, osc_port)
 
-        self.left_hand = Transform((0, 0, 0), (0, 0, 0, 1), (1.0, 1.0, 1.0, 1.0, 1.0),True)
-        self.right_hand = Transform((0, 0, 0), (0, 0, 0, 1), (1.0, 1.0, 1.0, 1.0, 1.0),True)
+        self.left_hand = Transform((0, 0, 0), (0, 0, 0, 1), (1.0, 1.0, 1.0, 1.0, 1.0),False,False,False)
+        self.right_hand = Transform((0, 0, 0), (0, 0, 0, 1), (1.0, 1.0, 1.0, 1.0, 1.0),False,False,False)
         self.vmt_init()
 
     def send_hand(self, is_left_hand, target: Transform):
@@ -43,6 +45,10 @@ class GloveControllerSender:
             self.client.send_message("/VMT/Follow/Driver", message)
         else:
             self.client.send_message("/VMT/Joint/Driver", message)
+
+    def disable_hand(self,is_left_hand):
+        message = [1 if is_left_hand else 2, 0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0]
+        self.client.send_message("/VMT/Room/Unity", message)
 
     def send_finger(self, is_left_hand, target: Transform):
         for i, value in enumerate(target.finger):
@@ -92,7 +98,14 @@ class GloveControllerSender:
         )
 
     def update(self):
-        self.send_hand(True, self.left_hand)
-        self.send_hand(False, self.right_hand)
-        self.send_finger(True, self.left_hand)
-        self.send_finger(False, self.right_hand)
+        if not self.left_hand.enable and g.config["Tracking"]["Hand"]["enable_hand_down"] and not self.left_hand.force_enable:
+            self.disable_hand(True)
+        else:
+            self.send_hand(True, self.left_hand)
+            self.send_finger(True, self.left_hand)
+
+        if not self.right_hand.enable and g.config["Tracking"]["Hand"]["enable_hand_down"] and not self.right_hand  .force_enable:
+            self.disable_hand(False)
+        else:
+            self.send_hand(False, self.right_hand)
+            self.send_finger(False, self.right_hand)

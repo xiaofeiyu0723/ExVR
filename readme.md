@@ -73,29 +73,29 @@ The `config.json` file, located in the root (`./settings`) directory, allows use
 
 #### Tracking Settings  
 
-| **Component**  | **Parameter**                                           | **Description**                                      |
-|----------------|---------------------------------------------------------|------------------------------------------------------|
-| **Head**       | enable                                                  | Activate head tracking (`true` or `false`).          |
-|                | x_scalar, y_scalar, z_scalar                            | Adjust sensitivity for head position in each axis.   |
-|                | x_rotation_scalar, y_rotation_scalar, z_rotation_scalar | Adjust sensitivity for head rotation.                |
-| **Face**       | enable                                                  | Activate face tracking.                              |
-| **Tongue**     | enable                                                  | Activate tongue tracking.                            |
-|                | tongue_confidence                                       | Minimum confidence for tongue detection.             |
-|                | tongue_threshold                                        | Threshold to recognize tongue movements.             |
-|                | tongue_x_scalar, tongue_y_scalar                        | Adjust sensitivity for tongue movements.             |
-|                | mouth_close_threshold                                   | Threshold to detect a closed mouth.                  |
-| **Hand**       | enable                                                  | Activate hand tracking.                              |
-|                | x_scalar, y_scalar, z_scalar                            | Adjust sensitivity for hand position in each axis.   |
-|                | hand_confidence                                         | Minimum confidence for hand detection.               |
-|                | enable_hand_auto_reset                                  | Automatically resets hand position (`true`/`false`). |
-|                | hand_detection_upper_threshold                          | Upper threshold for hand detection.                  |
-|                | hand_detection_lower_threshold                          | Lower threshold for hand detection.                  |
-|                | hand_count_threshold                                    | Minimum number of hands required for detection.      |
-|                | only_front                                              | Limit tracking to front-facing hands.                |
-|                | toggle_hand_tracking_mode                               | Toggle hand-tracking mode between Follow and Joint.  |
-| **Finger**     | enable                                                  | Activate finger tracking.                            |
-|                | finger_confidence                                       | Minimum confidence for finger detection.             |
-|                | finger_threshold                                        | Sensitivity threshold for finger movements.          |
+| **Component**  | **Parameter**                                                                  | **Description**                                      |
+|----------------|--------------------------------------------------------------------------------|------------------------------------------------------|
+| **Head**       | enable                                                                         | Activate head tracking (`true` or `false`).          |
+|                | x_scalar, y_scalar, z_scalar                                                   | Adjust sensitivity for head position in each axis.   |
+|                | yaw_rotation_scalar, pitch_rotation_scalar, roll_rotation_scalar | Adjust sensitivity for head rotation.                |
+| **Face**       | enable                                                                         | Activate face tracking.                              |
+| **Tongue**     | enable                                                                         | Activate tongue tracking.                            |
+|                | tongue_confidence                                                              | Minimum confidence for tongue detection.             |
+|                | tongue_threshold                                                               | Threshold to recognize tongue movements.             |
+|                | tongue_x_scalar, tongue_y_scalar                                               | Adjust sensitivity for tongue movements.             |
+|                | mouth_close_threshold                                                          | Threshold to detect a closed mouth.                  |
+| **Hand**       | enable                                                                         | Activate hand tracking.                              |
+|                | x_scalar, y_scalar, z_scalar                                                   | Adjust sensitivity for hand position in each axis.   |
+|                | hand_confidence                                                                | Minimum confidence for hand detection.               |
+|                | enable_hand_auto_reset                                                         | Automatically resets hand position (`true`/`false`). |
+|                | hand_detection_upper_threshold                                                 | Upper threshold for hand detection.                  |
+|                | hand_detection_lower_threshold                                                 | Lower threshold for hand detection.                  |
+|                | hand_count_threshold                                                           | Minimum number of hands required for detection.      |
+|                | only_front                                                                     | Limit tracking to front-facing hands.                |
+|                | toggle_hand_tracking_mode                                                      | Toggle hand-tracking mode between Follow and Joint.  |
+| **Finger**     | enable                                                                         | Activate finger tracking.                            |
+|                | finger_confidence                                                              | Minimum confidence for finger detection.             |
+|                | finger_threshold                                                               | Sensitivity threshold for finger movements.          |
 
 #### Model Settings  
 

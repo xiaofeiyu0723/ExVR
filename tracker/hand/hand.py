@@ -176,9 +176,10 @@ def hand_is_changed(key, hand_name,hand_landmarks,change_points,change_threshold
         return True, 0
 
 finger_action_threshold = {"Left":0,"Right":0}
+prev_distance_scalar = None
 def hand_pred_handling(detection_result):
     global left_hand_detection_counts, right_hand_detection_counts, left_position_queue, right_position_queue
-    global finger_action_threshold
+    global finger_action_threshold,prev_distance_scalar
 
     g.hand_landmarks = detection_result.multi_hand_landmarks
     g.handedness = detection_result.multi_handedness
@@ -258,9 +259,19 @@ def hand_pred_handling(detection_result):
             data_transformed = g.hand_feature_model.transform(data)
             pred_distance = g.hand_regression_model.predict(data_transformed)
             hand_distance_temp=pred_distance[0]
+
             rounded_value = np.round(g.data["HeadImagePosition"][2]["v"], 2)
             clipped_value = np.clip(rounded_value, None, -1e-8)
-            hand_distance = hand_distance_temp/clipped_value
+            if prev_distance_scalar is None:
+                distance_scalar=clipped_value
+                prev_distance_scalar=clipped_value
+            else:
+                if abs(g.data["Rotation"][1]["v"]+g.data["Rotation"][1]["s"])%360<10 or abs(g.data["Rotation"][1]["v"]+g.data["Rotation"][1]["s"])%360>350:
+                    distance_scalar=clipped_value
+                else:
+                    distance_scalar=prev_distance_scalar
+
+            hand_distance = hand_distance_temp/distance_scalar
 
             hand_distance += g.config["Tracking"]["Hand"]["z_shifting"]
             hand_distance *= g.config["Tracking"]["Hand"]["z_scalar"]
@@ -281,33 +292,27 @@ def hand_pred_handling(detection_result):
             y = y / np.linalg.norm(y)
             z = z / np.linalg.norm(z)
 
-            yaw_calibration = g.config["Tracking"]["Head"]["yaw_calibration"]
-            pitch_calibration = g.config["Tracking"]["Head"]["pitch_calibration"]
-            roll_calibration = g.config["Tracking"]["Head"]["roll_calibration"]
-            calibration_rot = R.from_euler("xyz", [-yaw_calibration, pitch_calibration, -roll_calibration],degrees=True)
-            calibration_matrix=calibration_rot.as_matrix()
             wrist_matrix = np.vstack((x, y, z)).T
-            wrist_matrix = calibration_matrix @ wrist_matrix
             wrist_rot = R.from_matrix(wrist_matrix).as_euler("xyz", degrees=True)
-            hand_position= calibration_matrix @ hand_position
 
             if g.config["Tracking"]["Finger"]["enable"]:
                 finger_curl=finger_handling(hand_pose)
                 finger_0, finger_1, finger_2, finger_3, finger_4 = finger_curl["thumb"],finger_curl["index"],finger_curl["middle"],finger_curl["ring"],finger_curl["pinky"]
-                if finger_1 < g.config["Tracking"]["Hand"]["trigger_threshold"]:
-                    g.controller.send_trigger(True if hand_name=="Left" else False, 0, 1)
-                else:
-                    g.controller.send_trigger(True if hand_name=="Left" else False, 0, 0)
-                if finger_1>0.3 and finger_3>0.3 and finger_4 >0.5 and finger_0<0.7 and finger_2<0.4:
-                    finger_action_threshold[hand_name] = g.config["Tracking"]["Hand"]["finger_action_threshold"]
-                else:
-                    finger_action_threshold[hand_name] = max(0,finger_action_threshold[hand_name]-1)
-                if finger_action_threshold[hand_name] != 0:
-                    finger_1 = 1.0
-                    finger_3 = 1.0
-                    finger_4 = 1.0
-                    finger_0 = 0.0
-                    finger_2 = 0.25
+                if g.config["Tracking"]["Hand"]["enable_finger_action"]:
+                    if finger_1 < g.config["Tracking"]["Hand"]["trigger_threshold"]:
+                        g.controller.send_trigger(True if hand_name=="Left" else False, 0, 1)
+                    else:
+                        g.controller.send_trigger(True if hand_name=="Left" else False, 0, 0)
+                    if finger_1>0.3 and finger_3>0.3 and finger_4 >0.5 and finger_0<0.7 and finger_2<0.4:
+                        finger_action_threshold[hand_name] = g.config["Tracking"]["Hand"]["finger_action_threshold"]
+                    else:
+                        finger_action_threshold[hand_name] = max(0,finger_action_threshold[hand_name]-1)
+                    if finger_action_threshold[hand_name] != 0:
+                        finger_1 = 1.0
+                        finger_3 = 1.0
+                        finger_4 = 1.0
+                        finger_0 = 0.0
+                        finger_2 = 0.25
 
             else:
                 finger_0, finger_1, finger_2, finger_3, finger_4 = 1.0, 1.0, 1.0, 1.0, 1.0
@@ -343,7 +348,7 @@ def hand_pred_handling(detection_result):
                     g.data["LeftHandFinger"][2]["v"] = finger_2
                     g.data["LeftHandFinger"][3]["v"] = finger_3
                     g.data["LeftHandFinger"][4]["v"] = finger_4
-
+                g.controller.left_hand.enable = True
             else:
                 if g.config["Smoothing"]["enable"]:
                     if rotation_change_flag:
@@ -375,6 +380,7 @@ def hand_pred_handling(detection_result):
                     g.data["RightHandFinger"][2]["v"] = finger_2
                     g.data["RightHandFinger"][3]["v"] = finger_3
                     g.data["RightHandFinger"][4]["v"] = finger_4
+                g.controller.right_hand.enable = True
 
     if left_hand_detection_counts <= g.config["Tracking"]["Hand"]["hand_detection_lower_threshold"] and \
             g.config["Tracking"]["Hand"]["enable_hand_auto_reset"] and not g.config["Tracking"]["LeftController"][
@@ -400,10 +406,13 @@ def hand_pred_handling(detection_result):
         if g.config["Tracking"]["Hand"]["follow"]:
             g.controller.left_hand.follow = False
         else:
-            g.controller.left_hand.follow = True
-
+            # g.controller.left_hand.follow = True
+            g.controller.left_hand.follow = False
+        g.controller.left_hand.enable = False
     else:
-        g.controller.left_hand.follow = True
+        # g.controller.left_hand.follow = True
+        g.controller.left_hand.follow = False
+
 
     if right_hand_detection_counts <= g.config["Tracking"]["Hand"]["hand_detection_lower_threshold"] and \
             g.config["Tracking"]["Hand"]["enable_hand_auto_reset"] and not g.config["Tracking"]["RightController"][
@@ -429,10 +438,12 @@ def hand_pred_handling(detection_result):
         if g.config["Tracking"]["Hand"]["follow"]:
             g.controller.right_hand.follow = False
         else:
-            g.controller.right_hand.follow = True
-
+            # g.controller.right_hand.follow = True
+            g.controller.right_hand.follow = False
+        g.controller.right_hand.enable = False
     else:
-        g.controller.right_hand.follow = True
+        # g.controller.right_hand.follow = True
+        g.controller.right_hand.follow = False
 
 
 def initialize_hand():

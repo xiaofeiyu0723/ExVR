@@ -77,8 +77,8 @@ def is_hand_in_face():
 head_position_prev=None
 head_position=None
 def face_pred_handling(detection_result, output_image, timestamp_ms, tongue_model):
-    # For each face detected
     global head_position_prev,head_position
+    # For each face detected
     for idx in range(len(detection_result.face_landmarks)):
         g.face_landmarks = detection_result.face_landmarks
 
@@ -90,11 +90,12 @@ def face_pred_handling(detection_result, output_image, timestamp_ms, tongue_mode
         head_image_position_y = detection_result.face_landmarks[0][4].y
         head_image_position_z = detection_result.face_landmarks[0][4].z
 
-        for i in range(len(detection_result.face_blendshapes[0])):
-            if g.config["Smoothing"]["enable"]:
-                g.latest_data[i] = detection_result.face_blendshapes[0][i].score
-            else:
-                g.data["BlendShapes"][i]["v"] = detection_result.face_blendshapes[0][i].score
+        if not coverage_ratio > g.config["Tracking"]["Face"]["face_block_threshold"]:
+            for i in range(len(detection_result.face_blendshapes[0])):
+                if g.config["Smoothing"]["enable"]:
+                    g.latest_data[i] = detection_result.face_blendshapes[0][i].score
+                else:
+                    g.data["BlendShapes"][i]["v"] = detection_result.face_blendshapes[0][i].score
         # Eye with shifting
         EyeYawLeft = -g.data["BlendShapes"][15]["v"] + g.data["BlendShapes"][13]["v"]
         EyeYawRight = -g.data["BlendShapes"][14]["v"] + g.data["BlendShapes"][16]["v"]
@@ -117,8 +118,8 @@ def face_pred_handling(detection_result, output_image, timestamp_ms, tongue_mode
         # Head Position
         mat = np.array(detection_result.facial_transformation_matrixes[0])
         position_x = -mat[0][3] * g.config["Tracking"]["Head"]["x_scalar"]
-        position_y = mat[1][3] * g.config["Tracking"]["Head"]["y_scalar"]
-        position_z = -mat[2][3] * g.config["Tracking"]["Head"]["z_scalar"]
+        position_y = -mat[2][3] * g.config["Tracking"]["Head"]["z_scalar"]
+        position_z = mat[1][3] * g.config["Tracking"]["Head"]["y_scalar"]
         head_position_temp=np.array([position_x, position_y,position_z])
         if head_position_prev is None:
             head_position_prev = head_position_temp.copy()
@@ -126,105 +127,104 @@ def face_pred_handling(detection_result, output_image, timestamp_ms, tongue_mode
         else:
             head_position_diff = head_position_temp - head_position_prev
             head_position_prev = head_position_temp.copy()
-
-            yaw_calibration = g.config["Tracking"]["Head"]["yaw_calibration"]
-            pitch_calibration = g.config["Tracking"]["Head"]["pitch_calibration"]
-            roll_calibration = g.config["Tracking"]["Head"]["roll_calibration"]
-            calibration_rot = R.from_euler("xyz", [-yaw_calibration, pitch_calibration, -roll_calibration],
-                                           degrees=True)
+            yaw_calibration = g.data["Rotation"][0]["s"]
+            pitch_calibration = g.data["Rotation"][1]["s"]
+            # roll_calibration = g.data["Rotation"][2]["s"]
+            calibration_rot = R.from_euler("zy", [-yaw_calibration,pitch_calibration], degrees=True)
             calibration_matrix = calibration_rot.as_matrix()
             calibrated_diff = calibration_matrix @ head_position_diff
             head_position += calibrated_diff
 
-        rotation_x = (
-            -(
-                np.arctan2(-mat[2, 0], np.sqrt(mat[2, 1] ** 2 + mat[2, 2] ** 2))
+        rotation_yaw = (
+            -np.arctan2(-mat[2, 0], np.sqrt(mat[2, 1] ** 2 + mat[2, 2] ** 2))
                 * 180
                 / math.pi
-            )
-            * g.config["Tracking"]["Head"]["x_rotation_scalar"]
+            * g.config["Tracking"]["Head"]["yaw_rotation_scalar"]
         )
-        rotation_y = (
-            -np.arctan2(mat[1, 0], mat[0, 0])
-            * 180
-            / math.pi
-            * g.config["Tracking"]["Head"]["y_rotation_scalar"]
-        )
-        rotation_z = (
+        rotation_pitch = (
             -np.arctan2(mat[2, 1], mat[2, 2])
             * 180
             / math.pi
-            * g.config["Tracking"]["Head"]["z_rotation_scalar"]
+            * g.config["Tracking"]["Head"]["pitch_rotation_scalar"]
         )
+        rotation_roll = (
+            -np.arctan2(mat[1, 0], mat[0, 0])
+            * 180
+            / math.pi
+            * g.config["Tracking"]["Head"]["roll_rotation_scalar"]
+        )
+        head_rotation=np.array([rotation_yaw, rotation_pitch,rotation_roll])
 
         # Update g.latest_data or data directly
         if g.config["Smoothing"]["enable"]:
-            # Head Blendshape
-            g.latest_data[53] = 0.0
-            g.latest_data[54] = 0.0
-            g.latest_data[55] = 0.0
+            if not coverage_ratio > g.config["Tracking"]["Face"]["face_block_threshold"]:
+                # Head Blendshape
+                g.latest_data[53] = 0.0
+                g.latest_data[54] = 0.0
+                g.latest_data[55] = 0.0
 
-            # Eye with shifting
-            g.latest_data[56] = EyeYawLeft
-            g.latest_data[57] = EyePitchLeft
-            g.latest_data[58] = 0.0
-            g.latest_data[59] = EyeYawRight
-            g.latest_data[60] = EyePitchRight
-            g.latest_data[61] = 0.0
+                # Eye with shifting
+                g.latest_data[56] = EyeYawLeft
+                g.latest_data[57] = EyePitchLeft
+                g.latest_data[58] = 0.0
+                g.latest_data[59] = EyeYawRight
+                g.latest_data[60] = EyePitchRight
+                g.latest_data[61] = 0.0
 
-            # Tongue
-            if g.config["Tracking"]["Tongue"]["enable"] and tongue_out is not None and tongue_x is not None and tongue_y is not None:
-                g.latest_data[52] = tongue_out
-                g.latest_data[62] = tongue_x
-                g.latest_data[63] = tongue_y
+                # Tongue
+                if g.config["Tracking"]["Tongue"]["enable"] and tongue_out is not None and tongue_x is not None and tongue_y is not None:
+                    g.latest_data[52] = tongue_out
+                    g.latest_data[62] = tongue_x
+                    g.latest_data[63] = tongue_y
 
             if g.config["Tracking"]["Head"]["enable"]:
                 if not coverage_ratio > g.config["Tracking"]["Face"]["position_block_threshold"]:
                     # Head Position
                     g.latest_data[64] = head_position[0]
-                    g.latest_data[65] = head_position[2]
-                    g.latest_data[66] = head_position[1]
+                    g.latest_data[65] = head_position[1]
+                    g.latest_data[66] = head_position[2]
 
                 if not coverage_ratio > g.config["Tracking"]["Face"]["rotation_block_threshold"]:
                     # Head Rotation
-                    g.latest_data[67] = rotation_x
-                    g.latest_data[68] = rotation_z
-                    g.latest_data[69] = rotation_y
+                    g.latest_data[67] = head_rotation[0]
+                    g.latest_data[68] = head_rotation[1]
+                    g.latest_data[69] = head_rotation[2]
             if not coverage_ratio > g.config["Tracking"]["Face"]["position_block_threshold"]:
                 g.latest_data[114] = head_image_position_x
                 g.latest_data[115] = head_image_position_y
                 g.latest_data[116] = head_image_position_z
 
         else:
-            # Head Blendshape
-            g.data["BlendShapes"][53]["v"] = 0.0
-            g.data["BlendShapes"][54]["v"] = 0.0
-            g.data["BlendShapes"][55]["v"] = 0.0
+            if not coverage_ratio > g.config["Tracking"]["Face"]["face_block_threshold"]:
+                # Head Blendshape
+                g.data["BlendShapes"][53]["v"] = 0.0
+                g.data["BlendShapes"][54]["v"] = 0.0
+                g.data["BlendShapes"][55]["v"] = 0.0
 
-            # Eye with shifting
-            g.data["BlendShapes"][56]["v"] = EyeYawLeft
-            g.data["BlendShapes"][57]["v"] = EyePitchLeft
-            g.data["BlendShapes"][58]["v"] = 0.0
-            g.data["BlendShapes"][59]["v"] = EyeYawRight
-            g.data["BlendShapes"][60]["v"] = EyePitchRight
-            g.data["BlendShapes"][61]["v"] = 0.0
+                # Eye with shifting
+                g.data["BlendShapes"][56]["v"] = EyeYawLeft
+                g.data["BlendShapes"][57]["v"] = EyePitchLeft
+                g.data["BlendShapes"][58]["v"] = 0.0
+                g.data["BlendShapes"][59]["v"] = EyeYawRight
+                g.data["BlendShapes"][60]["v"] = EyePitchRight
+                g.data["BlendShapes"][61]["v"] = 0.0
 
-            # Tongue
-            if g.config["Tracking"]["Tongue"]["enable"] and tongue_out is not None and tongue_x is not None and tongue_y is not None:
-                g.data["BlendShapes"][52]["v"] = tongue_out
-                g.data["BlendShapes"][62]["v"] = tongue_x
-                g.data["BlendShapes"][63]["v"] = tongue_y
+                # Tongue
+                if g.config["Tracking"]["Tongue"]["enable"] and tongue_out is not None and tongue_x is not None and tongue_y is not None:
+                    g.data["BlendShapes"][52]["v"] = tongue_out
+                    g.data["BlendShapes"][62]["v"] = tongue_x
+                    g.data["BlendShapes"][63]["v"] = tongue_y
             if g.config["Tracking"]["Head"]["enable"]:
                 if not coverage_ratio > g.config["Tracking"]["Face"]["position_block_threshold"]:
                     # Head Position
                     g.data["Position"][0]["v"] = head_position[0]
-                    g.data["Position"][1]["v"] = head_position[2]
-                    g.data["Position"][2]["v"] = head_position[1]
+                    g.data["Position"][1]["v"] = head_position[1]
+                    g.data["Position"][2]["v"] = head_position[2]
                 if not coverage_ratio > g.config["Tracking"]["Face"]["rotation_block_threshold"]:
                     # Head Rotation
-                    g.data["Rotation"][0]["v"] = rotation_x
-                    g.data["Rotation"][1]["v"] = rotation_z
-                    g.data["Rotation"][2]["v"] = rotation_y
+                    g.data["Rotation"][0]["v"] = head_rotation[0]
+                    g.data["Rotation"][1]["v"] = head_rotation[1]
+                    g.data["Rotation"][2]["v"] = head_rotation[2]
             if not coverage_ratio > g.config["Tracking"]["Face"]["position_block_threshold"]:
                 g.data["HeadImagePosition"][0]["v"] = head_image_position_x
                 g.data["HeadImagePosition"][1]["v"] = head_image_position_y

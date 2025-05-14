@@ -1,5 +1,6 @@
 import utils.globals as g
 from threading import Timer
+import math
 
 def reset_eye():
     for i in [9, 10]:
@@ -24,10 +25,6 @@ def disable_eye():
 
 
 def reset_head():
-    g.config["Tracking"]["Head"]["yaw_calibration"] = g.data["Rotation"][0]["v"]
-    g.config["Tracking"]["Head"]["pitch_calibration"] = g.data["Rotation"][1]["v"]
-    g.config["Tracking"]["Head"]["roll_calibration"] = g.data["Rotation"][2]["v"]
-    # print(g.config["Tracking"]["Head"]["yaw_calibration"],g.config["Tracking"]["Head"]["pitch_calibration"],g.config["Tracking"]["Head"]["roll_calibration"])
     for i in range(0, 3):
         g.data["Position"][i]["s"] = -g.data["Position"][i]["v"]
     for i in range(0, 3):
@@ -50,32 +47,27 @@ def right():
 
 
 def head_pitch(flag=True,value=5):
-    temp=g.data["Rotation"][1]["s"]
+    temp_0=g.data["Rotation"][1]["s"]
     if flag:
-        temp += value
+        temp_0 += value
     else:
-        temp -= value
-    g.data["Rotation"][1]["s"] = temp % 360
+        temp_0 -= value
+    g.data["Rotation"][1]["s"] = temp_0 % 360
 
 
 def head_yaw(flag=True,value=5):
     temp_0 = g.data["Rotation"][0]["s"]
-    temp_1 = g.config["Tracking"]["Head"]["pitch_calibration"]
     if flag:
-        temp_0 -= value
-        temp_1 += value
-    else:
         temp_0 += value
-        temp_1 -= value
+    else:
+        temp_0 -= value
     g.data["Rotation"][0]["s"] = temp_0 % 360
-    g.config["Tracking"]["Head"]["pitch_calibration"] = temp_1 % 360
 
 def set_head_pitch(value):
     g.data["Rotation"][1]["s"] = value % 360
 
 def set_head_yaw(value):
-    g.data["Rotation"][0]["s"] = value % 360
-    g.config["Tracking"]["Head"]["pitch_calibration"] = -value % 360
+    g.data["Rotation"][0]["s"] = -value % 360
 
 
 # head_yaw_timer = None
@@ -104,23 +96,36 @@ def grab(value, index):
     else:
         g.controller.send_trigger(value, index, 0.0)
 
-
+controller_enablement_timer={True: None, False: None}
 def trigger_press(value, index):
-    # print(1)
+    global controller_enablement_timer
+    if value:
+        g.controller.left_hand.force_enable = True
+    else:
+        g.controller.right_hand.force_enable = True
+
+    def hand_disablement(value):
+        global controller_enablement_timer
+        if value:
+            g.controller.left_hand.force_enable = False
+        else:
+            g.controller.right_hand.force_enable = False
+        if controller_enablement_timer[value] is not None:
+            controller_enablement_timer[value].cancel()
+            controller_enablement_timer[value]  = None
+    if controller_enablement_timer[value] is None:
+        controller_enablement_timer[value] = Timer(g.config["Tracking"]["Hand"]["enable_hand_time"], hand_disablement,args=(value,))
+        controller_enablement_timer[value].start()
     g.controller.send_trigger(value, index, 1.0)
 
-
 def trigger_release(value, index):
-    # print(0)
     g.controller.send_trigger(value, index, 0.0)
 
-import math
 
 joystick_value = 1.0
 joystick_status = (0.0, joystick_value)
 joystick_step = 0.2
 angle = math.atan2(joystick_status[1], joystick_status[0])
-
 def joystick_up(value, index):
     global joystick_status, joystick_step, angle, joystick_value
     angle += joystick_step
@@ -147,7 +152,6 @@ def joystick_middle(value, index):
 
 
 joystick_middle_timer = None
-
 def joystick_middle_delay(value, index):
     global joystick_middle_timer, joystick_status, joystick_value
 
@@ -237,8 +241,6 @@ def enable_hand():
 
 
 hand_reset_timer = None
-
-
 def reset_hand(value=None):
     global hand_reset_timer
     hand_side = "LeftHandPosition" if value else "RightHandPosition"
