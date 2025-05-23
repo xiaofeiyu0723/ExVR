@@ -760,7 +760,7 @@ class VideoWindow(QMainWindow):
         # print(dev)
         for device in devices:
             if device.index > 1000:
-                device.name += " (MSMF)"
+                device.name += " (MSMF - Discouraged)"
             else:
                 device.name += " (DSHOW)"
         for device in devices:
@@ -784,12 +784,16 @@ class VideoWindow(QMainWindow):
 
     def populate_camera_list(self):
         devices = enumerate_cameras(cv2.CAP_ANY)
+        dshow_devices = []
+        msmf_devices = []
         for device in devices:
             if device.index > 1000:
-                device.name += " (MSMF)"
+                device.name += " (MSMF - Discouraged)"
+                msmf_devices.append(device)
             else:
                 device.name += " (DSHOW)"
-        for device in devices:
+                dshow_devices.append(device)
+        for device in dshow_devices + msmf_devices:
             self.camera_selection.addItem(device.name)
 
     def populate_resolution_list(self):
