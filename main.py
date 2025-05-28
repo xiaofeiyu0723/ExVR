@@ -134,6 +134,13 @@ class VideoWindow(QMainWindow):
             QSizePolicy.Expanding
         )
 
+        top_right_layout = QHBoxLayout()
+        top_right_layout.addStretch()
+        self.steamvr_status_label = QLabel(self)
+        top_right_layout.addWidget(self.steamvr_status_label)
+        layout.insertLayout(0, top_right_layout)
+
+
         flip_layout = QHBoxLayout()  # Create a QHBoxLayout for new reset buttons
         self.flip_x_checkbox = QCheckBox("Flip X", self)
         self.flip_x_checkbox.clicked.connect(self.flip_x)
@@ -170,12 +177,14 @@ class VideoWindow(QMainWindow):
         layout.addWidget(self.priority_selection)
         self.priority_selection.setCurrentIndex(self.priority_selection.findText(g.config["Setting"]["priority"]))
 
-        self.install_state, steamvr_driver_path, vrcfacetracking_path = self.install_checking()
-        if steamvr_driver_path is None or vrcfacetracking_path is None:
-            self.install_button = QPushButton("Please Install SteamVR", self)
-            self.install_button.setStyleSheet(
-                "QPushButton { background-color: red; color: white; }")
-        elif self.install_state:
+        self.install_state, steamvr_driver_path, vrcfacetracking_path, check_steamvr_path = self.install_checking()
+        if check_steamvr_path is not None:
+            self.steamvr_status_label.setText("SteamVR 已安装")
+            self.steamvr_status_label.setStyleSheet("color: green; font-weight: bold;")
+        else:
+            self.steamvr_status_label.setText("SteamVR 未安装")
+            self.steamvr_status_label.setStyleSheet("color: red; font-weight: bold;")
+        if self.install_state:
             self.install_button = QPushButton("Uninstall Drivers", self)
             self.install_button.setStyleSheet("")
         else:
@@ -617,6 +626,13 @@ class VideoWindow(QMainWindow):
             steamvr_driver_path = os.path.join(
                 steam_path, "steamapps", "common", "SteamVR", "drivers"
             )
+
+            check_steamvr_path = os.path.join(
+                steam_path, "steamapps", "common", "SteamVR", "bin"
+            )
+            if not os.path.exists(check_steamvr_path):
+                check_steamvr_path = None
+
             vrcfacetracking_path = os.path.join(
                 os.getenv("APPDATA"), "VRCFaceTracking", "CustomLibs"
             )
@@ -630,12 +646,12 @@ class VideoWindow(QMainWindow):
                 for driver in ["vmt", "vrto3d"]
             ]
             if all(os.path.exists(path) for path in required_paths):
-                return True, steamvr_driver_path, vrcfacetracking_path
+                return True, steamvr_driver_path, vrcfacetracking_path, check_steamvr_path
             else:
-                return False, steamvr_driver_path, vrcfacetracking_path
+                return False, steamvr_driver_path, vrcfacetracking_path, check_steamvr_path
         except Exception as e:
             print(f"Error accessing registry or file system: {e}")
-            return False, None, None
+            return False, None, None, None
 
     def set_process_priority(self):
         priority_key = self.priority_selection.currentText()
@@ -670,23 +686,39 @@ class VideoWindow(QMainWindow):
         return
 
     def install_function(self):
-        self.install_state, steamvr_driver_path, vrcfacetracking_path = (
+        self.install_state, steamvr_driver_path, vrcfacetracking_path, check_steamvr_path = (
             self.install_checking()
         )
-        if steamvr_driver_path is None or vrcfacetracking_path is None:
-            self.install_button.setText("Please Install SteamVR")
-            self.install_button.setStyleSheet(
-                "QPushButton { background-color: red; color: white; }")
-        elif self.install_state:
+        if check_steamvr_path is not None:
+            self.steamvr_status_label.setText("SteamVR 已安装")
+            self.steamvr_status_label.setStyleSheet("color: green; font-weight: bold;")
+        else:
+            self.steamvr_status_label.setText("SteamVR 未安装")
+            self.steamvr_status_label.setStyleSheet("color: red; font-weight: bold;")
+        if self.install_state:
             # Uninstall process
             dll_path = os.path.join(vrcfacetracking_path, "VRCFT-MediapipePro.dll")
+
+            error_occurred = False
+            drivers_to_remove = ["vmt", "vrto3d"]
+            for driver in drivers_to_remove:
+                dir_path = os.path.join(steamvr_driver_path, driver)
+                try:
+                    shutil.rmtree(dir_path)
+                except FileNotFoundError:
+                    pass
+                except Exception as e:
+                    error_occurred = True
+                if os.path.exists(dir_path):
+                    error_occurred = True
+            if error_occurred:
+                self.display_message("Error", "SteamVR is running, Please Close SteamVR and try again.")
+                return
             try:
                 os.remove(dll_path)
             except PermissionError:
                 self.display_message("Error", "VRCFT is running, please close VRCFT and try again.")
                 return
-            shutil.rmtree(os.path.join(steamvr_driver_path, "vmt"), ignore_errors=True)
-            shutil.rmtree(os.path.join(steamvr_driver_path, "vrto3d"), ignore_errors=True)
             self.install_button.setText("Install Drivers")
             self.install_button.setStyleSheet("QPushButton { background-color: blue; color: white; }")
         else:
