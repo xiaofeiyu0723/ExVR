@@ -51,9 +51,9 @@
         },
         "Head": {
             "enable": true,
-            "x_scalar": 2.0,
-            "y_scalar": 3.0,
-            "z_scalar": 3.0,
+            "x_scalar": 1.0,
+            "y_scalar": 1.0,
+            "z_scalar": 1.0,
             "yaw_rotation_scalar": 1.0,
             "pitch_rotation_scalar": 1.0,
             "roll_rotation_scalar": 1.0
