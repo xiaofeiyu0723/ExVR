@@ -37,6 +37,13 @@ def up():
 def down():
     g.data["Position"][2]["s"] -= 5
 
+def squat():
+    # g.data["Position"][2]["v"] = 0.5
+    pass
+
+def prone():
+    # g.data["Position"][2]["v"] = 0.2
+    pass
 
 def left():
     g.data["Position"][0]["s"] -= 5

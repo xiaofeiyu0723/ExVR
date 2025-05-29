@@ -262,14 +262,7 @@ def hand_pred_handling(detection_result):
 
             rounded_value = np.round(g.data["HeadImagePosition"][2]["v"], 2)
             clipped_value = np.clip(rounded_value, None, -1e-8)
-            if prev_distance_scalar is None:
-                distance_scalar=clipped_value
-                prev_distance_scalar=clipped_value
-            else:
-                if abs(g.data["Rotation"][1]["v"]+g.data["Rotation"][1]["s"])%360<10 or abs(g.data["Rotation"][1]["v"]+g.data["Rotation"][1]["s"])%360>350:
-                    distance_scalar=clipped_value
-                else:
-                    distance_scalar=prev_distance_scalar
+            distance_scalar = clipped_value
 
             hand_distance = hand_distance_temp/distance_scalar
 

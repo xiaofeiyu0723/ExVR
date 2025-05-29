@@ -44,6 +44,8 @@
     {"key": "ctrl+down", "action": "down"},
     {"key": "ctrl+left", "action": "left"},
     {"key": "ctrl+right", "action": "right"},
+    {"key": "z", "action": "prone"},
+    {"key": "c", "action": "squat"},
     {"key": "up", "action": "head_pitch_up"},
     {"key": "down", "action": "head_pitch_down"},
     {"key": "left", "action": "head_yaw_left"},

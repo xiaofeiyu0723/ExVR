@@ -97,10 +97,10 @@ def face_pred_handling(detection_result, output_image, timestamp_ms, tongue_mode
                 else:
                     g.data["BlendShapes"][i]["v"] = detection_result.face_blendshapes[0][i].score
         # Eye with shifting
-        EyeYawLeft = -g.data["BlendShapes"][15]["v"] + g.data["BlendShapes"][13]["v"]
-        EyeYawRight = -g.data["BlendShapes"][14]["v"] + g.data["BlendShapes"][16]["v"]
-        EyePitchLeft = (g.data["BlendShapes"][11]["v"] - 0.5) * 2
-        EyePitchRight = (g.data["BlendShapes"][12]["v"] - 0.5) * 2
+        EyeYawLeft = (-g.data["BlendShapes"][15]["v"] + g.data["BlendShapes"][13]["v"] -g.data["BlendShapes"][14]["v"] + g.data["BlendShapes"][16]["v"])/2
+        EyeYawRight = EyeYawLeft
+        EyePitchLeft = np.clip((g.data["BlendShapes"][11]["v"] - 0.5) + (g.data["BlendShapes"][12]["v"] - 0.5),-1,0.1)
+        EyePitchRight=EyePitchLeft
 
         # Tongue detection
         if g.config["Tracking"]["Tongue"]["enable"]:

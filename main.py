@@ -41,7 +41,7 @@ warnings.filterwarnings("ignore")
 class VideoCaptureThread(QThread):
     frame_ready = pyqtSignal(QImage)
 
-    def __init__(self, source,width=1280, height=720, fps=30):
+    def __init__(self, source,width=640, height=480, fps=60):
         super().__init__()
         self.source = source
         self.video_capture = None
@@ -64,7 +64,7 @@ class VideoCaptureThread(QThread):
         self.video_capture = cv2.VideoCapture(self.source, cv2.CAP_ANY)
         self.video_capture.set(cv2.CAP_PROP_FRAME_WIDTH, self.width)
         self.video_capture.set(cv2.CAP_PROP_FRAME_HEIGHT, self.height)
-        self.video_capture.set(cv2.CAP_PROP_FPS, 60)
+        self.video_capture.set(cv2.CAP_PROP_FPS, self.fps)
         print(self.video_capture.get(cv2.CAP_PROP_FRAME_WIDTH), self.video_capture.get(cv2.CAP_PROP_FRAME_HEIGHT),self.video_capture.get(cv2.CAP_PROP_FPS))
         self.video_capture.set(cv2.CAP_PROP_BUFFERSIZE, 1)
         while self.is_running:
@@ -899,10 +899,10 @@ class VideoWindow(QMainWindow):
         super().closeEvent(event)
 
 if __name__ == "__main__":
-    if not pyuac.isUserAdmin():
-        pyuac.runAsAdmin()
-    else:
-        app = QApplication(sys.argv)
-        window = VideoWindow()
-        window.show()
-        sys.exit(app.exec_())
+    # if not pyuac.isUserAdmin():
+    #     pyuac.runAsAdmin()
+    # else:
+    app = QApplication(sys.argv)
+    window = VideoWindow()
+    window.show()
+    sys.exit(app.exec_())

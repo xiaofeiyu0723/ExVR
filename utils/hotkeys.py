@@ -23,6 +23,8 @@ actions = {
     "down": down,
     "left": left,
     "right": right,
+    "squat": squat,
+    "prone": prone,
     "head_pitch_up": lambda: head_pitch(True),
     "head_pitch_down": lambda: head_pitch(False),
     "head_yaw_left": lambda: head_yaw(True),

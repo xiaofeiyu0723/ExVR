@@ -5,7 +5,7 @@
         "flip_y": false,
         "camera_width": 640,
         "camera_height": 480,
-        "camera_fps": 30
+        "camera_fps": 60
     },
     "Hotkey": {
         "enable": true
@@ -81,7 +81,7 @@
             "z_shifting": 1.5,
             "hand_confidence": 0.0,
             "enable_hand_auto_reset": true,
-            "enable_hand_down":true,
+            "enable_hand_down": true,
             "enable_hand_time": 5,
             "trigger_threshold": 0.5,
             "finger_action_threshold": 10,
