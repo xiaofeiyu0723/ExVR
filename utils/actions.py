@@ -96,31 +96,35 @@ def grab(value, index):
     else:
         g.controller.send_trigger(value, index, 0.0)
 
-controller_enablement_timer={True: None, False: None}
+
+controller_enablement_timer = {True: None, False: None}
 def trigger_press(value, index):
     global controller_enablement_timer
-    if value:
-        g.controller.left_hand.force_enable = True
-    else:
-        g.controller.right_hand.force_enable = True
+    if (not g.config["Tracking"]["LeftController"]["enable"] and value) or (
+            not g.config["Tracking"]["RightController"]["enable"] and not value):
+        if not g.config["Tracking"]["LeftController"]["enable"]:  # 左手模式
+            g.controller.left_hand.force_enable = True
+        else:
+            g.controller.right_hand.force_enable = True
+    if controller_enablement_timer[value] is not None:
+        controller_enablement_timer[value].cancel()
+        controller_enablement_timer[value] = None
+    g.controller.send_trigger(value, index, 1.0)
 
+def trigger_release(value, index):
+    global controller_enablement_timer
     def hand_disablement(value):
-        global controller_enablement_timer
         if (not g.config["Tracking"]["LeftController"]["enable"] and value) or (
                 not g.config["Tracking"]["RightController"]["enable"] and not value):
             if value:
                 g.controller.left_hand.force_enable = False
             else:
                 g.controller.right_hand.force_enable = False
-        if controller_enablement_timer[value] is not None:
-            controller_enablement_timer[value].cancel()
-            controller_enablement_timer[value]  = None
-    if controller_enablement_timer[value] is None:
-        controller_enablement_timer[value] = Timer(g.config["Tracking"]["Hand"]["enable_hand_time"], hand_disablement,args=(value,))
-        controller_enablement_timer[value].start()
-    g.controller.send_trigger(value, index, 1.0)
-
-def trigger_release(value, index):
+    if (not g.config["Tracking"]["LeftController"]["enable"] and value) or (
+            not g.config["Tracking"]["RightController"]["enable"] and not value):
+        if controller_enablement_timer[value] is None:
+            controller_enablement_timer[value] = Timer(g.config["Tracking"]["Hand"]["enable_hand_time"],hand_disablement, args=(value,))
+            controller_enablement_timer[value].start()
     g.controller.send_trigger(value, index, 0.0)
 
 

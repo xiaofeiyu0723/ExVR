@@ -179,10 +179,10 @@ class VideoWindow(QMainWindow):
 
         self.install_state, steamvr_driver_path, vrcfacetracking_path, check_steamvr_path = self.install_checking()
         if check_steamvr_path is not None:
-            self.steamvr_status_label.setText("SteamVR 已安装")
+            self.steamvr_status_label.setText("SteamVR Installed")
             self.steamvr_status_label.setStyleSheet("color: green; font-weight: bold;")
         else:
-            self.steamvr_status_label.setText("SteamVR 未安装")
+            self.steamvr_status_label.setText("SteamVR Not Installed")
             self.steamvr_status_label.setStyleSheet("color: red; font-weight: bold;")
         if self.install_state:
             self.install_button = QPushButton("Uninstall Drivers", self)
@@ -690,10 +690,10 @@ class VideoWindow(QMainWindow):
             self.install_checking()
         )
         if check_steamvr_path is not None:
-            self.steamvr_status_label.setText("SteamVR 已安装")
+            self.steamvr_status_label.setText("SteamVR Installed")
             self.steamvr_status_label.setStyleSheet("color: green; font-weight: bold;")
         else:
-            self.steamvr_status_label.setText("SteamVR 未安装")
+            self.steamvr_status_label.setText("SteamVR Not Installed")
             self.steamvr_status_label.setStyleSheet("color: red; font-weight: bold;")
         if self.install_state:
             # Uninstall process
@@ -712,7 +712,7 @@ class VideoWindow(QMainWindow):
                 if os.path.exists(dir_path):
                     error_occurred = True
             if error_occurred:
-                self.display_message("Error", "SteamVR is running, Please Close SteamVR and try again.")
+                self.display_message("Error", "SteamVR is running, Please close SteamVR and try again.")
                 return
             try:
                 os.remove(dll_path)
