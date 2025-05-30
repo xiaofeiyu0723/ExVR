@@ -412,6 +412,7 @@ class VideoWindow(QMainWindow):
         self.controller_thread = None
 
     def save_data(self):
+        data=deepcopy(g.default_data)
         for i, (key, edits) in enumerate(self.lineEdits.items()):
             idx=i+1
             v = float(edits[0].text())
@@ -419,12 +420,12 @@ class VideoWindow(QMainWindow):
             w = float(edits[2].text())
             max_value = float(edits[3].text())
             e = self.checkBoxes[key].isChecked()
-            g.data["BlendShapes"][idx]["v"] = v
-            g.data["BlendShapes"][idx]["s"] = s
-            g.data["BlendShapes"][idx]["w"] = w
-            g.data["BlendShapes"][idx]["max"] = max_value
-            g.data["BlendShapes"][idx]["e"] = e
-        save_data(g.data)
+            data["BlendShapes"][idx]["v"] = v
+            data["BlendShapes"][idx]["s"] = s
+            data["BlendShapes"][idx]["w"] = w
+            data["BlendShapes"][idx]["max"] = max_value
+            data["BlendShapes"][idx]["e"] = e
+        save_data(data)
         self.dialog.close()
 
     def face_dialog(self):

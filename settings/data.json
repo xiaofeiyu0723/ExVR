@@ -1,86 +1,878 @@
 {
-    "Position": [{"k": "x", "v": 0.0, "s": 0.0,"e":true}, {"k": "y", "v": 0.0, "s": 0.0,"e":true}, {"k": "z", "v": -50.0, "s": 50.0,"e":true}],
-    "Rotation": [{"k": "x", "v": 0.0, "s": 0.0,"e":true}, {"k": "y", "v": 0.0, "s": 0.0,"e":true}, {"k": "z", "v": 0.0, "s": 0.0,"e":true}],
-    "BlendShapes": [
-        {"k": "_neutral", "v": 0.0, "s": 0.0,"w": 1.0,"max": 1.0,"e":true},
-        {"k": "BrowDownLeft", "v": 0.0, "s": 0.0,"w": 1.0,"max": 1.0,"e":true},
-        {"k": "BrowDownRight", "v": 0.0, "s": 0.0,"w": 1.0,"max": 1.0,"e":true},
-        {"k": "BrowInnerUp", "v": 0.0, "s": 0.0,"w": 1.0,"max": 1.0,"e":true},
-        {"k": "BrowOuterUpLeft", "v": 0.0, "s": 0.0,"w": 1.0,"max": 1.0,"e":true},
-        {"k": "BrowOuterUpRight", "v": 0.0, "s": 0.0,"w": 1.0,"max": 1.0,"e":true},
-        {"k": "CheekPuff", "v": 0.0, "s": 0.0,"w": 1.0,"max": 1.0,"e":true},
-        {"k": "CheekSquintLeft", "v": 0.0, "s": 0.0, "w": 1.0,"max": 1.0,"e":true},
-        {"k": "CheekSquintRight", "v": 0.0, "s": 0.0, "w": 1.0,"max": 1.0,"e":true},
-        {"k": "EyeBlinkLeft", "v": 0.0, "s": 0.0, "w": 1.2,"max": 1.0,"e":true},
-        {"k": "EyeBlinkRight", "v": 0.0, "s": 0.0, "w": 1.2,"max": 1.0,"e":true},
-        {"k": "EyeLookDownLeft", "v": 0.0, "s": 0.0, "w": 1.0,"max": 1.0,"e":true},
-        {"k": "EyeLookDownRight", "v": 0.0, "s": 0.0, "w": 1.0,"max": 1.0,"e":true},
-        {"k": "EyeLookInLeft", "v": 0.0, "s": 0.0,"w": 1.0,"max": 1.0,"e":true},
-        {"k": "EyeLookInRight", "v": 0.0, "s": 0.0,"w": 1.0,"max": 1.0,"e":true},
-        {"k": "EyeLookOutLeft", "v": 0.0, "s": 0.0,"w": 1.0,"max": 1.0,"e":true},
-        {"k": "EyeLookOutRight", "v": 0.0, "s": 0.0,"w": 1.0,"max": 1.0,"e":true},
-        {"k": "EyeLookUpLeft", "v": 0.0, "s": 0.0,"w": 1.0,"max": 1.0,"e":true},
-        {"k": "EyeLookUpRight", "v": 0.0, "s": 0.0,"w": 1.0,"max": 1.0,"e":true},
-        {"k": "EyeSquintLeft", "v": 0.0, "s": 0.0,"w": 1.0,"max": 1.0,"e":true},
-        {"k": "EyeSquintRight", "v": 0.0, "s": 0.0,"w": 1.0,"max": 1.0,"e":true},
-        {"k": "EyeWideLeft", "v": 0.0, "s": 0.0,"w": 1.0,"max": 1.0,"e":true},
-        {"k": "EyeWideRight", "v": 0.0, "s": 0.0,"w": 1.0,"max": 1.0,"e":true},
-        {"k": "JawForward", "v": 0.0, "s": 0.0,"w": 1.0,"max": 1.0,"e":true},
-        {"k": "JawLeft", "v": 0.0, "s": 0.0,"w": 1.0,"max": 1.0,"e":true},
-        {"k": "JawOpen", "v": 0.0, "s": 0.0,"w": 1.0,"max": 1.0,"e":true},
-        {"k": "JawRight", "v": 0.0, "s": 0.0,"w": 1.0,"max": 1.0,"e":true},
-        {"k": "MouthClose", "v": 0.0, "s": 0.0,"w": 1.0,"max": 1.0,"e":true},
-        {"k": "MouthDimpleLeft", "v": 0.0, "s": 0.0,"w": 1.0,"max": 1.0,"e":true},
-        {"k": "MouthDimpleRight", "v": 0.0, "s": 0.0,"w": 1.0,"max": 1.0,"e":true},
-        {"k": "MouthFrownLeft", "v": 0.0, "s": 0.0,"w": 1.0,"max": 1.0,"e":true},
-        {"k": "MouthFrownRight", "v": 0.0, "s": 0.0,"w": 1.0,"max": 1.0,"e":true},
-        {"k": "MouthFunnel", "v": 0.0, "s": 0.0,"w": 1.0,"max": 1.0,"e":true},
-        {"k": "MouthLeft", "v": 0.0, "s": 0.0,"w": 1.0,"max": 1.0,"e":true},
-        {"k": "MouthLowerDownLeft", "v": 0.0, "s": 0.0,"w": 1.0,"max": 1.0,"e":true},
-        {"k": "MouthLowerDownRight", "v": 0.0, "s": 0.0,"w": 1.0,"max": 1.0,"e":true},
-        {"k": "MouthPressLeft", "v": 0.0, "s": 0.0,"w": 1.0,"max": 1.0,"e":true},
-        {"k": "MouthPressRight", "v": 0.0, "s": 0.0,"w": 1.0,"max": 1.0,"e":true},
-        {"k": "MouthPucker", "v": 0.0, "s": 0.0,"w": 1.0,"max": 1.0,"e":true},
-        {"k": "MouthRight", "v": 0.0, "s": 0.0,"w": 1.0,"max": 1.0,"e":true},
-        {"k": "MouthRollLower", "v": 0.0, "s": 0.0,"w": 1.0,"max": 1.0,"e":true},
-        {"k": "MouthRollUpper", "v": 0.0, "s": 0.0,"w": 1.0,"max": 1.0,"e":true},
-        {"k": "MouthShrugLower", "v": 0.0, "s": 0.0,"w": 1.0,"max": 1.0,"e":true},
-        {"k": "MouthShrugUpper", "v": 0.0, "s": 0.0,"w": 1.0,"max": 1.0,"e":true},
-        {"k": "MouthSmileLeft", "v": 0.0, "s": 0.0,"w": 1.0,"max": 1.0,"e":true},
-        {"k": "MouthSmileRight", "v": 0.0, "s": 0.0,"w": 1.0,"max": 1.0,"e":true},
-        {"k": "MouthStretchLeft", "v": 0.0, "s": 0.0,"w": 1.0,"max": 1.0,"e":true},
-        {"k": "MouthStretchRight", "v": 0.0, "s": 0.0,"w": 1.0,"max": 1.0,"e":true},
-        {"k": "MouthUpperUpLeft", "v": 0.0, "s": 0.0,"w": 1.0,"max": 1.0,"e":true},
-        {"k": "MouthUpperUpRight", "v": 0.0, "s": 0.0,"w": 1.0,"max": 1.0,"e":true},
-        {"k": "NoseSneerLeft", "v": 0.0, "s": 0.0,"w": 1.0,"max": 1.0,"e":true},
-        {"k": "NoseSneerRight", "v": 0.0, "s": 0.0,"w": 1.0,"max": 1.0,"e":true},
-        {"k": "TongueOut", "v": 0.0, "s": -0.1,"w": 1.0,"max": 1.0,"e":true},
-        {"k": "HeadYaw", "v": 0.0, "s": 0.0,"w": 1.0,"max": 1.0,"e":true},
-        {"k": "HeadPitch", "v": 0.0, "s": 0.0,"w": 1.0,"max": 1.0,"e":true},
-        {"k": "HeadRoll", "v": 0.0, "s": 0.0,"w": 1.0,"max": 1.0,"e":true},
-        {"k": "EyeYawLeft", "v": -0.3, "s": 0.3,"w": 1.0,"max": 1.0,"e":true},
-        {"k": "EyePitchLeft", "v": -0.5, "s": 0.5,"w": 1.0,"max": 1.0,"e":true},
-        {"k": "EyeRollLeft", "v": 0.0, "s": 0.0,"w": 1.0,"max": 1.0,"e":true},
-        {"k": "EyeYawRight", "v": -0.3, "s": 0.3,"w": 1.0,"max": 1.0,"e":true},
-        {"k": "EyePitchRight", "v": -0.5, "s": 0.5,"w": 1.0,"max": 1.0,"e":true},
-        {"k": "EyeRollRight", "v": 0.0, "s": 0.0,"w": 1.0,"max": 1.0,"e":true},
-        {"k": "TongueX", "v": 0.0, "s": 0.0,"w": 1.0,"max": 1.0,"e":true},
-        {"k": "TongueY", "v": 0.0, "s": 0.0,"w": 1.0,"max": 1.0,"e":true}
+    "Position": [
+        {
+            "k": "x",
+            "v": 0.0,
+            "s": 0.0,
+            "e": true
+        },
+        {
+            "k": "y",
+            "v": 0.0,
+            "s": 0.0,
+            "e": true
+        },
+        {
+            "k": "z",
+            "v": -50.0,
+            "s": 50.0,
+            "e": true
+        }
     ],
-    "LeftHandPosition": [{"k": "x", "v": -0.12, "s": 0.05,"e":true}, {"k": "y", "v": -0.15, "s": 0.15,"e":true}, {"k": "z", "v": -0.35, "s": 0.0,"e":true}],
-    "LeftHandRotation": [{"k": "x", "v": -20.0, "s": 75.0,"e":true}, {"k": "y", "v": 0.0, "s": 0.0,"e":true}, {"k": "z", "v": 0.0, "s": -15.0,"e":true}],
-    "RightHandPosition": [{"k": "x", "v": 0.12, "s": -0.05,"e":true}, {"k": "y", "v": -0.15, "s": 0.15,"e":true}, {"k": "z", "v": -0.35, "s": 0.0,"e":true}],
-    "RightHandRotation": [{"k": "x", "v": -20.0, "s": 75.0,"e":true}, {"k": "y", "v": 0.0, "s": 0.0,"e":true}, {"k": "z", "v": 0.0, "s": 15.0,"e":true}],
-    "LeftHandFinger": [{"k": "0", "v": 1.0, "s": 0.0,"e":true}, {"k": "1", "v": 1.0, "s": 0.0,"e":true}, {"k": "2", "v": 1.0, "s": 0.0,"e":true}, {"k": "3", "v": 1.0, "s": 0.0,"e":true}, {"k": "4", "v": 1.0, "s": 0.0,"e":true}],
-    "RightHandFinger": [{"k": "0", "v": 1.0, "s": 0.0,"e":true}, {"k": "1", "v": 1.0, "s": 0.0,"e":true}, {"k": "2", "v": 1.0, "s": 0.0,"e":true}, {"k": "3", "v": 1.0, "s": 0.0,"e":true}, {"k": "4", "v": 1.0, "s": 0.0,"e":true}],
-
-    "LeftControllerPosition": [{"k": "x", "v": 0.0, "s": 0.0,"e":true}, {"k": "y", "v": 0.0, "s": 0.0,"e":true}, {"k": "z", "v": 0.0, "s": 0.0,"e":true}],
-    "LeftControllerRotation": [{"k": "x", "v": 0.0, "s": 140,"e":true}, {"k": "y", "v": 0.0, "s": 0.0,"e":true}, {"k": "z", "v": 0.0, "s": 0.0,"e":true}],
-    "RightControllerPosition": [{"k": "x", "v": 0.0, "s": 0.0,"e":true}, {"k": "y", "v": 0.0, "s": 0.0,"e":true}, {"k": "z", "v": 0.0, "s": 0.0,"e":true}],
-    "RightControllerRotation": [{"k": "x", "v": 0.0, "s": 140,"e":true}, {"k": "y", "v": 0.0, "s": 0.0,"e":true}, {"k": "z", "v": 0.0, "s": 0.0,"e":true}],
-    "LeftControllerFinger": [{"k": "0", "v": 1.0, "s": 0.0,"e":true}, {"k": "1", "v": 1.0, "s": 0.0,"e":true}, {"k": "2", "v": 1.0, "s": 0.0,"e":true}, {"k": "3", "v": 1.0, "s": 0.0,"e":true}, {"k": "4", "v": 1.0, "s": 0.0,"e":true}],
-    "RightControllerFinger": [{"k": "0", "v": 1.0, "s": 0.0,"e":true}, {"k": "1", "v": 1.0, "s": 0.0,"e":true}, {"k": "2", "v": 1.0, "s": 0.0,"e":true}, {"k": "3", "v": 1.0, "s": 0.0,"e":true}, {"k": "4", "v": 1.0, "s": 0.0,"e":true}],
-
-    "HeadImagePosition":[{"k": "x", "v": 0.0, "s": 0.0,"e":true}, {"k": "y", "v": 0.0, "s": 0.0,"e":true}, {"k": "z", "v": 0.0, "s": 0.0,"e":true}],
-    "MousePosition": [{"k": "x", "v": 0.0, "s": 0.0,"e":true}, {"k": "y", "v": 0.0, "s": 0.0,"e":true}]
+    "Rotation": [
+        {
+            "k": "x",
+            "v": 0.0,
+            "s": 0.0,
+            "e": true
+        },
+        {
+            "k": "y",
+            "v": 0.0,
+            "s": 0.0,
+            "e": true
+        },
+        {
+            "k": "z",
+            "v": 0.0,
+            "s": 0.0,
+            "e": true
+        }
+    ],
+    "BlendShapes": [
+        {
+            "k": "_neutral",
+            "v": 0.0,
+            "s": 0.0,
+            "w": 1.0,
+            "max": 1.0,
+            "e": true
+        },
+        {
+            "k": "BrowDownLeft",
+            "v": 0.0,
+            "s": 0.0,
+            "w": 1.0,
+            "max": 1.0,
+            "e": true
+        },
+        {
+            "k": "BrowDownRight",
+            "v": 0.0,
+            "s": 0.0,
+            "w": 1.0,
+            "max": 1.0,
+            "e": true
+        },
+        {
+            "k": "BrowInnerUp",
+            "v": 0.0,
+            "s": 0.0,
+            "w": 1.0,
+            "max": 1.0,
+            "e": true
+        },
+        {
+            "k": "BrowOuterUpLeft",
+            "v": 0.0,
+            "s": 0.0,
+            "w": 1.0,
+            "max": 1.0,
+            "e": true
+        },
+        {
+            "k": "BrowOuterUpRight",
+            "v": 0.0,
+            "s": 0.0,
+            "w": 1.0,
+            "max": 1.0,
+            "e": true
+        },
+        {
+            "k": "CheekPuff",
+            "v": 0.0,
+            "s": 0.0,
+            "w": 1.0,
+            "max": 1.0,
+            "e": true
+        },
+        {
+            "k": "CheekSquintLeft",
+            "v": 0.0,
+            "s": 0.0,
+            "w": 1.0,
+            "max": 1.0,
+            "e": true
+        },
+        {
+            "k": "CheekSquintRight",
+            "v": 0.0,
+            "s": 0.0,
+            "w": 1.0,
+            "max": 1.0,
+            "e": true
+        },
+        {
+            "k": "EyeBlinkLeft",
+            "v": 0.0,
+            "s": 0.10403903852361202,
+            "w": 1.2,
+            "max": 1.0,
+            "e": true
+        },
+        {
+            "k": "EyeBlinkRight",
+            "v": 0.0,
+            "s": 0.14463330060760604,
+            "w": 1.2,
+            "max": 1.0,
+            "e": true
+        },
+        {
+            "k": "EyeLookDownLeft",
+            "v": 0.0,
+            "s": -0.16425637015223493,
+            "w": 1.0,
+            "max": 1.0,
+            "e": true
+        },
+        {
+            "k": "EyeLookDownRight",
+            "v": 0.0,
+            "s": -0.16828084841390215,
+            "w": 1.0,
+            "max": 1.0,
+            "e": true
+        },
+        {
+            "k": "EyeLookInLeft",
+            "v": 0.0,
+            "s": -0.012174860864694527,
+            "w": 1.0,
+            "max": 1.0,
+            "e": true
+        },
+        {
+            "k": "EyeLookInRight",
+            "v": 0.0,
+            "s": -0.2150327883885849,
+            "w": 1.0,
+            "max": 1.0,
+            "e": true
+        },
+        {
+            "k": "EyeLookOutLeft",
+            "v": 0.0,
+            "s": -0.19937917615392353,
+            "w": 1.0,
+            "max": 1.0,
+            "e": true
+        },
+        {
+            "k": "EyeLookOutRight",
+            "v": 0.0,
+            "s": -0.023219204122160754,
+            "w": 1.0,
+            "max": 1.0,
+            "e": true
+        },
+        {
+            "k": "EyeLookUpLeft",
+            "v": 0.0,
+            "s": -0.05258860318943294,
+            "w": 1.0,
+            "max": 1.0,
+            "e": true
+        },
+        {
+            "k": "EyeLookUpRight",
+            "v": 0.0,
+            "s": -0.0480629424834483,
+            "w": 1.0,
+            "max": 1.0,
+            "e": true
+        },
+        {
+            "k": "EyeSquintLeft",
+            "v": 0.0,
+            "s": -0.401405244216117,
+            "w": 1.0,
+            "max": 1.0,
+            "e": true
+        },
+        {
+            "k": "EyeSquintRight",
+            "v": 0.0,
+            "s": -0.2592476862761879,
+            "w": 1.0,
+            "max": 1.0,
+            "e": true
+        },
+        {
+            "k": "EyeWideLeft",
+            "v": 0.0,
+            "s": -0.006468204217686349,
+            "w": 1.0,
+            "max": 1.0,
+            "e": true
+        },
+        {
+            "k": "EyeWideRight",
+            "v": 0.0,
+            "s": -0.008626114795080166,
+            "w": 1.0,
+            "max": 1.0,
+            "e": true
+        },
+        {
+            "k": "JawForward",
+            "v": 0.0,
+            "s": 0.0,
+            "w": 1.0,
+            "max": 1.0,
+            "e": true
+        },
+        {
+            "k": "JawLeft",
+            "v": 0.0,
+            "s": 0.0,
+            "w": 1.0,
+            "max": 1.0,
+            "e": true
+        },
+        {
+            "k": "JawOpen",
+            "v": 0.0,
+            "s": 0.0,
+            "w": 1.0,
+            "max": 1.0,
+            "e": true
+        },
+        {
+            "k": "JawRight",
+            "v": 0.0,
+            "s": 0.0,
+            "w": 1.0,
+            "max": 1.0,
+            "e": true
+        },
+        {
+            "k": "MouthClose",
+            "v": 0.0,
+            "s": 0.0,
+            "w": 1.0,
+            "max": 1.0,
+            "e": true
+        },
+        {
+            "k": "MouthDimpleLeft",
+            "v": 0.0,
+            "s": 0.0,
+            "w": 1.0,
+            "max": 1.0,
+            "e": true
+        },
+        {
+            "k": "MouthDimpleRight",
+            "v": 0.0,
+            "s": 0.0,
+            "w": 1.0,
+            "max": 1.0,
+            "e": true
+        },
+        {
+            "k": "MouthFrownLeft",
+            "v": 0.0,
+            "s": 0.0,
+            "w": 1.0,
+            "max": 1.0,
+            "e": true
+        },
+        {
+            "k": "MouthFrownRight",
+            "v": 0.0,
+            "s": 0.0,
+            "w": 1.0,
+            "max": 1.0,
+            "e": true
+        },
+        {
+            "k": "MouthFunnel",
+            "v": 0.0,
+            "s": 0.0,
+            "w": 1.0,
+            "max": 1.0,
+            "e": true
+        },
+        {
+            "k": "MouthLeft",
+            "v": 0.0,
+            "s": 0.0,
+            "w": 1.0,
+            "max": 1.0,
+            "e": true
+        },
+        {
+            "k": "MouthLowerDownLeft",
+            "v": 0.0,
+            "s": 0.0,
+            "w": 1.0,
+            "max": 1.0,
+            "e": true
+        },
+        {
+            "k": "MouthLowerDownRight",
+            "v": 0.0,
+            "s": 0.0,
+            "w": 1.0,
+            "max": 1.0,
+            "e": true
+        },
+        {
+            "k": "MouthPressLeft",
+            "v": 0.0,
+            "s": 0.0,
+            "w": 1.0,
+            "max": 1.0,
+            "e": true
+        },
+        {
+            "k": "MouthPressRight",
+            "v": 0.0,
+            "s": 0.0,
+            "w": 1.0,
+            "max": 1.0,
+            "e": true
+        },
+        {
+            "k": "MouthPucker",
+            "v": 0.0,
+            "s": 0.0,
+            "w": 1.0,
+            "max": 1.0,
+            "e": true
+        },
+        {
+            "k": "MouthRight",
+            "v": 0.0,
+            "s": 0.0,
+            "w": 1.0,
+            "max": 1.0,
+            "e": true
+        },
+        {
+            "k": "MouthRollLower",
+            "v": 0.0,
+            "s": 0.0,
+            "w": 1.0,
+            "max": 1.0,
+            "e": true
+        },
+        {
+            "k": "MouthRollUpper",
+            "v": 0.0,
+            "s": 0.0,
+            "w": 1.0,
+            "max": 1.0,
+            "e": true
+        },
+        {
+            "k": "MouthShrugLower",
+            "v": 0.0,
+            "s": 0.0,
+            "w": 1.0,
+            "max": 1.0,
+            "e": true
+        },
+        {
+            "k": "MouthShrugUpper",
+            "v": 0.0,
+            "s": 0.0,
+            "w": 1.0,
+            "max": 1.0,
+            "e": true
+        },
+        {
+            "k": "MouthSmileLeft",
+            "v": 0.0,
+            "s": 0.0,
+            "w": 1.0,
+            "max": 1.0,
+            "e": true
+        },
+        {
+            "k": "MouthSmileRight",
+            "v": 0.0,
+            "s": 0.0,
+            "w": 1.0,
+            "max": 1.0,
+            "e": true
+        },
+        {
+            "k": "MouthStretchLeft",
+            "v": 0.0,
+            "s": 0.0,
+            "w": 1.0,
+            "max": 1.0,
+            "e": true
+        },
+        {
+            "k": "MouthStretchRight",
+            "v": 0.0,
+            "s": 0.0,
+            "w": 1.0,
+            "max": 1.0,
+            "e": true
+        },
+        {
+            "k": "MouthUpperUpLeft",
+            "v": 0.0,
+            "s": 0.0,
+            "w": 1.0,
+            "max": 1.0,
+            "e": true
+        },
+        {
+            "k": "MouthUpperUpRight",
+            "v": 0.0,
+            "s": 0.0,
+            "w": 1.0,
+            "max": 1.0,
+            "e": true
+        },
+        {
+            "k": "NoseSneerLeft",
+            "v": 0.0,
+            "s": 0.0,
+            "w": 1.0,
+            "max": 1.0,
+            "e": true
+        },
+        {
+            "k": "NoseSneerRight",
+            "v": 0.0,
+            "s": 0.0,
+            "w": 1.0,
+            "max": 1.0,
+            "e": true
+        },
+        {
+            "k": "TongueOut",
+            "v": 0.0,
+            "s": -0.1,
+            "w": 1.0,
+            "max": 1.0,
+            "e": true
+        },
+        {
+            "k": "HeadYaw",
+            "v": 0.0,
+            "s": 0.0,
+            "w": 1.0,
+            "max": 1.0,
+            "e": true
+        },
+        {
+            "k": "HeadPitch",
+            "v": 0.0,
+            "s": 0.0,
+            "w": 1.0,
+            "max": 1.0,
+            "e": true
+        },
+        {
+            "k": "HeadRoll",
+            "v": 0.0,
+            "s": 0.0,
+            "w": 1.0,
+            "max": 1.0,
+            "e": true
+        },
+        {
+            "k": "EyeYawLeft",
+            "v": -0.3,
+            "s": 0.19567189478073238,
+            "w": 1.0,
+            "max": 1.0,
+            "e": true
+        },
+        {
+            "k": "EyePitchLeft",
+            "v": -0.5,
+            "s": 0.665683736707643,
+            "w": 1.0,
+            "max": 1.0,
+            "e": true
+        },
+        {
+            "k": "EyeRollLeft",
+            "v": 0.0,
+            "s": -0.0,
+            "w": 1.0,
+            "max": 1.0,
+            "e": true
+        },
+        {
+            "k": "EyeYawRight",
+            "v": -0.3,
+            "s": 0.19567189478073238,
+            "w": 1.0,
+            "max": 1.0,
+            "e": true
+        },
+        {
+            "k": "EyePitchRight",
+            "v": -0.5,
+            "s": 0.665683736707643,
+            "w": 1.0,
+            "max": 1.0,
+            "e": true
+        },
+        {
+            "k": "EyeRollRight",
+            "v": 0.0,
+            "s": -0.0,
+            "w": 1.0,
+            "max": 1.0,
+            "e": true
+        },
+        {
+            "k": "TongueX",
+            "v": 0.0,
+            "s": 0.0,
+            "w": 1.0,
+            "max": 1.0,
+            "e": true
+        },
+        {
+            "k": "TongueY",
+            "v": 0.0,
+            "s": 0.0,
+            "w": 1.0,
+            "max": 1.0,
+            "e": true
+        }
+    ],
+    "LeftHandPosition": [
+        {
+            "k": "x",
+            "v": -0.12,
+            "s": 0.05,
+            "e": true
+        },
+        {
+            "k": "y",
+            "v": -0.15,
+            "s": 0.15,
+            "e": true
+        },
+        {
+            "k": "z",
+            "v": -0.35,
+            "s": 0.0,
+            "e": true
+        }
+    ],
+    "LeftHandRotation": [
+        {
+            "k": "x",
+            "v": -20.0,
+            "s": 75.0,
+            "e": true
+        },
+        {
+            "k": "y",
+            "v": 0.0,
+            "s": 0.0,
+            "e": true
+        },
+        {
+            "k": "z",
+            "v": 0.0,
+            "s": -15.0,
+            "e": true
+        }
+    ],
+    "RightHandPosition": [
+        {
+            "k": "x",
+            "v": 0.12,
+            "s": -0.05,
+            "e": true
+        },
+        {
+            "k": "y",
+            "v": -0.15,
+            "s": 0.15,
+            "e": true
+        },
+        {
+            "k": "z",
+            "v": -0.35,
+            "s": 0.0,
+            "e": true
+        }
+    ],
+    "RightHandRotation": [
+        {
+            "k": "x",
+            "v": -20.0,
+            "s": 75.0,
+            "e": true
+        },
+        {
+            "k": "y",
+            "v": 0.0,
+            "s": 0.0,
+            "e": true
+        },
+        {
+            "k": "z",
+            "v": 0.0,
+            "s": 15.0,
+            "e": true
+        }
+    ],
+    "LeftHandFinger": [
+        {
+            "k": "0",
+            "v": 1.0,
+            "s": 0.0,
+            "e": true
+        },
+        {
+            "k": "1",
+            "v": 1.0,
+            "s": 0.0,
+            "e": true
+        },
+        {
+            "k": "2",
+            "v": 1.0,
+            "s": 0.0,
+            "e": true
+        },
+        {
+            "k": "3",
+            "v": 1.0,
+            "s": 0.0,
+            "e": true
+        },
+        {
+            "k": "4",
+            "v": 1.0,
+            "s": 0.0,
+            "e": true
+        }
+    ],
+    "RightHandFinger": [
+        {
+            "k": "0",
+            "v": 1.0,
+            "s": 0.0,
+            "e": true
+        },
+        {
+            "k": "1",
+            "v": 1.0,
+            "s": 0.0,
+            "e": true
+        },
+        {
+            "k": "2",
+            "v": 1.0,
+            "s": 0.0,
+            "e": true
+        },
+        {
+            "k": "3",
+            "v": 1.0,
+            "s": 0.0,
+            "e": true
+        },
+        {
+            "k": "4",
+            "v": 1.0,
+            "s": 0.0,
+            "e": true
+        }
+    ],
+    "LeftControllerPosition": [
+        {
+            "k": "x",
+            "v": 0.0,
+            "s": 0.0,
+            "e": true
+        },
+        {
+            "k": "y",
+            "v": 0.0,
+            "s": 0.0,
+            "e": true
+        },
+        {
+            "k": "z",
+            "v": 0.0,
+            "s": 0.0,
+            "e": true
+        }
+    ],
+    "LeftControllerRotation": [
+        {
+            "k": "x",
+            "v": 0.0,
+            "s": 140,
+            "e": true
+        },
+        {
+            "k": "y",
+            "v": 0.0,
+            "s": 0.0,
+            "e": true
+        },
+        {
+            "k": "z",
+            "v": 0.0,
+            "s": 0.0,
+            "e": true
+        }
+    ],
+    "RightControllerPosition": [
+        {
+            "k": "x",
+            "v": 0.0,
+            "s": 0.0,
+            "e": true
+        },
+        {
+            "k": "y",
+            "v": 0.0,
+            "s": 0.0,
+            "e": true
+        },
+        {
+            "k": "z",
+            "v": 0.0,
+            "s": 0.0,
+            "e": true
+        }
+    ],
+    "RightControllerRotation": [
+        {
+            "k": "x",
+            "v": 0.0,
+            "s": 140,
+            "e": true
+        },
+        {
+            "k": "y",
+            "v": 0.0,
+            "s": 0.0,
+            "e": true
+        },
+        {
+            "k": "z",
+            "v": 0.0,
+            "s": 0.0,
+            "e": true
+        }
+    ],
+    "LeftControllerFinger": [
+        {
+            "k": "0",
+            "v": 1.0,
+            "s": 0.0,
+            "e": true
+        },
+        {
+            "k": "1",
+            "v": 1.0,
+            "s": 0.0,
+            "e": true
+        },
+        {
+            "k": "2",
+            "v": 1.0,
+            "s": 0.0,
+            "e": true
+        },
+        {
+            "k": "3",
+            "v": 1.0,
+            "s": 0.0,
+            "e": true
+        },
+        {
+            "k": "4",
+            "v": 1.0,
+            "s": 0.0,
+            "e": true
+        }
+    ],
+    "RightControllerFinger": [
+        {
+            "k": "0",
+            "v": 1.0,
+            "s": 0.0,
+            "e": true
+        },
+        {
+            "k": "1",
+            "v": 1.0,
+            "s": 0.0,
+            "e": true
+        },
+        {
+            "k": "2",
+            "v": 1.0,
+            "s": 0.0,
+            "e": true
+        },
+        {
+            "k": "3",
+            "v": 1.0,
+            "s": 0.0,
+            "e": true
+        },
+        {
+            "k": "4",
+            "v": 1.0,
+            "s": 0.0,
+            "e": true
+        }
+    ],
+    "HeadImagePosition": [
+        {
+            "k": "x",
+            "v": 0.0,
+            "s": 0.0,
+            "e": true
+        },
+        {
+            "k": "y",
+            "v": 0.0,
+            "s": 0.0,
+            "e": true
+        },
+        {
+            "k": "z",
+            "v": 0.0,
+            "s": 0.0,
+            "e": true
+        }
+    ],
+    "MousePosition": [
+        {
+            "k": "x",
+            "v": 0.0,
+            "s": 0.0,
+            "e": true
+        },
+        {
+            "k": "y",
+            "v": 0.0,
+            "s": 0.0,
+            "e": true
+        }
+    ]
 }
