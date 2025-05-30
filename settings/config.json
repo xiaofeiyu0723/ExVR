@@ -12,8 +12,8 @@
     },
     "Mouse": {
         "enable": true,
-        "scalar_x": 150.0,
-        "scalar_y": 100.0,
+        "scalar_x": 200.0,
+        "scalar_y": 150.0,
         "bound_threshold": 0.48,
         "dx": 0.15
     },

@@ -34,6 +34,17 @@ def pack_hmd_data(data, default_data):
     x = get_value_without_shifting(data["Position"][0], default_data["Position"][0])
     y = get_value_without_shifting(data["Position"][1], default_data["Position"][1])
     z = get_value_without_shifting(data["Position"][2], default_data["Position"][2])
+    yaw_calibration = g.data["Rotation"][0]["s"]
+    calibration_rot = R.from_euler("z", -yaw_calibration, degrees=True)
+    calibrated_diff = calibration_rot.apply([
+        g.data["Position"][0]["s"],
+        g.data["Position"][1]["s"],
+        g.data["Position"][2]["s"]
+    ])
+    x += calibrated_diff[0]
+    y += calibrated_diff[1]
+    z += calibrated_diff[2]
+
     yaw = get_value_without_shifting(data["Rotation"][0], default_data["Rotation"][0])
     pitch = get_value_without_shifting(data["Rotation"][1], default_data["Rotation"][1])
     roll = get_value_without_shifting(data["Rotation"][2], default_data["Rotation"][2])
@@ -122,7 +133,10 @@ def handling_hand_data(data, default_data):
     g.controller.left_hand.finger = finger_l
     g.controller.right_hand.finger = finger_r
 
+prev_x=None
+prev_y=None
 def send_mouse_position(data, default_data):
+    global prev_x, prev_y
     x = data["MousePosition"][0]["v"]
     y = data["MousePosition"][1]["v"]
     if abs(x)>=g.config["Mouse"]["bound_threshold"]:
@@ -130,9 +144,17 @@ def send_mouse_position(data, default_data):
         data["MousePosition"][0]["s"]=data["MousePosition"][0]["s"]%360
     x = get_value(data["MousePosition"][0],default_data["MousePosition"][0])
     y = get_value(data["MousePosition"][1],default_data["MousePosition"][1])
-    set_head_yaw(x * g.config['Mouse']["scalar_x"])
-    set_head_pitch(y * g.config['Mouse']["scalar_y"])
-
+    if prev_x is None or prev_y is None:
+        prev_x = x
+        prev_y = y
+    else:
+        if prev_x == x and prev_y == y:
+            pass
+        else:
+            set_head_yaw(x * g.config['Mouse']["scalar_x"])
+            set_head_pitch(y * g.config['Mouse']["scalar_y"])
+            prev_x = x
+            prev_y = y
 
 def data_send_thread(target_ip):
     frame_duration = 1.0 / 60.0

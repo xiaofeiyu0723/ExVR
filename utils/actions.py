@@ -1,6 +1,7 @@
 import utils.globals as g
 from threading import Timer
 import math
+from scipy.spatial.transform import Rotation as R
 
 def reset_eye():
     for i in [9, 10]:
@@ -28,7 +29,7 @@ def reset_head():
     for i in range(0, 3):
         g.data["Position"][i]["s"] = g.default_data["Position"][i]["s"]
     for i in range(0, 3):
-        g.data["Rotation"][i]["s"] = g.default_data["Rotation"][i]["s"]
+        g.data["Rotation"][i]["s"] = -g.data["Rotation"][i]["v"]
 
 def up():
     g.data["Position"][2]["s"] += 5
@@ -37,13 +38,34 @@ def up():
 def down():
     g.data["Position"][2]["s"] -= 5
 
+stand_flag=True
+squat_flag=False
+prone_flag=False
 def squat():
-    # g.data["Position"][2]["v"] = 0.5
-    pass
-
+    global stand_flag,squat_flag,prone_flag
+    if stand_flag or prone_flag:
+        g.data["Position"][2]["s"]=-20+g.data["Position"][2]["v"]
+        stand_flag=False
+        squat_flag=True
+        prone_flag=False
+    else:
+        g.data["Position"][2]["s"]=g.default_data["Position"][2]["s"]
+        stand_flag=True
+        squat_flag=False
+        prone_flag=False
 def prone():
-    # g.data["Position"][2]["v"] = 0.2
-    pass
+    global stand_flag,squat_flag,prone_flag
+    if stand_flag or squat_flag:
+        g.data["Position"][2]["s"] = -70 + g.data["Position"][2]["v"]
+        stand_flag = False
+        squat_flag=False
+        prone_flag=True
+    else:
+        g.data["Position"][2]["s"] = g.default_data["Position"][2]["s"]
+        stand_flag=True
+        squat_flag=False
+        prone_flag=False
+
 
 def left():
     g.data["Position"][0]["s"] -= 5
@@ -76,24 +98,6 @@ def set_head_pitch(value):
 def set_head_yaw(value):
     g.data["Rotation"][0]["s"] = -value % 360
 
-
-# head_yaw_timer = None
-# def head_yaw(flag=True):
-    # global head_yaw_timer
-    # if flag:
-    #     g.controller.send_joystick(False, 1, -1.0, 0.0)
-    # else:
-    #     g.controller.send_joystick(False, 1, 1.0, 0.0)
-    # def head_move(flag):
-    #     global head_yaw_timer
-    #     g.controller.send_joystick(False, 1, 0.0, 0.0)
-    #     if head_yaw_timer is not None:
-    #         head_yaw_timer.cancel()
-    #         head_yaw_timer = None
-    # if head_yaw_timer is None:
-    #     head_yaw_timer = Timer(0.05, head_move,args=[flag])
-    #     head_yaw_timer.start()
-
 grab_status = {True: False, False: False}
 def grab(value, index):
     grab_status[value] = not grab_status[value]
@@ -109,7 +113,7 @@ def trigger_press(value, index):
     global controller_enablement_timer
     if (not g.config["Tracking"]["LeftController"]["enable"] and value) or (
             not g.config["Tracking"]["RightController"]["enable"] and not value):
-        if not g.config["Tracking"]["LeftController"]["enable"]:  # 左手模式
+        if value:
             g.controller.left_hand.force_enable = True
         else:
             g.controller.right_hand.force_enable = True

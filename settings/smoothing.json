@@ -62,7 +62,7 @@
             "is_rotation": true,
             "indices": [73, 74, 75],
             "shifting": 73,
-            "dt_multiplier": 80,
+            "dt_multiplier": 90,
               "kalman_params": {
                 "q_process": 0.01,
                 "r_measure": 0.02
@@ -73,7 +73,7 @@
             "is_rotation": true,
             "indices": [79, 80, 81],
             "shifting": 79,
-            "dt_multiplier": 80,
+            "dt_multiplier": 90,
               "kalman_params": {
                 "q_process": 0.01,
                 "r_measure": 0.02
@@ -84,7 +84,7 @@
             "is_rotation": false,
             "indices": [70, 71, 72],
             "shifting": 70,
-            "dt_multiplier": 80,
+            "dt_multiplier": 90,
               "kalman_params": {
                 "q_process": 0.005,
                 "r_measure": 0.03
@@ -95,7 +95,7 @@
             "is_rotation": false,
             "indices": [76, 77, 78],
             "shifting": 76,
-            "dt_multiplier": 80,
+            "dt_multiplier": 90,
               "kalman_params": {
                 "q_process": 0.005,
                 "r_measure": 0.03

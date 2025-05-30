@@ -117,9 +117,9 @@ def face_pred_handling(detection_result, output_image, timestamp_ms, tongue_mode
 
         # Head Position
         mat = np.array(detection_result.facial_transformation_matrixes[0])
-        position_x = -mat[0][3] * g.config["Tracking"]["Head"]["x_scalar"]+g.data["Position"][0]["s"]
-        position_y = -mat[2][3] * g.config["Tracking"]["Head"]["z_scalar"]+g.data["Position"][1]["s"]
-        position_z = mat[1][3] * g.config["Tracking"]["Head"]["y_scalar"]+g.data["Position"][2]["s"]
+        position_x = -mat[0][3] * g.config["Tracking"]["Head"]["x_scalar"]
+        position_y = -mat[2][3] * g.config["Tracking"]["Head"]["z_scalar"]
+        position_z = mat[1][3] * g.config["Tracking"]["Head"]["y_scalar"]
         head_position_temp=np.array([position_x, position_y,position_z])
         if head_position_prev is None:
             head_position_prev = head_position_temp.copy()
