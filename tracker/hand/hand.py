@@ -237,8 +237,10 @@ def hand_pred_handling(detection_result):
             hand_pose = get_hand_pose(world_landmarks)
             image_landmarks = hand_landmarks.landmark
             image_hand_pose = get_hand_pose(image_landmarks, False)
+            # hand_position = [g.data["HeadImagePosition"][0]["v"], g.data["HeadImagePosition"][1]["v"],
+            #                  g.data["HeadImagePosition"][2]["v"]] - image_hand_pose[2]
             hand_position = [g.data["HeadImagePosition"][0]["v"], g.data["HeadImagePosition"][1]["v"],
-                             g.data["HeadImagePosition"][2]["v"]] - image_hand_pose[2]
+                             g.data["HeadImagePosition"][2]["v"]] - (image_hand_pose[2]*0.3+image_hand_pose[5]*0.7)
             hand_position[:2] *= [g.config["Tracking"]["Hand"]["x_scalar"], g.config["Tracking"]["Hand"]["y_scalar"]]
 
             # hand_distance_temp=np.linalg.norm(np.array(image_hand_pose[1][:2]) - np.array(image_hand_pose[2][:2]))
