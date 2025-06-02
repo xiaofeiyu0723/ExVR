@@ -185,7 +185,6 @@ class VideoWindow(QMainWindow):
         self.priority_selection.currentIndexChanged.connect(self.set_process_priority)
         layout.addWidget(self.priority_selection)
         self.priority_selection.setCurrentIndex(self.priority_selection.findText(g.config["Setting"]["priority"]))
-        self.set_process_priority()
 
         self.install_state, steamvr_driver_path, vrcfacetracking_path, check_steamvr_path = self.install_checking()
         if check_steamvr_path is not None:
