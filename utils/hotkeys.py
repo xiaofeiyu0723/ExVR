@@ -3,6 +3,10 @@ from pynput import mouse
 from utils.actions import *
 from utils.json_manager import load_json
 import screeninfo
+import os
+import psutil
+import win32gui, win32process
+
 mouse_listener = None
 monitor = None
 def toggle_hotkeys():
@@ -74,6 +78,14 @@ def apply_hotkeys():
     if mouse_listener is not None:
         mouse_listener.stop()
 
+    # find better way to do please
+    def hook(func):
+        def wrapper(*args, **kwargs):
+            if g.config['Setting']["only_ingame"] and not is_in_game():
+                return# print("not in game")
+            return func(*args, **kwargs)
+        return wrapper
+
     mouse_actions = {}
     for item in g.hotkey_config.get("Hotkeys"):
         key = item.get("key")
@@ -83,19 +95,27 @@ def apply_hotkeys():
             if action in actions:
                 if isinstance(actions[action], tuple):
                     if len(actions[action]) == 2:
-                        keyboard.on_press_key(key, actions[action][0])
-                        keyboard.on_release_key(key, actions[action][1])
+                        keyboard.on_press_key(key, hook(actions[action][0]))
+                        keyboard.on_release_key(key, hook(actions[action][1]))
                 else:
-                    keyboard.add_hotkey(key, actions[action])
+                    keyboard.add_hotkey(key, hook(actions[action]))
             elif "left_fingers" in action or "right_fingers" in action:
                 keyboard.add_hotkey(key, lambda a=action: set_fingers(a))
         if mouse_button and action:
             if action in actions:
                 if mouse_button not in mouse_actions:
                     mouse_actions[mouse_button] = []
-                mouse_actions[mouse_button].append(actions[action])
+                if isinstance(actions[action], tuple):
+                    # press/release button
+                    h = actions[action]
+                    mouse_actions[mouse_button].append((hook(h[0]), hook(h[1])))
+                else:
+                    mouse_actions[mouse_button].append(hook(actions[action]))
     pressed_buttons = set()
     def on_click(x, y, button, pressed):
+        if g.config['Setting']["only_ingame"] and not is_in_game():
+            return
+
         button_str = None
         if pressed:
             pressed_buttons.add(button)
@@ -132,6 +152,9 @@ def apply_hotkeys():
                             action()
 
     def on_scroll(x, y, dx, dy):
+        if g.config['Setting']["only_ingame"] and not is_in_game():
+            return
+
         if dy > 0:
             action_list = mouse_actions.get("scroll_up")
             if action_list:
@@ -158,7 +181,18 @@ def apply_hotkeys():
 
     def on_move(x, y):
         global monitor
+
         if g.config['Mouse']["enable"]:
+            if g.config['Setting']["only_ingame"] and not is_in_game():
+                # this ensure that it will not keep rotating
+                bound = g.config["Mouse"]["bound_threshold"] - 0.01 # i have no idea why it need -0.01
+                g.latest_data[117] = max(-bound, min(bound, g.latest_data[117]))
+                g.latest_data[118] = max(-bound, min(bound, g.latest_data[118]))
+                g.data["MousePosition"][0]["v"] = max(-bound, min(bound, 
+                                                    g.data["MousePosition"][0]["v"]))
+                g.data["MousePosition"][1]["v"] = max(-bound, min(bound, 
+                                                    g.data["MousePosition"][1]["v"]))
+                return
             if monitor is None:
                 monitor = get_current_monitor(x, y)
             x_normalized = (x / monitor.width - 0.5)
@@ -187,3 +221,21 @@ def stop_hotkeys():
         if item["action"] == "toggle_hotkeys":
             keyboard.add_hotkey(item["key"], toggle_hotkeys)
     print("Stop Hotkey")
+
+# check title first then program name
+def is_in_game():
+    hwnd = win32gui.GetForegroundWindow()
+    title = win32gui.GetWindowText(hwnd)
+
+    if title == g.config['Setting']["only_ingame_game"]:
+        return True
+
+    _, pid = win32process.GetWindowThreadProcessId(hwnd)
+    try:
+        program_name = os.path.basename(psutil.Process(pid).exe())
+        if program_name == g.config['Setting']["only_ingame_game"]:
+            return True
+    except:
+        pass
+
+    return False

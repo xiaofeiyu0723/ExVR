@@ -215,6 +215,19 @@ class VideoWindow(QMainWindow):
         self.show_frame_button.clicked.connect(self.toggle_video_display)
         layout.addWidget(self.show_frame_button)
 
+        only_ingame_layout = QHBoxLayout()
+        self.only_ingame_checkbox = QCheckBox("Only Ingame", self)
+        self.only_ingame_checkbox.clicked.connect(lambda: self.toggle_only_in_game(self.only_ingame_checkbox.isChecked()))
+        self.only_ingame_checkbox.setChecked(g.config["Setting"]["only_ingame"])
+        self.only_ingame_checkbox.setToolTip("Currently this only applies to hotkeys and mouse input and not head movement")
+        self.only_ingame_game_input = QLineEdit(self)
+        self.only_ingame_game_input.setPlaceholderText("window title / process name / VRChat, VRChat.exe, javaw.exe")
+        self.only_ingame_game_input.textChanged.connect(self.update_mouse_only_in_game_name)
+        self.only_ingame_game_input.setText(g.config["Setting"]["only_ingame_game"])
+        only_ingame_layout.addWidget(self.only_ingame_checkbox)
+        only_ingame_layout.addWidget(self.only_ingame_game_input)
+        layout.addLayout(only_ingame_layout)
+
         separator_0 = QFrame(self)
         separator_0.setFrameShape(
             QFrame.HLine
@@ -616,6 +629,12 @@ class VideoWindow(QMainWindow):
 
     def toggle_mouse(self, value):
         g.config["Mouse"]["enable"] = value
+
+    def toggle_only_in_game(self, value):
+        g.config["Setting"]["only_ingame"] = value
+
+    def update_mouse_only_in_game_name(self, value):
+        g.config["Setting"]["only_ingame_game"] = value
 
     def toggle_hand_down(self, value):
         g.config["Tracking"]["Hand"]["enable_hand_down"] = value

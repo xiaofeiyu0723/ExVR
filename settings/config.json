@@ -6,7 +6,9 @@
         "camera_width": 640,
         "camera_height": 480,
         "camera_fps": 60,
-        "camera_ip": ""
+        "camera_ip": "",
+        "only_ingame": false,
+        "only_ingame_game": ""
     },
     "Hotkey": {
         "enable": true

@@ -20,3 +20,4 @@ pywin32==310
 screeninfo==0.8.1
 joblib==1.5.0
 scikit-learn==1.6.1
+psutil==7.0.0
