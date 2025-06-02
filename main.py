@@ -378,6 +378,8 @@ class VideoWindow(QMainWindow):
         mouse_layout = QHBoxLayout()
         self.mouse_checkbox = QCheckBox("Mouse", self)
         self.mouse_checkbox.clicked.connect(lambda: self.toggle_mouse(self.mouse_checkbox.isChecked()))
+        self.mouse_checkbox.setChecked(g.config["Mouse"]["enable"])
+
         self.mouse_slider_x = QSlider(Qt.Horizontal)
         self.mouse_slider_y = QSlider(Qt.Horizontal)
         self.mouse_slider_dx = QSlider(Qt.Horizontal)
