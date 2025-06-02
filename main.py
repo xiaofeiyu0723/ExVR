@@ -161,6 +161,9 @@ class VideoWindow(QMainWindow):
 
         self.ip_camera_url_input = QLineEdit(self)
         self.ip_camera_url_input.setPlaceholderText("Enter IP camera URL")
+        self.ip_camera_url_input.textChanged.connect(self.update_camera_ip)
+        # use .get() to avoid KeyError with old config
+        self.ip_camera_url_input.setText(g.config["Setting"].get("camera_ip", ""))
         layout.addWidget(self.ip_camera_url_input)
 
         camera_layout = QHBoxLayout()
@@ -765,7 +768,7 @@ class VideoWindow(QMainWindow):
             self.toggle_button.setStyleSheet(
                 "QPushButton { background-color: red; color: white; }"
             )
-            ip_camera_url = self.ip_camera_url_input.text()
+            ip_camera_url = g.config["Setting"]["camera_ip"]
             selected_camera_name = self.camera_selection.currentText()
             source = (
                 ip_camera_url
@@ -891,6 +894,9 @@ class VideoWindow(QMainWindow):
         if current_fps:
             g.config["Setting"]["camera_fps"] = current_fps
             print(f"FPS updated to: {current_fps}")
+
+    def update_camera_ip(self, value):
+        g.config["Setting"]["camera_ip"] = value 
 
     def thread_stopped(self):
         if self.video_thread:
