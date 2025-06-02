@@ -19,8 +19,15 @@ from PyQt5.QtWidgets import (
 from PyQt5.QtCore import QThread, pyqtSignal, Qt
 from PyQt5.QtGui import QImage, QPixmap, QDoubleValidator
 
-import cv2
 import sys, winreg, shutil
+import pyuac
+if __name__ == "__main__":
+    if not pyuac.isUserAdmin():
+        pyuac.runAsAdmin()
+        sys.exit(0)
+
+
+import cv2
 import utils.tracking
 from utils.actions import *
 import utils.globals as g
@@ -33,7 +40,6 @@ from ctypes import windll
 from cv2_enumerate_cameras import enumerate_cameras
 from tracker.controller.controller import *
 import numpy as np
-import pyuac
 import warnings
 warnings.filterwarnings("ignore")
 
@@ -155,6 +161,9 @@ class VideoWindow(QMainWindow):
 
         self.ip_camera_url_input = QLineEdit(self)
         self.ip_camera_url_input.setPlaceholderText("Enter IP camera URL")
+        self.ip_camera_url_input.textChanged.connect(self.update_camera_ip)
+        # use .get() to avoid KeyError with old config
+        self.ip_camera_url_input.setText(g.config["Setting"].get("camera_ip", ""))
         layout.addWidget(self.ip_camera_url_input)
 
         camera_layout = QHBoxLayout()
@@ -205,6 +214,19 @@ class VideoWindow(QMainWindow):
         self.show_frame_button = QPushButton("Show Frame", self)
         self.show_frame_button.clicked.connect(self.toggle_video_display)
         layout.addWidget(self.show_frame_button)
+
+        only_ingame_layout = QHBoxLayout()
+        self.only_ingame_checkbox = QCheckBox("Only Ingame", self)
+        self.only_ingame_checkbox.clicked.connect(lambda: self.toggle_only_in_game(self.only_ingame_checkbox.isChecked()))
+        self.only_ingame_checkbox.setChecked(g.config["Setting"]["only_ingame"])
+        self.only_ingame_checkbox.setToolTip("Currently this only applies to hotkeys and mouse input and not head movement")
+        self.only_ingame_game_input = QLineEdit(self)
+        self.only_ingame_game_input.setPlaceholderText("window title / process name / VRChat, VRChat.exe, javaw.exe")
+        self.only_ingame_game_input.textChanged.connect(self.update_mouse_only_in_game_name)
+        self.only_ingame_game_input.setText(g.config["Setting"]["only_ingame_game"])
+        only_ingame_layout.addWidget(self.only_ingame_checkbox)
+        only_ingame_layout.addWidget(self.only_ingame_game_input)
+        layout.addLayout(only_ingame_layout)
 
         separator_0 = QFrame(self)
         separator_0.setFrameShape(
@@ -356,6 +378,8 @@ class VideoWindow(QMainWindow):
         mouse_layout = QHBoxLayout()
         self.mouse_checkbox = QCheckBox("Mouse", self)
         self.mouse_checkbox.clicked.connect(lambda: self.toggle_mouse(self.mouse_checkbox.isChecked()))
+        self.mouse_checkbox.setChecked(g.config["Mouse"]["enable"])
+
         self.mouse_slider_x = QSlider(Qt.Horizontal)
         self.mouse_slider_y = QSlider(Qt.Horizontal)
         self.mouse_slider_dx = QSlider(Qt.Horizontal)
@@ -608,6 +632,12 @@ class VideoWindow(QMainWindow):
     def toggle_mouse(self, value):
         g.config["Mouse"]["enable"] = value
 
+    def toggle_only_in_game(self, value):
+        g.config["Setting"]["only_ingame"] = value
+
+    def update_mouse_only_in_game_name(self, value):
+        g.config["Setting"]["only_ingame_game"] = value
+
     def toggle_hand_down(self, value):
         g.config["Tracking"]["Hand"]["enable_hand_down"] = value
 
@@ -676,6 +706,7 @@ class VideoWindow(QMainWindow):
         success = windll.kernel32.SetPriorityClass(handle, priority_class)
         windll.kernel32.CloseHandle(handle)
         print("Finished setting priority")
+        g.config["Setting"]["priority"] = priority_key
 
     def display_message(self,title,message,style=""):
         msg_box = QMessageBox()
@@ -757,7 +788,7 @@ class VideoWindow(QMainWindow):
             self.toggle_button.setStyleSheet(
                 "QPushButton { background-color: red; color: white; }"
             )
-            ip_camera_url = self.ip_camera_url_input.text()
+            ip_camera_url = g.config["Setting"]["camera_ip"]
             selected_camera_name = self.camera_selection.currentText()
             source = (
                 ip_camera_url
@@ -884,6 +915,9 @@ class VideoWindow(QMainWindow):
             g.config["Setting"]["camera_fps"] = current_fps
             print(f"FPS updated to: {current_fps}")
 
+    def update_camera_ip(self, value):
+        g.config["Setting"]["camera_ip"] = value 
+
     def thread_stopped(self):
         if self.video_thread:
             self.video_thread.stop()
@@ -900,10 +934,7 @@ class VideoWindow(QMainWindow):
         super().closeEvent(event)
 
 if __name__ == "__main__":
-    if not pyuac.isUserAdmin():
-        pyuac.runAsAdmin()
-    else:
-        app = QApplication(sys.argv)
-        window = VideoWindow()
-        window.show()
-        sys.exit(app.exec_())
+    app = QApplication(sys.argv)
+    window = VideoWindow()
+    window.show()
+    sys.exit(app.exec_())
