@@ -19,8 +19,15 @@ from PyQt5.QtWidgets import (
 from PyQt5.QtCore import QThread, pyqtSignal, Qt
 from PyQt5.QtGui import QImage, QPixmap, QDoubleValidator
 
-import cv2
 import sys, winreg, shutil
+import pyuac
+if __name__ == "__main__":
+    if not pyuac.isUserAdmin():
+        pyuac.runAsAdmin()
+        sys.exit(0)
+
+
+import cv2
 import utils.tracking
 from utils.actions import *
 import utils.globals as g
@@ -33,7 +40,6 @@ from ctypes import windll
 from cv2_enumerate_cameras import enumerate_cameras
 from tracker.controller.controller import *
 import numpy as np
-import pyuac
 import warnings
 warnings.filterwarnings("ignore")
 
@@ -902,10 +908,7 @@ class VideoWindow(QMainWindow):
         super().closeEvent(event)
 
 if __name__ == "__main__":
-    if not pyuac.isUserAdmin():
-        pyuac.runAsAdmin()
-    else:
-        app = QApplication(sys.argv)
-        window = VideoWindow()
-        window.show()
-        sys.exit(app.exec_())
+    app = QApplication(sys.argv)
+    window = VideoWindow()
+    window.show()
+    sys.exit(app.exec_())
