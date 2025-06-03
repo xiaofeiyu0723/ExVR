@@ -101,39 +101,96 @@ def finger_handling(hand_pose):
 
     return finger_curl
 
+def compute_bounding_size(reference_kp):
+    xs = [kp.x for kp in reference_kp]
+    ys = [kp.y for kp in reference_kp]
+    return max(xs)-min(xs), max(ys)-min(ys)
 
-def compute_bounding_box(landmarks):
-    points = np.array([(lm.x, lm.y, lm.z) for lm in landmarks])
-    min_x, min_y = points.min(axis=0)[:2]
-    max_x, max_y = points.max(axis=0)[:2]
-    width = max_x - min_x
-    height = max_y - min_y
-    return width, height, min_x, min_y, max_x, max_y
+def calculate_normalized_distance(kp1, kp2, reference_kp, points):
+    distances = [
+        np.linalg.norm(np.array([kp1[i].x, kp1[i].y]) - np.array([kp2[i].x, kp2[i].y]))
+        for i in points
+    ]
+    avg_distance = np.mean(distances)
+    width, height = compute_bounding_size(reference_kp)
+    return avg_distance / max(width, height)
 
-prev_hand_landmarks = {}
-def hand_is_changed(key, hand_name,hand_landmarks,change_points,change_threshold, update_flag=True):
-    global prev_hand_landmarks
 
+prev_hands = {}  # {key: {'left': landmarks, 'right': landmarks}}
+def hand_is_changed(key, hand_name, hand_landmarks, change_points, change_threshold, update_flag=True):
+    global prev_hands
     all_keypoints = [hand_landmarks.landmark[i] for i in range(21)]
-    reference_keypoints = [hand_landmarks.landmark[i] for i in [0,1,17]]
-    if key not in prev_hand_landmarks:
-        prev_hand_landmarks[key] = {}
-    if hand_name in prev_hand_landmarks[key]:
-        prev_keypoints = prev_hand_landmarks[key][hand_name]
-        distances = [np.linalg.norm(np.array([all_keypoints[i].x, all_keypoints[i].y]) - np.array(
-            [prev_keypoints[i].x, prev_keypoints[i].y])) for i in change_points]
-        avg_distance = np.mean(distances)
-        width, height, _, _, _, _ = compute_bounding_box(reference_keypoints)
-        norm_distance = avg_distance / max(width, height)
-        if norm_distance>=change_threshold:
-            if update_flag:
-                prev_hand_landmarks[key][hand_name] = all_keypoints
-            return True, norm_distance
-        else:
-            return False, norm_distance
+    reference_keypoints = [hand_landmarks.landmark[i] for i in [0, 1, 17]]
+    other_hand = 'Right' if hand_name == 'Left' else 'Left'
+    if key not in prev_hands:
+        prev_hands[key] = {}
+    swap_flag = False
+    if prev_hands[key]:
+        if hand_name in prev_hands[key] and other_hand in prev_hands[key]:
+            self_dist = calculate_normalized_distance(
+                all_keypoints,
+                prev_hands[key][hand_name],
+                reference_keypoints,
+                change_points
+            )
+            other_dist = calculate_normalized_distance(
+                all_keypoints,
+                prev_hands[key][other_hand],
+                reference_keypoints,
+                change_points
+            )
+            swap_flag = other_dist < self_dist and (self_dist - other_dist) > g.config["Tracking"]["Hand"]["hand_swap_threshold"]
+
+    changed = False
+    norm_distance = 0
+    if hand_name in prev_hands[key]:
+        norm_distance = calculate_normalized_distance(
+            all_keypoints,
+            prev_hands[key][hand_name],
+            reference_keypoints,
+            change_points
+        )
+        changed = norm_distance >= change_threshold
     else:
-        prev_hand_landmarks[key][hand_name] = all_keypoints
-        return True, 0
+        changed = True
+    if update_flag and not swap_flag:
+        prev_hands[key][hand_name] = all_keypoints
+    return changed, norm_distance, swap_flag
+
+
+# def compute_bounding_box(landmarks):
+#     points = np.array([(lm.x, lm.y, lm.z) for lm in landmarks])
+#     min_x, min_y = points.min(axis=0)[:2]
+#     max_x, max_y = points.max(axis=0)[:2]
+#     width = max_x - min_x
+#     height = max_y - min_y
+#     return width, height, min_x, min_y, max_x, max_y
+
+# prev_hand_landmarks = {}
+# def hand_is_changed(key, hand_name,hand_landmarks,change_points,change_threshold, update_flag=True):
+#     global prev_hand_landmarks
+#
+#     all_keypoints = [hand_landmarks.landmark[i] for i in range(21)]
+#     reference_keypoints = [hand_landmarks.landmark[i] for i in [0,1,17]]
+#     if key not in prev_hand_landmarks:
+#         prev_hand_landmarks[key] = {}
+#     if hand_name in prev_hand_landmarks[key]:
+#         prev_keypoints = prev_hand_landmarks[key][hand_name]
+#         distances = [np.linalg.norm(np.array([all_keypoints[i].x, all_keypoints[i].y]) - np.array(
+#             [prev_keypoints[i].x, prev_keypoints[i].y])) for i in change_points]
+#         avg_distance = np.mean(distances)
+#         width, height, _, _, _, _ = compute_bounding_box(reference_keypoints)
+#         norm_distance = avg_distance / max(width, height)
+#
+#         if norm_distance>=change_threshold:
+#             if update_flag:
+#                 prev_hand_landmarks[key][hand_name] = all_keypoints
+#             return True, norm_distance
+#         else:
+#             return False, norm_distance
+#     else:
+#         prev_hand_landmarks[key][hand_name] = all_keypoints
+#         return True, 0
 
 hand_detection_counts = {"Left":0,"Right":0}
 finger_action_threshold = {"Left":0,"Right":0}
@@ -157,10 +214,10 @@ def hand_pred_handling(detection_result):
             hands=detection_result.multi_handedness
             if hands[0].classification[0].label == hands[1].classification[0].label:
                 hand_name = "Right" if hands[0].classification[0].label == "Left" else "Left"
-                _,avg_distance_0 = hand_is_changed("hand_change", hand_name, detection_result.multi_hand_landmarks[0],
+                _,avg_distance_0,_ = hand_is_changed("hand_change", hand_name, detection_result.multi_hand_landmarks[0],
                                                        [0,1,17],
                                                        0, False)
-                _,avg_distance_1 = hand_is_changed("hand_change", hand_name, detection_result.multi_hand_landmarks[1],
+                _,avg_distance_1,_ = hand_is_changed("hand_change", hand_name, detection_result.multi_hand_landmarks[1],
                                                        [0,1,17],
                                                        0, False)
                 if avg_distance_0<=avg_distance_1:
@@ -175,7 +232,7 @@ def hand_pred_handling(detection_result):
             if same_hand_flag == idx:
                 continue
             else:
-                _,_ = hand_is_changed("hand_change", hand_name, hand_landmarks,
+                _,_,_ = hand_is_changed("hand_change", hand_name, hand_landmarks,
                                                        [0,1,17],
                                                        0)
             if hand.classification[0].score < g.config["Tracking"]["Hand"]["hand_confidence"] or (g.config["Tracking"]["LeftController"]["enable"] and hand_name=="Left") or (g.config["Tracking"]["RightController"]["enable"] and hand_name=="Right"):
@@ -237,9 +294,12 @@ def hand_pred_handling(detection_result):
 
             hand_position[2] = hand_distance
 
-            position_change_flag,_ = hand_is_changed("position",hand_name,hand_landmarks,g.config["Tracking"]["Hand"]["position_change_points"],g.config["Tracking"]["Hand"]["position_change_threshold"])
-            rotation_change_flag,_ = hand_is_changed("rotation",hand_name,hand_landmarks,g.config["Tracking"]["Hand"]["rotation_change_points"],g.config["Tracking"]["Hand"]["rotation_change_threshold"])
-
+            position_change_flag,_,swap_flag = hand_is_changed("position",hand_name,hand_landmarks,g.config["Tracking"]["Hand"]["position_change_points"],g.config["Tracking"]["Hand"]["position_change_threshold"])
+            rotation_change_flag,_,_ = hand_is_changed("rotation",hand_name,hand_landmarks,g.config["Tracking"]["Hand"]["rotation_change_points"],g.config["Tracking"]["Hand"]["rotation_change_threshold"])
+            if swap_flag:
+                print("====================")
+                print(swap_flag)
+                continue
             z = hand_pose[0] - hand_pose[17]
             x = np.cross(hand_pose[1] - hand_pose[0], z)
             y = np.cross(z, x)

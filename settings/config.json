@@ -91,18 +91,19 @@
             "enable_finger_action": true,
             "hand_detection_upper_threshold": 100,
             "hand_detection_lower_threshold": 10,
+            "hand_swap_threshold": 0.1,
             "position_change_points": [
                 0,
                 1,
                 17
             ],
-            "position_change_threshold": 0.03,
+            "position_change_threshold": 0.02,
             "rotation_change_points": [
                 0,
                 1,
                 17
             ],
-            "rotation_change_threshold": 0.06,
+            "rotation_change_threshold": 0.05,
             "only_front": true,
             "follow": true
         },
