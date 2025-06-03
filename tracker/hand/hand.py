@@ -113,26 +113,26 @@ def compute_bounding_box(landmarks):
 prev_hand_landmarks = {}
 def hand_is_changed(key, hand_name,hand_landmarks,change_points,change_threshold, update_flag=True):
     global prev_hand_landmarks
-    if len(change_points)==0:
-        return True
-    current_keypoints = [hand_landmarks.landmark[i] for i in change_points]
+
+    all_keypoints = [hand_landmarks.landmark[i] for i in range(21)]
+    reference_keypoints = [hand_landmarks.landmark[i] for i in [0,1,17]]
     if key not in prev_hand_landmarks:
         prev_hand_landmarks[key] = {}
     if hand_name in prev_hand_landmarks[key]:
         prev_keypoints = prev_hand_landmarks[key][hand_name]
-        distances = [np.linalg.norm(np.array([current_keypoints[i].x, current_keypoints[i].y]) - np.array(
-            [prev_keypoints[i].x, prev_keypoints[i].y])) for i in range(len(current_keypoints))]
+        distances = [np.linalg.norm(np.array([all_keypoints[i].x, all_keypoints[i].y]) - np.array(
+            [prev_keypoints[i].x, prev_keypoints[i].y])) for i in change_points]
         avg_distance = np.mean(distances)
-        width, height, _, _, _, _ = compute_bounding_box(current_keypoints)
-        norm_distance = avg_distance / np.sqrt(width ** 2 + height ** 2)
+        width, height, _, _, _, _ = compute_bounding_box(reference_keypoints)
+        norm_distance = avg_distance / max(width, height)
         if norm_distance>=change_threshold:
             if update_flag:
-                prev_hand_landmarks[key][hand_name] = current_keypoints
+                prev_hand_landmarks[key][hand_name] = all_keypoints
             return True, norm_distance
         else:
             return False, norm_distance
     else:
-        prev_hand_landmarks[key][hand_name] = current_keypoints
+        prev_hand_landmarks[key][hand_name] = all_keypoints
         return True, 0
 
 hand_detection_counts = {"Left":0,"Right":0}
@@ -200,7 +200,7 @@ def hand_pred_handling(detection_result):
             # hand_position = [g.data["HeadImagePosition"][0]["v"], g.data["HeadImagePosition"][1]["v"],
             #                  g.data["HeadImagePosition"][2]["v"]] - image_hand_pose[2]
             hand_position = [g.data["HeadImagePosition"][0]["v"], g.data["HeadImagePosition"][1]["v"],
-                             g.data["HeadImagePosition"][2]["v"]] - (image_hand_pose[2]*0.3+image_hand_pose[5]*0.7)
+                             g.data["HeadImagePosition"][2]["v"]] - image_hand_pose[2]
             hand_position[:2] *= [g.config["Tracking"]["Hand"]["x_scalar"], g.config["Tracking"]["Hand"]["y_scalar"]]
 
             # hand_distance_temp=np.linalg.norm(np.array(image_hand_pose[1][:2]) - np.array(image_hand_pose[2][:2]))
