@@ -21,11 +21,9 @@ from PyQt5.QtGui import QImage, QPixmap, QDoubleValidator
 
 import sys, winreg, shutil
 import pyuac
-if __name__ == "__main__":
-    if not pyuac.isUserAdmin():
-        pyuac.runAsAdmin()
-        sys.exit(0)
-
+if not pyuac.isUserAdmin():
+    pyuac.runAsAdmin()
+    sys.exit(0)
 
 import cv2
 import utils.tracking

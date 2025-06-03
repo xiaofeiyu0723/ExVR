@@ -96,13 +96,13 @@
                 1,
                 17
             ],
-            "position_change_threshold": 0.02,
+            "position_change_threshold": 0.03,
             "rotation_change_points": [
                 0,
                 1,
                 17
             ],
-            "rotation_change_threshold": 0.05,
+            "rotation_change_threshold": 0.06,
             "only_front": true,
             "follow": true
         },

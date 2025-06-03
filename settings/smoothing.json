@@ -84,7 +84,7 @@
             "is_rotation": false,
             "indices": [70, 71, 72],
             "shifting": 70,
-            "dt_multiplier": 90,
+            "dt_multiplier": 100,
               "kalman_params": {
                 "q_process": 0.005,
                 "r_measure": 0.03
@@ -95,7 +95,7 @@
             "is_rotation": false,
             "indices": [76, 77, 78],
             "shifting": 76,
-            "dt_multiplier": 90,
+            "dt_multiplier": 100,
               "kalman_params": {
                 "q_process": 0.005,
                 "r_measure": 0.03

@@ -102,46 +102,6 @@ def finger_handling(hand_pose):
     return finger_curl
 
 
-left_hand_detection_counts = 0
-right_hand_detection_counts = 0
-
-def predict_hand_position(queue):
-    k = len(queue)
-    if k == 0:
-        return None
-    times = np.arange(k)
-    x = np.array([pos[0] for pos in queue])
-    y = np.array([pos[1] for pos in queue])
-    z = np.array([pos[2] for pos in queue])
-
-    sum_t = np.sum(times)
-    sum_t2 = np.sum(times ** 2)
-    denominator = k * sum_t2 - sum_t ** 2
-
-    if denominator == 0:
-        return np.array([x[-1], y[-1], z[-1]])
-    else:
-        sum_x = np.sum(x)
-        sum_tx = np.sum(times * x)
-        a_x = (k * sum_tx - sum_t * sum_x) / denominator
-        b_x = (sum_x - a_x * sum_t) / k
-        predicted_x = a_x * k + b_x
-
-        sum_y = np.sum(y)
-        sum_ty = np.sum(times * y)
-        a_y = (k * sum_ty - sum_t * sum_y) / denominator
-        b_y = (sum_y - a_y * sum_t) / k
-        predicted_y = a_y * k + b_y
-
-        sum_z = np.sum(z)
-        sum_tz = np.sum(times * z)
-        a_z = (k * sum_tz - sum_t * sum_z) / denominator
-        b_z = (sum_z - a_z * sum_t) / k
-        predicted_z = a_z * k + b_z
-
-    return np.array([predicted_x, predicted_y, predicted_z])
-
-
 def compute_bounding_box(landmarks):
     points = np.array([(lm.x, lm.y, lm.z) for lm in landmarks])
     min_x, min_y = points.min(axis=0)[:2]
@@ -175,21 +135,21 @@ def hand_is_changed(key, hand_name,hand_landmarks,change_points,change_threshold
         prev_hand_landmarks[key][hand_name] = current_keypoints
         return True, 0
 
+hand_detection_counts = {"Left":0,"Right":0}
 finger_action_threshold = {"Left":0,"Right":0}
 prev_distance_scalar = None
 def hand_pred_handling(detection_result):
-    global left_hand_detection_counts, right_hand_detection_counts, left_position_queue, right_position_queue
-    global finger_action_threshold,prev_distance_scalar
+    global hand_detection_counts, finger_action_threshold,prev_distance_scalar
 
     g.hand_landmarks = detection_result.multi_hand_landmarks
     g.handedness = detection_result.multi_handedness
 
-    right_hand_detection_counts -= 1
-    if right_hand_detection_counts < 0:
-        right_hand_detection_counts = 0
-    left_hand_detection_counts -= 1
-    if left_hand_detection_counts < 0:
-        left_hand_detection_counts = 0
+    hand_detection_counts["Left"] -= 1
+    if hand_detection_counts["Left"] < 0:
+        hand_detection_counts["Left"] = 0
+    hand_detection_counts["Right"] -= 1
+    if hand_detection_counts["Right"] < 0:
+        hand_detection_counts["Right"] = 0
 
     if detection_result.multi_hand_landmarks is not None and detection_result.multi_handedness is not None and detection_result.multi_hand_world_landmarks is not None:
         same_hand_flag=None
@@ -221,16 +181,16 @@ def hand_pred_handling(detection_result):
             if hand.classification[0].score < g.config["Tracking"]["Hand"]["hand_confidence"] or (g.config["Tracking"]["LeftController"]["enable"] and hand_name=="Left") or (g.config["Tracking"]["RightController"]["enable"] and hand_name=="Right"):
                 continue
             if hand_name == "Left":
-                left_hand_detection_counts += 2
-                if left_hand_detection_counts > g.config["Tracking"]["Hand"]["hand_detection_upper_threshold"]:
-                    left_hand_detection_counts = g.config["Tracking"]["Hand"]["hand_detection_upper_threshold"]
-                if left_hand_detection_counts <= g.config["Tracking"]["Hand"]["hand_detection_lower_threshold"]:
+                hand_detection_counts["Left"] += 2
+                if hand_detection_counts["Left"] > g.config["Tracking"]["Hand"]["hand_detection_upper_threshold"]:
+                    hand_detection_counts["Left"] = g.config["Tracking"]["Hand"]["hand_detection_upper_threshold"]
+                if hand_detection_counts["Left"] <= g.config["Tracking"]["Hand"]["hand_detection_lower_threshold"]:
                     continue
             else:
-                right_hand_detection_counts += 2
-                if right_hand_detection_counts > g.config["Tracking"]["Hand"]["hand_detection_upper_threshold"]:
-                    right_hand_detection_counts = g.config["Tracking"]["Hand"]["hand_detection_upper_threshold"]
-                if right_hand_detection_counts <= g.config["Tracking"]["Hand"]["hand_detection_lower_threshold"]:
+                hand_detection_counts["Right"] += 2
+                if hand_detection_counts["Right"] > g.config["Tracking"]["Hand"]["hand_detection_upper_threshold"]:
+                    hand_detection_counts["Right"] = g.config["Tracking"]["Hand"]["hand_detection_upper_threshold"]
+                if hand_detection_counts["Right"] <= g.config["Tracking"]["Hand"]["hand_detection_lower_threshold"]:
                     continue
 
             world_landmarks = hand_world_landmarks.landmark
@@ -377,7 +337,7 @@ def hand_pred_handling(detection_result):
                     g.data["RightHandFinger"][4]["v"] = finger_4
                 g.controller.right_hand.enable = True
 
-    if left_hand_detection_counts <= g.config["Tracking"]["Hand"]["hand_detection_lower_threshold"] and \
+    if hand_detection_counts["Left"] <= g.config["Tracking"]["Hand"]["hand_detection_lower_threshold"] and \
             g.config["Tracking"]["Hand"]["enable_hand_auto_reset"] and not g.config["Tracking"]["LeftController"][
         "enable"]:
         if g.config["Smoothing"]["enable"]:
@@ -409,9 +369,8 @@ def hand_pred_handling(detection_result):
         g.controller.left_hand.follow = False
 
 
-    if right_hand_detection_counts <= g.config["Tracking"]["Hand"]["hand_detection_lower_threshold"] and \
-            g.config["Tracking"]["Hand"]["enable_hand_auto_reset"] and not g.config["Tracking"]["RightController"][
-        "enable"]:
+    if hand_detection_counts["Right"] <= g.config["Tracking"]["Hand"]["hand_detection_lower_threshold"] and \
+            g.config["Tracking"]["Hand"]["enable_hand_auto_reset"] and not g.config["Tracking"]["RightController"]["enable"]:
         if g.config["Smoothing"]["enable"]:
             g.latest_data[79] = g.default_data["RightHandRotation"][0]["v"]
             g.latest_data[80] = g.default_data["RightHandRotation"][1]["v"]
