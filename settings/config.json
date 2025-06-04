@@ -1,4 +1,5 @@
 {
+    "Version": "0.7.1",
     "Setting": {
         "priority": "NORMAL_PRIORITY_CLASS",
         "flip_x": false,

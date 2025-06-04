@@ -120,9 +120,9 @@ class VideoWindow(QMainWindow):
         # self.setAttribute(Qt.WA_TranslucentBackground)
         # self.setAttribute(Qt.WA_NoSystemBackground, False)
         # self.setAttribute(Qt.WA_PaintOnScreen)  # 硬件加速
-
+        version=g.config["Version"]
         self.setWindowTitle(
-            "ExVR - Experience Virtual Reality"
+            f"ExVR {version} - Experience Virtual Reality"
         )
         # self.setFixedSize(width, height)
         self.resize(self.width, self.height)
