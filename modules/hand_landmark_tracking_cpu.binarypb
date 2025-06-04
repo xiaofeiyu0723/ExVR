@@ -1,0 +1,23 @@
+
+zGateCalculatorprev_hand_rects_from_landmarks"$gated_prev_hand_rects_from_landmarks*ALLOW:use_prev_landmarks:úýÁæ
+{(NormalizedRectVectorHasMinSizeCalculator-ITERABLE:gated_prev_hand_rects_from_landmarks"prev_has_enough_hands*	num_hands
+WGateCalculatorimageDISALLOW:prev_has_enough_hands"palm_detection_image:úýÁæ
+qPalmDetectionCpuIMAGE:palm_detection_image"DETECTIONS:all_palm_detections*!MODEL_COMPLEXITY:model_complexity
+T!ClipDetectionVectorSizeCalculatorall_palm_detections"palm_detections*	num_hands
+WImagePropertiesCalculatorIMAGE:palm_detection_image"SIZE:palm_detection_image_size
+¯BeginLoopDetectionCalculatorITERABLE:palm_detectionsCLONE:palm_detection_image_size"ITEM:palm_detection"CLONE:image_size_for_palms"#BATCH_END:palm_detections_timestamp
+{PalmDetectionDetectionToRoiDETECTION:palm_detectionIMAGE_SIZE:image_size_for_palms"!ROI:hand_rect_from_palm_detection
+”EndLoopNormalizedRectCalculator"ITEM:hand_rect_from_palm_detection#BATCH_END:palm_detections_timestamp"(ITERABLE:hand_rects_from_palm_detections
+AssociationNormRectCalculatorhand_rects_from_palm_detections$gated_prev_hand_rects_from_landmarks"
+hand_rects:ú¦Â™fff?
+=ImagePropertiesCalculatorIMAGE_CPU:image"SIZE:image_size
+Ñ!BeginLoopNormalizedRectCalculatorITERABLE:hand_rectsCLONE:0:imageCLONE:1:image_size"ITEM:single_hand_rect"CLONE:0:image_for_landmarks" CLONE:1:image_size_for_landmarks"BATCH_END:hand_rects_timestamp
+ÑHandLandmarkCpuIMAGE:image_for_landmarksROI:single_hand_rect"LANDMARKS:single_hand_landmarks"+WORLD_LANDMARKS:single_hand_world_landmarks"HANDEDNESS:single_handedness*!MODEL_COMPLEXITY:model_complexity
+x#EndLoopClassificationListCalculatorITEM:single_handednessBATCH_END:hand_rects_timestamp"ITERABLE:multi_handedness
+‡HandLandmarkLandmarksToRoi#IMAGE_SIZE:image_size_for_landmarksLANDMARKS:single_hand_landmarks"#ROI:single_hand_rect_from_landmarks
+Š-EndLoopNormalizedLandmarkListVectorCalculatorITEM:single_hand_landmarksBATCH_END:hand_rects_timestamp"ITERABLE:multi_hand_landmarks
+Œ#EndLoopLandmarkListVectorCalculator ITEM:single_hand_world_landmarksBATCH_END:hand_rects_timestamp"#ITERABLE:multi_hand_world_landmarks
+‹EndLoopNormalizedRectCalculator$ITEM:single_hand_rect_from_landmarksBATCH_END:hand_rects_timestamp""ITERABLE:hand_rects_from_landmarks
+|PreviousLoopbackCalculator
+MAIN:imageLOOP:hand_rects_from_landmarks"(PREV_LOOP:prev_hand_rects_from_landmarksj
+LOOPRIMAGE:imagezLANDMARKS:multi_hand_landmarksz*WORLD_LANDMARKS:multi_hand_world_landmarkszHANDEDNESS:multi_handednesszPALM_DETECTIONS:palm_detectionsz2HAND_ROIS_FROM_LANDMARKS:hand_rects_from_landmarksz>HAND_ROIS_FROM_PALM_DETECTIONS:hand_rects_from_palm_detections‚NUM_HANDS:num_hands‚!MODEL_COMPLEXITY:model_complexity‚%USE_PREV_LANDMARKS:use_prev_landmarks¢HandLandmarkTrackingCpu
