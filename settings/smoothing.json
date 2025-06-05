@@ -106,16 +106,23 @@
             "is_rotation": false,
             "indices": [82, 83, 84, 85, 86],
             "shifting": 82,
-            "dt_multiplier": 20
+            "dt_multiplier": 60,
+              "kalman_params": {
+                "q_process": 0.005,
+                "r_measure": 0.03
+              }
         },
         "RightHandFinger": {
             "key": "RightHandFinger",
             "is_rotation": false,
             "indices": [87, 88, 89, 90, 91],
             "shifting": 87,
-            "dt_multiplier": 20
+            "dt_multiplier": 60,
+              "kalman_params": {
+                "q_process": 0.005,
+                "r_measure": 0.03
+              }
         },
-
         "LeftControllerRotation": {
             "key": "LeftControllerRotation",
             "is_rotation": true,
