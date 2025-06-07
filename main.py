@@ -21,10 +21,6 @@ from PyQt5.QtGui import QImage, QPixmap, QDoubleValidator
 
 import sys, winreg, shutil
 import pyuac
-if not pyuac.isUserAdmin():
-    pyuac.runAsAdmin()
-    sys.exit(0)
-
 import cv2
 import utils.tracking
 from utils.actions import *
@@ -932,7 +928,11 @@ class VideoWindow(QMainWindow):
         super().closeEvent(event)
 
 if __name__ == "__main__":
-    app = QApplication(sys.argv)
-    window = VideoWindow()
-    window.show()
-    sys.exit(app.exec_())
+    if not pyuac.isUserAdmin():
+        pyuac.runAsAdmin()
+        sys.exit(0)
+    else:
+        app = QApplication(sys.argv)
+        window = VideoWindow()
+        window.show()
+        sys.exit(app.exec_())
