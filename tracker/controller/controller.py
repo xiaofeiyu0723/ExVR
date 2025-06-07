@@ -86,14 +86,6 @@ class ControllerApp(QThread):
         server_ip = request.host.split(':')[0]  # 提取IP
         return server_ip
 
-    # def get_default_ip(self):
-    #     try:
-    #         gateways = netifaces.gateways()
-    #         default_interface = gateways['default'][netifaces.AF_INET][1]
-    #         ip = netifaces.ifaddresses(default_interface)[netifaces.AF_INET][0]['addr']
-    #         return ip
-    #     except Exception:
-    #         return '127.0.0.1'
     def get_default_ip(self):
         interfaces = psutil.net_if_addrs()
         stats = psutil.net_if_stats()
