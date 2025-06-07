@@ -12,7 +12,7 @@ import utils.globals as g
 from utils.json_manager import load_json
 import websockets
 import ssl
-import netifaces
+import psutil
 from pythonosc import dispatcher
 from pythonosc import osc_server
 import socket
@@ -86,14 +86,28 @@ class ControllerApp(QThread):
         server_ip = request.host.split(':')[0]  # 提取IP
         return server_ip
 
+    # def get_default_ip(self):
+    #     try:
+    #         gateways = netifaces.gateways()
+    #         default_interface = gateways['default'][netifaces.AF_INET][1]
+    #         ip = netifaces.ifaddresses(default_interface)[netifaces.AF_INET][0]['addr']
+    #         return ip
+    #     except Exception:
+    #         return '127.0.0.1'
     def get_default_ip(self):
-        try:
-            gateways = netifaces.gateways()
-            default_interface = gateways['default'][netifaces.AF_INET][1]
-            ip = netifaces.ifaddresses(default_interface)[netifaces.AF_INET][0]['addr']
-            return ip
-        except Exception:
-            return '127.0.0.1'
+        interfaces = psutil.net_if_addrs()
+        stats = psutil.net_if_stats()
+
+        for interface_name, addresses in interfaces.items():
+            if_stats = stats.get(interface_name)
+            if not if_stats or not if_stats.isup:
+                continue  # 跳过未启用接口
+
+            for addr in addresses:
+                if addr.family == socket.AF_INET and not addr.address.startswith('127.'):
+                    return addr.address
+
+        return '127.0.0.1'
 
     def home(self):
         self.server_ip = self.get_server_ip()
