@@ -1,3 +1,8 @@
+import sys
+import pyuac
+if not pyuac.isUserAdmin():
+    pyuac.runAsAdmin()
+    sys.exit(0)
 from PyQt5.QtWidgets import (
     QApplication,
     QMainWindow,
@@ -18,9 +23,7 @@ from PyQt5.QtWidgets import (
 )
 from PyQt5.QtCore import QThread, pyqtSignal, Qt
 from PyQt5.QtGui import QImage, QPixmap, QDoubleValidator
-
-import sys, winreg, shutil
-import pyuac
+import winreg, shutil
 import cv2
 import utils.tracking
 from utils.actions import *
@@ -928,11 +931,7 @@ class VideoWindow(QMainWindow):
         super().closeEvent(event)
 
 if __name__ == "__main__":
-    if not pyuac.isUserAdmin():
-        pyuac.runAsAdmin()
-        sys.exit(0)
-    else:
-        app = QApplication(sys.argv)
-        window = VideoWindow()
-        window.show()
-        sys.exit(app.exec_())
+    app = QApplication(sys.argv)
+    window = VideoWindow()
+    window.show()
+    sys.exit(app.exec_())

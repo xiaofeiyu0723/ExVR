@@ -104,7 +104,7 @@ class KeypointCNN(nn.Module):
 def initialize_tongue_model():
     tongue_model = KeypointCNN()
     tongue_model.load_state_dict(
-        torch.load("./model/model_epoch_196.pth", weights_only=True)
+        torch.load("./models/model_epoch_196.pth", weights_only=True)
     )
     tongue_model.eval()
     return tongue_model

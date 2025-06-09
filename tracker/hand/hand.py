@@ -464,6 +464,6 @@ def initialize_hand():
                           min_detection_confidence=g.config["Model"]["Hand"]["min_hand_detection_confidence"],
                           min_tracking_confidence=g.config["Model"]["Hand"]["min_tracking_confidence"])
 def initialize_hand_depth():
-    feature_model = joblib.load('./model/hand_feature_model.pkl')
-    hand_regression_model = joblib.load('./model/hand_regression_model.pkl')
+    feature_model = joblib.load('./models/hand_feature_model.pkl')
+    hand_regression_model = joblib.load('./models/hand_regression_model.pkl')
     return feature_model, hand_regression_model

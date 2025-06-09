@@ -239,7 +239,7 @@ def initialize_face(tongue_model):
     FaceLandmarkerOptions = mp.tasks.vision.FaceLandmarkerOptions
     VisionRunningMode = mp.tasks.vision.RunningMode
 
-    model = BaseOptions(model_asset_path="./model/face_landmarker.task")
+    model = BaseOptions(model_asset_path="./models/face_landmarker.task")
     options = FaceLandmarkerOptions(
         base_options=model,
         output_face_blendshapes=True,
