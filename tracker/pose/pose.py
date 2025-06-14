@@ -156,5 +156,4 @@ class PoseDetector:
 
 
 def initialize_pose():
-    return PoseDetector(model_path="D:/hkust/ExVR_new_new_new/ExVR-main/tracker/pose/end2end_3.onnx", provider="DmlExecutionProvider")
-    # return PoseDetector(model_path="D:/hkust/ExVR_new_new_new/ExVR-main/tracker/pose/end2end_3.onnx", provider="CPUExecutionProvider")
+    return PoseDetector(model_path="./tracker/pose/end2end_3.onnx", provider="DmlExecutionProvider")
