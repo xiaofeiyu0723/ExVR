@@ -33,6 +33,8 @@ from utils.hotkeys import stop_hotkeys, apply_hotkeys
 from tracker.face.face import draw_face_landmarks
 from tracker.face.tongue import draw_tongue_position
 from tracker.hand.hand import draw_hand_landmarks
+from tracker.pose.pose import draw_pose_landmarks
+
 from ctypes import windll
 from cv2_enumerate_cameras import enumerate_cameras
 from tracker.controller.controller import *
@@ -87,6 +89,8 @@ class VideoCaptureThread(QThread):
                         rgb_image = draw_face_landmarks(rgb_image)
                     if g.config["Tracking"]["Tongue"]["enable"]:
                         rgb_image = draw_tongue_position(rgb_image)
+                    if g.config["Tracking"]["Pose"]["enable"]:
+                        rgb_image = draw_pose_landmarks(rgb_image)
                     if g.config["Tracking"]["Hand"]["enable"]:
                         rgb_image = draw_hand_landmarks(rgb_image)
                     rgb_image = cv2.resize(rgb_image, (640, 480))

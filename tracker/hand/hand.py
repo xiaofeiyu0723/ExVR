@@ -257,7 +257,7 @@ def hand_pred_handling(detection_result):
             # hand_position = [g.data["HeadImagePosition"][0]["v"], g.data["HeadImagePosition"][1]["v"],
             #                  g.data["HeadImagePosition"][2]["v"]] - image_hand_pose[2]
             hand_position = [g.data["HeadImagePosition"][0]["v"], g.data["HeadImagePosition"][1]["v"],
-                             g.data["HeadImagePosition"][2]["v"]] - image_hand_pose[2]
+                             g.data["HeadImagePosition"][2]["v"]] - image_hand_pose[9]
             hand_position[:2] *= [g.config["Tracking"]["Hand"]["x_scalar"], g.config["Tracking"]["Hand"]["y_scalar"]]
 
             # hand_distance_temp=np.linalg.norm(np.array(image_hand_pose[1][:2]) - np.array(image_hand_pose[2][:2]))
@@ -296,8 +296,9 @@ def hand_pred_handling(detection_result):
 
             position_change_flag,_,swap_flag = hand_is_changed("position",hand_name,hand_landmarks,g.config["Tracking"]["Hand"]["position_change_points"],g.config["Tracking"]["Hand"]["position_change_threshold"])
             rotation_change_flag,_,_ = hand_is_changed("rotation",hand_name,hand_landmarks,g.config["Tracking"]["Hand"]["rotation_change_points"],g.config["Tracking"]["Hand"]["rotation_change_threshold"])
-            if swap_flag:
-                continue
+            if not g.config["Tracking"]["Pose"]["enable"]:
+                if swap_flag and g.config["Tracking"]["Hand"]["enable_swap_strategy"]:
+                    continue
             z = hand_pose[0] - hand_pose[17]
             x = np.cross(hand_pose[1] - hand_pose[0], z)
             y = np.cross(z, x)
@@ -308,6 +309,7 @@ def hand_pred_handling(detection_result):
             wrist_matrix = np.vstack((x, y, z)).T
             wrist_rot = R.from_matrix(wrist_matrix).as_euler("xyz", degrees=True)
 
+            # exit()
             if g.config["Tracking"]["Finger"]["enable"]:
                 finger_curl=finger_handling(hand_pose)
                 finger_0, finger_1, finger_2, finger_3, finger_4 = finger_curl["thumb"],finger_curl["index"],finger_curl["middle"],finger_curl["ring"],finger_curl["pinky"]
@@ -337,8 +339,9 @@ def hand_pred_handling(detection_result):
                         g.latest_data[74] = wrist_rot[1]
                         g.latest_data[75] = wrist_rot[2]
                     if position_change_flag:
-                        g.latest_data[70] = hand_position[0]
-                        g.latest_data[71] = hand_position[1]
+                        if not g.config["Tracking"]["Pose"]["enable"]:
+                            g.latest_data[70] = hand_position[0]
+                            g.latest_data[71] = hand_position[1]
                         g.latest_data[72] = hand_position[2]
 
                     g.latest_data[82] = finger_0
@@ -352,8 +355,9 @@ def hand_pred_handling(detection_result):
                         g.data["LeftHandRotation"][1]["v"] = wrist_rot[1]
                         g.data["LeftHandRotation"][2]["v"] = wrist_rot[2]
                     if position_change_flag:
-                        g.data["LeftHandPosition"][0]["v"] = hand_position[0]
-                        g.data["LeftHandPosition"][1]["v"] = hand_position[1]
+                        if not g.config["Tracking"]["Pose"]["enable"]:
+                            g.data["LeftHandPosition"][0]["v"] = hand_position[0]
+                            g.data["LeftHandPosition"][1]["v"] = hand_position[1]
                         g.data["LeftHandPosition"][2]["v"] = hand_position[2]
 
                     g.data["LeftHandFinger"][0]["v"] = finger_0
@@ -369,8 +373,9 @@ def hand_pred_handling(detection_result):
                         g.latest_data[80] = wrist_rot[1]
                         g.latest_data[81] = wrist_rot[2]
                     if position_change_flag:
-                        g.latest_data[76] = hand_position[0]
-                        g.latest_data[77] = hand_position[1]
+                        if not g.config["Tracking"]["Pose"]["enable"]:
+                            g.latest_data[76] = hand_position[0]
+                            g.latest_data[77] = hand_position[1]
                         g.latest_data[78] = hand_position[2]
 
                     g.latest_data[87] = finger_0
@@ -384,8 +389,9 @@ def hand_pred_handling(detection_result):
                         g.data["RightHandRotation"][1]["v"] = wrist_rot[1]
                         g.data["RightHandRotation"][2]["v"] = wrist_rot[2]
                     if position_change_flag:
-                        g.data["RightHandPosition"][0]["v"] = hand_position[0]
-                        g.data["RightHandPosition"][1]["v"] = hand_position[1]
+                        if not g.config["Tracking"]["Pose"]["enable"]:
+                            g.data["RightHandPosition"][0]["v"] = hand_position[0]
+                            g.data["RightHandPosition"][1]["v"] = hand_position[1]
                         g.data["RightHandPosition"][2]["v"] = hand_position[2]
 
                     g.data["RightHandFinger"][0]["v"] = finger_0

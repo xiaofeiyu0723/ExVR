@@ -77,8 +77,23 @@
             "tongue_y_scalar": 3.0,
             "mouth_close_threshold": 0.1
         },
+        "Pose": {
+            "enable": false,
+            "center_l_x": 0.05,
+            "center_l_y": 0.1,
+            "center_l_z": 0,
+            "center_r_x": -0.05,
+            "center_r_y": 0.1,
+            "center_r_z": 0
+        },
         "Hand": {
             "enable": true,
+            "center_l_x": 0.05,
+            "center_l_y": 0.1,
+            "center_l_z": 0,
+            "center_r_x": -0.05,
+            "center_r_y": 0.1,
+            "center_r_z": 0,
             "x_scalar": 1.1,
             "y_scalar": 1.0,
             "z_scalar": 0.55,
@@ -92,6 +107,7 @@
             "enable_finger_action": true,
             "hand_detection_upper_threshold": 100,
             "hand_detection_lower_threshold": 10,
+            "enable_swap_strategy": true,
             "hand_swap_threshold": 0.1,
             "position_change_points": [
                 0,
