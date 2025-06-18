@@ -44,17 +44,33 @@ class Tracker:
             self.smoothing_thread = threading.Thread(target=apply_smoothing, daemon=True)
             self.smoothing_thread.start()
 
+    # def process_frames(self, image_rgb):
+    #     mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=image_rgb)
+    #     timestamp_ms = int((cv2.getTickCount() - g.start_time) * 1000 / cv2.getTickFrequency())
+    #     if g.config["Tracking"]["Head"]["enable"] or g.config["Tracking"]["Face"]["enable"]:
+    #         g.face_detector.detect_async(mp_image,timestamp_ms=timestamp_ms)
+    #     if g.config["Tracking"]["Pose"]["enable"]:
+    #         g.pose_detector.detect_async(image_rgb)
+    #     if g.config["Tracking"]["Hand"]["enable"]:
+    #         hand_result=g.hand_detector.process(image_rgb)
+    #         hand_pred_handling(hand_result)
     def process_frames(self, image_rgb):
+        start_tick = cv2.getTickCount()  # 开始计时
+
         mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=image_rgb)
         timestamp_ms = int((cv2.getTickCount() - g.start_time) * 1000 / cv2.getTickFrequency())
+
         if g.config["Tracking"]["Head"]["enable"] or g.config["Tracking"]["Face"]["enable"]:
-            g.face_detector.detect_async(mp_image,timestamp_ms=timestamp_ms)
+            g.face_detector.detect_async(mp_image, timestamp_ms=timestamp_ms)
         if g.config["Tracking"]["Pose"]["enable"]:
-            pose_result=g.pose_detector.process(image_rgb)
-            pose_pred_handling(pose_result)
+            g.pose_detector.detect_async(image_rgb)
         if g.config["Tracking"]["Hand"]["enable"]:
-            hand_result=g.hand_detector.process(image_rgb)
+            hand_result = g.hand_detector.process(image_rgb)
             hand_pred_handling(hand_result)
+
+        end_tick = cv2.getTickCount()  # 结束计时
+        elapsed_time_ms = (end_tick - start_tick) * 1000 / cv2.getTickFrequency()
+        print(f"Frame processed in {elapsed_time_ms:.2f} ms")
 
     def stop(self):
         self.is_running = False

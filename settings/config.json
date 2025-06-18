@@ -78,22 +78,22 @@
             "mouth_close_threshold": 0.1
         },
         "Pose": {
-            "enable": false,
+            "enable": true,
             "center_l_x": 0.05,
-            "center_l_y": 0.1,
-            "center_l_z": 0,
+            "center_l_y": -0.12,
+            "center_l_z": -0.12,
             "center_r_x": -0.05,
-            "center_r_y": 0.1,
-            "center_r_z": 0
+            "center_r_y": -0.12,
+            "center_r_z": -0.12
         },
         "Hand": {
             "enable": true,
             "center_l_x": 0.05,
-            "center_l_y": 0.1,
-            "center_l_z": 0,
+            "center_l_y": -0.07,
+            "center_l_z": -0.12,
             "center_r_x": -0.05,
-            "center_r_y": 0.1,
-            "center_r_z": 0,
+            "center_r_y": -0.07,
+            "center_r_z": -0.12,
             "x_scalar": 1.1,
             "y_scalar": 1.0,
             "z_scalar": 0.55,
