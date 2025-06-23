@@ -1,9 +1,9 @@
 import sys
 import pyuac
 import os
-# if not pyuac.isUserAdmin():
-#     pyuac.runAsAdmin()
-#     sys.exit(0)
+if not pyuac.isUserAdmin():
+    pyuac.runAsAdmin()
+    sys.exit(0)
 from PyQt5.QtWidgets import (
     QApplication,
     QMainWindow,
@@ -978,7 +978,7 @@ if __name__ == "__main__":
 
     # Create and install translator
     translator = QTranslator()
-    # 根据配置加载翻译文件
+    # Load translation file based on configuration
     current_dir = os.path.dirname(os.path.abspath(__file__))
     language = g.config["Setting"]["language"]
     translation_file_name = f"{language}.qm"
