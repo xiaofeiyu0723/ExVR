@@ -107,7 +107,6 @@ def face_pred_handling(detection_result, output_image, timestamp_ms, tongue_mode
             mouth_image = mouth_roi_on_image(
                 output_image.numpy_view(), detection_result.face_landmarks[0]
             )
-            # print(233)
             # cv2.imwrite("test.png",mouth_image)
             tongue_out, tongue_x, tongue_y = detect_tongue(
                 mouth_image, tongue_model, g.data

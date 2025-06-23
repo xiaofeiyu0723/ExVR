@@ -272,19 +272,24 @@ class VideoWindow(QMainWindow):
             lambda: self.set_tracking_config("Hand", self.checkbox4.isChecked())
         )
         checkbox_layout.addWidget(self.checkbox4)
+        self.checkbox5 = QCheckBox("Pose", self)
+        self.checkbox5.clicked.connect(
+            lambda: self.set_tracking_config("Pose", self.checkbox5.isChecked())
+        )
+        checkbox_layout.addWidget(self.checkbox5)
         layout.addLayout(checkbox_layout)
 
         checkbox_layout_1 = QHBoxLayout()
-        self.checkbox5 = QCheckBox("Hand Down", self)
-        self.checkbox5.clicked.connect(
-            lambda: self.toggle_hand_down(self.checkbox5.isChecked())
-        )
-        checkbox_layout_1.addWidget(self.checkbox5)
-        self.checkbox6 = QCheckBox("Finger Action", self)
+        self.checkbox6 = QCheckBox("Hand Down", self)
         self.checkbox6.clicked.connect(
-            lambda: self.toggle_finger_action(self.checkbox6.isChecked())
+            lambda: self.toggle_hand_down(self.checkbox6.isChecked())
         )
         checkbox_layout_1.addWidget(self.checkbox6)
+        self.checkbox7 = QCheckBox("Finger Action", self)
+        self.checkbox7.clicked.connect(
+            lambda: self.toggle_finger_action(self.checkbox7.isChecked())
+        )
+        checkbox_layout_1.addWidget(self.checkbox7)
         layout.addLayout(checkbox_layout_1)
 
         slider_layout = QHBoxLayout()
@@ -538,8 +543,9 @@ class VideoWindow(QMainWindow):
         self.checkbox2.setChecked(g.config["Tracking"]["Face"]["enable"])
         self.checkbox3.setChecked(g.config["Tracking"]["Tongue"]["enable"])
         self.checkbox4.setChecked(g.config["Tracking"]["Hand"]["enable"])
-        self.checkbox5.setChecked(g.config["Tracking"]["Hand"]["enable_hand_down"])
-        self.checkbox6.setChecked(g.config["Tracking"]["Hand"]["enable_finger_action"])
+        self.checkbox5.setChecked(g.config["Tracking"]["Pose"]["enable"])
+        self.checkbox6.setChecked(g.config["Tracking"]["Hand"]["enable_hand_down"])
+        self.checkbox7.setChecked(g.config["Tracking"]["Hand"]["enable_finger_action"])
         self.controller_checkbox1.setChecked(g.config["Tracking"]["LeftController"]["enable"])
         self.controller_checkbox2.setChecked(g.config["Tracking"]["RightController"]["enable"])
         self.mouse_checkbox.setChecked(g.config["Mouse"]["enable"])

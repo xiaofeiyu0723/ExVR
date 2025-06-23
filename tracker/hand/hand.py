@@ -226,7 +226,6 @@ def hand_pred_handling(detection_result):
             hand_position = [g.data["HeadImagePosition"][0]["v"], g.data["HeadImagePosition"][1]["v"],
                              g.data["HeadImagePosition"][2]["v"]] - image_hand_pose[9]
             hand_position[:2] *= [g.config["Tracking"]["Hand"]["x_scalar"], g.config["Tracking"]["Hand"]["y_scalar"]]
-
             # hand_distance_temp=np.linalg.norm(np.array(image_hand_pose[1][:2]) - np.array(image_hand_pose[2][:2]))
             # import keyboard
             # import pickle
@@ -308,7 +307,7 @@ def hand_pred_handling(detection_result):
                     if position_change_flag:
                         if not g.config["Tracking"]["Pose"]["enable"]:
                             g.latest_data[70] = hand_position[0]
-                            g.latest_data[71] = hand_position[1]
+                            g.latest_data[71] = hand_position[1]+g.config["Tracking"]["Hand"]["shift_l_y"]
                         g.latest_data[72] = hand_position[2]
 
                     g.latest_data[82] = finger_0
@@ -324,7 +323,7 @@ def hand_pred_handling(detection_result):
                     if position_change_flag:
                         if not g.config["Tracking"]["Pose"]["enable"]:
                             g.data["LeftHandPosition"][0]["v"] = hand_position[0]
-                            g.data["LeftHandPosition"][1]["v"] = hand_position[1]
+                            g.data["LeftHandPosition"][1]["v"] = hand_position[1]+g.config["Tracking"]["Hand"]["shift_l_y"]
                         g.data["LeftHandPosition"][2]["v"] = hand_position[2]
 
                     g.data["LeftHandFinger"][0]["v"] = finger_0
@@ -342,7 +341,7 @@ def hand_pred_handling(detection_result):
                     if position_change_flag:
                         if not g.config["Tracking"]["Pose"]["enable"]:
                             g.latest_data[76] = hand_position[0]
-                            g.latest_data[77] = hand_position[1]
+                            g.latest_data[77] = hand_position[1]+g.config["Tracking"]["Hand"]["shift_r_y"]
                         g.latest_data[78] = hand_position[2]
 
                     g.latest_data[87] = finger_0
@@ -358,7 +357,7 @@ def hand_pred_handling(detection_result):
                     if position_change_flag:
                         if not g.config["Tracking"]["Pose"]["enable"]:
                             g.data["RightHandPosition"][0]["v"] = hand_position[0]
-                            g.data["RightHandPosition"][1]["v"] = hand_position[1]
+                            g.data["RightHandPosition"][1]["v"] = hand_position[1]+g.config["Tracking"]["Hand"]["shift_r_y"]
                         g.data["RightHandPosition"][2]["v"] = hand_position[2]
 
                     g.data["RightHandFinger"][0]["v"] = finger_0
