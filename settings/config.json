@@ -78,13 +78,32 @@
             "tongue_y_scalar": 3.0,
             "mouth_close_threshold": 0.1
         },
+        "Pose": {
+            "enable": true,
+            "center_l_x": 0.05,
+            "center_l_y": -0.07,
+            "center_l_z": -0.12,
+            "center_r_x": -0.05,
+            "center_r_y": -0.07,
+            "center_r_z": -0.12,
+            "shift_l_y": 0.25,
+            "shift_r_y": 0.25
+        },
         "Hand": {
             "enable": true,
+            "center_l_x": 0.05,
+            "center_l_y": -0.07,
+            "center_l_z": -0.12,
+            "center_r_x": -0.05,
+            "center_r_y": -0.07,
+            "center_r_z": -0.12,
+            "shift_l_y": 0.0,
+            "shift_r_y": 0.0,
             "x_scalar": 1.1,
             "y_scalar": 1.0,
             "z_scalar": 0.55,
-            "z_shifting": 1.5,
-            "hand_confidence": 0.0,
+            "z_shifting": 1.4472277290670614,
+            "hand_confidence": 0.1,
             "enable_hand_auto_reset": true,
             "enable_hand_down": true,
             "enable_hand_time": 5,
@@ -93,6 +112,7 @@
             "enable_finger_action": true,
             "hand_detection_upper_threshold": 100,
             "hand_detection_lower_threshold": 10,
+            "enable_swap_strategy": true,
             "hand_swap_threshold": 0.1,
             "position_change_points": [
                 0,
@@ -170,9 +190,14 @@
             "min_tracking_confidence": 0.5
         },
         "Hand": {
-            "model_complexity": 0,
+            "model_complexity": 1,
             "min_hand_detection_confidence": 0.8,
             "min_tracking_confidence": 0.4
+        },
+        "Pose": {
+            "model_complexity": 1,
+            "min_pose_detection_confidence": 0.3,
+            "model_provider": "DmlExecutionProvider"
         }
     }
 }

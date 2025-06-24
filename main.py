@@ -35,6 +35,8 @@ from utils.hotkeys import stop_hotkeys, apply_hotkeys
 from tracker.face.face import draw_face_landmarks
 from tracker.face.tongue import draw_tongue_position
 from tracker.hand.hand import draw_hand_landmarks
+from tracker.pose.pose import draw_pose_landmarks
+
 from ctypes import windll
 from cv2_enumerate_cameras import enumerate_cameras
 from tracker.controller.controller import *
@@ -89,6 +91,8 @@ class VideoCaptureThread(QThread):
                         rgb_image = draw_face_landmarks(rgb_image)
                     if g.config["Tracking"]["Tongue"]["enable"]:
                         rgb_image = draw_tongue_position(rgb_image)
+                    if g.config["Tracking"]["Pose"]["enable"]:
+                        rgb_image = draw_pose_landmarks(rgb_image)
                     if g.config["Tracking"]["Hand"]["enable"]:
                         rgb_image = draw_hand_landmarks(rgb_image)
                     rgb_image = cv2.resize(rgb_image, (640, 480))
@@ -288,6 +292,11 @@ class VideoWindow(QMainWindow):
             lambda: self.set_tracking_config("Hand", self.checkbox4.isChecked())
         )
         checkbox_layout.addWidget(self.checkbox4)
+        self.checkbox5 = QCheckBox("Pose", self)
+        self.checkbox5.clicked.connect(
+            lambda: self.set_tracking_config("Pose", self.checkbox5.isChecked())
+        )
+        checkbox_layout.addWidget(self.checkbox5)
         layout.addLayout(checkbox_layout)
 
         checkbox_layout_1 = QHBoxLayout()
@@ -300,9 +309,14 @@ class VideoWindow(QMainWindow):
         # Translated checkbox text
         self.checkbox6 = QCheckBox(self.tr("Finger Action"), self)
         self.checkbox6.clicked.connect(
-            lambda: self.toggle_finger_action(self.checkbox6.isChecked())
+            lambda: self.toggle_hand_down(self.checkbox6.isChecked())
         )
         checkbox_layout_1.addWidget(self.checkbox6)
+        self.checkbox7 = QCheckBox("Finger Action", self)
+        self.checkbox7.clicked.connect(
+            lambda: self.toggle_finger_action(self.checkbox7.isChecked())
+        )
+        checkbox_layout_1.addWidget(self.checkbox7)
         layout.addLayout(checkbox_layout_1)
 
         slider_layout = QHBoxLayout()
@@ -567,8 +581,9 @@ class VideoWindow(QMainWindow):
         self.checkbox2.setChecked(g.config["Tracking"]["Face"]["enable"])
         self.checkbox3.setChecked(g.config["Tracking"]["Tongue"]["enable"])
         self.checkbox4.setChecked(g.config["Tracking"]["Hand"]["enable"])
-        self.checkbox5.setChecked(g.config["Tracking"]["Hand"]["enable_hand_down"])
-        self.checkbox6.setChecked(g.config["Tracking"]["Hand"]["enable_finger_action"])
+        self.checkbox5.setChecked(g.config["Tracking"]["Pose"]["enable"])
+        self.checkbox6.setChecked(g.config["Tracking"]["Hand"]["enable_hand_down"])
+        self.checkbox7.setChecked(g.config["Tracking"]["Hand"]["enable_finger_action"])
         self.controller_checkbox1.setChecked(g.config["Tracking"]["LeftController"]["enable"])
         self.controller_checkbox2.setChecked(g.config["Tracking"]["RightController"]["enable"])
         self.mouse_checkbox.setChecked(g.config["Mouse"]["enable"])

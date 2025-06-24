@@ -7,6 +7,7 @@ from utils.hand_sender import setup_controller
 from tracker.controller.controller import setup_gestures
 import cv2
 from copy import deepcopy
+
 config=setup_config()
 data,default_data = setup_data()
 latest_data = [0.0] * (64 + 6 + 12 + 10 + 12 + 10 + 3 + 2)
@@ -18,12 +19,14 @@ gesture_config = setup_gestures()
 face_landmarks=None
 hand_landmarks=None
 handedness=None
+pose_landmarks=None
 
 tongue_model=None
 face_detector=None
 hand_detector=None
 hand_feature_model=None
 hand_regression_model=None
+pose_detector=None
 start_time=cv2.getTickCount()
 
 def update_configs():

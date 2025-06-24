@@ -6,10 +6,11 @@ import mediapipe as mp
 from scipy.spatial.transform import Rotation as R
 from copy import deepcopy
 import utils.globals as g
-from collections import deque
 import joblib
 from sklearn.linear_model import LinearRegression
 from sklearn.preprocessing import PolynomialFeatures
+# from collections import deque
+# import threading, queue
 
 def draw_hand_landmarks(rgb_image):
     MARGIN = 10  # pixels
@@ -158,40 +159,6 @@ def hand_is_changed(key, hand_name, hand_landmarks, change_points, change_thresh
     return changed, norm_distance, swap_flag
 
 
-# def compute_bounding_box(landmarks):
-#     points = np.array([(lm.x, lm.y, lm.z) for lm in landmarks])
-#     min_x, min_y = points.min(axis=0)[:2]
-#     max_x, max_y = points.max(axis=0)[:2]
-#     width = max_x - min_x
-#     height = max_y - min_y
-#     return width, height, min_x, min_y, max_x, max_y
-
-# prev_hand_landmarks = {}
-# def hand_is_changed(key, hand_name,hand_landmarks,change_points,change_threshold, update_flag=True):
-#     global prev_hand_landmarks
-#
-#     all_keypoints = [hand_landmarks.landmark[i] for i in range(21)]
-#     reference_keypoints = [hand_landmarks.landmark[i] for i in [0,1,17]]
-#     if key not in prev_hand_landmarks:
-#         prev_hand_landmarks[key] = {}
-#     if hand_name in prev_hand_landmarks[key]:
-#         prev_keypoints = prev_hand_landmarks[key][hand_name]
-#         distances = [np.linalg.norm(np.array([all_keypoints[i].x, all_keypoints[i].y]) - np.array(
-#             [prev_keypoints[i].x, prev_keypoints[i].y])) for i in change_points]
-#         avg_distance = np.mean(distances)
-#         width, height, _, _, _, _ = compute_bounding_box(reference_keypoints)
-#         norm_distance = avg_distance / max(width, height)
-#
-#         if norm_distance>=change_threshold:
-#             if update_flag:
-#                 prev_hand_landmarks[key][hand_name] = all_keypoints
-#             return True, norm_distance
-#         else:
-#             return False, norm_distance
-#     else:
-#         prev_hand_landmarks[key][hand_name] = all_keypoints
-#         return True, 0
-
 hand_detection_counts = {"Left":0,"Right":0}
 finger_action_threshold = {"Left":0,"Right":0}
 prev_distance_scalar = None
@@ -257,9 +224,8 @@ def hand_pred_handling(detection_result):
             # hand_position = [g.data["HeadImagePosition"][0]["v"], g.data["HeadImagePosition"][1]["v"],
             #                  g.data["HeadImagePosition"][2]["v"]] - image_hand_pose[2]
             hand_position = [g.data["HeadImagePosition"][0]["v"], g.data["HeadImagePosition"][1]["v"],
-                             g.data["HeadImagePosition"][2]["v"]] - image_hand_pose[2]
+                             g.data["HeadImagePosition"][2]["v"]] - image_hand_pose[9]
             hand_position[:2] *= [g.config["Tracking"]["Hand"]["x_scalar"], g.config["Tracking"]["Hand"]["y_scalar"]]
-
             # hand_distance_temp=np.linalg.norm(np.array(image_hand_pose[1][:2]) - np.array(image_hand_pose[2][:2]))
             # import keyboard
             # import pickle
@@ -296,8 +262,9 @@ def hand_pred_handling(detection_result):
 
             position_change_flag,_,swap_flag = hand_is_changed("position",hand_name,hand_landmarks,g.config["Tracking"]["Hand"]["position_change_points"],g.config["Tracking"]["Hand"]["position_change_threshold"])
             rotation_change_flag,_,_ = hand_is_changed("rotation",hand_name,hand_landmarks,g.config["Tracking"]["Hand"]["rotation_change_points"],g.config["Tracking"]["Hand"]["rotation_change_threshold"])
-            if swap_flag:
-                continue
+            if not g.config["Tracking"]["Pose"]["enable"]:
+                if swap_flag and g.config["Tracking"]["Hand"]["enable_swap_strategy"]:
+                    continue
             z = hand_pose[0] - hand_pose[17]
             x = np.cross(hand_pose[1] - hand_pose[0], z)
             y = np.cross(z, x)
@@ -308,6 +275,7 @@ def hand_pred_handling(detection_result):
             wrist_matrix = np.vstack((x, y, z)).T
             wrist_rot = R.from_matrix(wrist_matrix).as_euler("xyz", degrees=True)
 
+            # exit()
             if g.config["Tracking"]["Finger"]["enable"]:
                 finger_curl=finger_handling(hand_pose)
                 finger_0, finger_1, finger_2, finger_3, finger_4 = finger_curl["thumb"],finger_curl["index"],finger_curl["middle"],finger_curl["ring"],finger_curl["pinky"]
@@ -337,8 +305,9 @@ def hand_pred_handling(detection_result):
                         g.latest_data[74] = wrist_rot[1]
                         g.latest_data[75] = wrist_rot[2]
                     if position_change_flag:
-                        g.latest_data[70] = hand_position[0]
-                        g.latest_data[71] = hand_position[1]
+                        if not g.config["Tracking"]["Pose"]["enable"]:
+                            g.latest_data[70] = hand_position[0]
+                            g.latest_data[71] = hand_position[1]+g.config["Tracking"]["Hand"]["shift_l_y"]
                         g.latest_data[72] = hand_position[2]
 
                     g.latest_data[82] = finger_0
@@ -352,8 +321,9 @@ def hand_pred_handling(detection_result):
                         g.data["LeftHandRotation"][1]["v"] = wrist_rot[1]
                         g.data["LeftHandRotation"][2]["v"] = wrist_rot[2]
                     if position_change_flag:
-                        g.data["LeftHandPosition"][0]["v"] = hand_position[0]
-                        g.data["LeftHandPosition"][1]["v"] = hand_position[1]
+                        if not g.config["Tracking"]["Pose"]["enable"]:
+                            g.data["LeftHandPosition"][0]["v"] = hand_position[0]
+                            g.data["LeftHandPosition"][1]["v"] = hand_position[1]+g.config["Tracking"]["Hand"]["shift_l_y"]
                         g.data["LeftHandPosition"][2]["v"] = hand_position[2]
 
                     g.data["LeftHandFinger"][0]["v"] = finger_0
@@ -369,8 +339,9 @@ def hand_pred_handling(detection_result):
                         g.latest_data[80] = wrist_rot[1]
                         g.latest_data[81] = wrist_rot[2]
                     if position_change_flag:
-                        g.latest_data[76] = hand_position[0]
-                        g.latest_data[77] = hand_position[1]
+                        if not g.config["Tracking"]["Pose"]["enable"]:
+                            g.latest_data[76] = hand_position[0]
+                            g.latest_data[77] = hand_position[1]+g.config["Tracking"]["Hand"]["shift_r_y"]
                         g.latest_data[78] = hand_position[2]
 
                     g.latest_data[87] = finger_0
@@ -384,8 +355,9 @@ def hand_pred_handling(detection_result):
                         g.data["RightHandRotation"][1]["v"] = wrist_rot[1]
                         g.data["RightHandRotation"][2]["v"] = wrist_rot[2]
                     if position_change_flag:
-                        g.data["RightHandPosition"][0]["v"] = hand_position[0]
-                        g.data["RightHandPosition"][1]["v"] = hand_position[1]
+                        if not g.config["Tracking"]["Pose"]["enable"]:
+                            g.data["RightHandPosition"][0]["v"] = hand_position[0]
+                            g.data["RightHandPosition"][1]["v"] = hand_position[1]+g.config["Tracking"]["Hand"]["shift_r_y"]
                         g.data["RightHandPosition"][2]["v"] = hand_position[2]
 
                     g.data["RightHandFinger"][0]["v"] = finger_0
@@ -457,12 +429,65 @@ def hand_pred_handling(detection_result):
         # g.controller.right_hand.follow = True
         g.controller.right_hand.follow = False
 
+# class HandDetector:
+
+#     def __init__(self):
+#         mp_hands = mp.solutions.hands
+#         self.hands = mp_hands.Hands(
+#             model_complexity         = g.config["Model"]["Hand"]["model_complexity"],
+#             max_num_hands            = 2,
+#             min_detection_confidence = g.config["Model"]["Hand"]["min_hand_detection_confidence"],
+#             min_tracking_confidence  = g.config["Model"]["Hand"]["min_tracking_confidence"]
+#         )
+#
+#         self._frame_queue = queue.Queue(maxsize=1)
+#         self._stop_event  = threading.Event()
+#         self._worker      = threading.Thread(
+#             target=self._worker_loop,
+#             daemon=True,
+#             name="HandWorker"
+#         )
+#         self._worker.start()
+#
+#     def detect_async(self, image_bgr: np.ndarray) -> None:
+#         if self._frame_queue.full():
+#             try:
+#                 _ = self._frame_queue.get_nowait()   # 丢弃旧帧
+#             except queue.Empty:
+#                 pass
+#         self._frame_queue.put_nowait(image_bgr)
+#
+#     def close(self):
+#         if not self._stop_event.is_set():
+#             self._stop_event.set()
+#             if self._worker.is_alive():
+#                 self._worker.join(timeout=1.0)
+#         if hasattr(self, "hands"):
+#             self.hands.close()
+#
+#     def __del__(self):
+#         self.close()
+#
+#     def _worker_loop(self):
+#         while not self._stop_event.is_set():
+#             try:
+#                 frame_bgr = self._frame_queue.get(timeout=0.02)
+#             except queue.Empty:
+#                 continue
+#
+#             frame_rgb = cv2.cvtColor(frame_bgr, cv2.COLOR_BGR2RGB)
+#             result    = self.hands.process(frame_rgb)
+#
+#             hand_pred_handling(result)
 
 def initialize_hand():
     mp_hands = mp.solutions.hands
     return mp_hands.Hands(model_complexity=g.config["Model"]["Hand"]["model_complexity"], max_num_hands=2,
                           min_detection_confidence=g.config["Model"]["Hand"]["min_hand_detection_confidence"],
                           min_tracking_confidence=g.config["Model"]["Hand"]["min_tracking_confidence"])
+# def initialize_hand():
+#     return HandDetector()
+
 def initialize_hand_depth():
     feature_model = joblib.load('./models/hand_feature_model.pkl')
     hand_regression_model = joblib.load('./models/hand_regression_model.pkl')

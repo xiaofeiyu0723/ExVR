@@ -183,7 +183,7 @@ def detect_tongue(mouth_image, tongue_model, data):
             tongue_out = 1.0
             tongue_x = float(-(x / 32 - 0.5) * g.config["Tracking"]["Tongue"]["tongue_x_scalar"])
             tongue_y = float(-(y / 32 - 0.5) * g.config["Tracking"]["Tongue"]["tongue_y_scalar"])
-            print(tongue_x, tongue_y, out_classification_value)
+            # print(tongue_x, tongue_y, out_classification_value)
     else:
         tongue_count -= 1
         if tongue_count <= 0:
@@ -192,7 +192,7 @@ def detect_tongue(mouth_image, tongue_model, data):
             tongue_x = 0.0
             tongue_y = 0.0
         else:
-            print(tongue_count)
+            # print(tongue_count)
             tongue_out = g.data["BlendShapes"][52]["v"]
             tongue_x = g.data["BlendShapes"][62]["v"]
             tongue_y = g.data["BlendShapes"][63]["v"]
