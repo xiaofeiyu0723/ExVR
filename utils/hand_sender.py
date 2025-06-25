@@ -15,6 +15,7 @@ class Transform:
     follow: bool
     enable: bool
     force_enable: bool
+    change_flag: bool
 
 # GloveControllerSender equivalent in Python
 class GloveControllerSender:
@@ -22,8 +23,8 @@ class GloveControllerSender:
         # Initialize OSC client
         self.client = udp_client.SimpleUDPClient(osc_ip, osc_port)
 
-        self.left_hand = Transform((0, 0, 0), (0, 0, 0, 1), (1.0, 1.0, 1.0, 1.0, 1.0),False,False,False)
-        self.right_hand = Transform((0, 0, 0), (0, 0, 0, 1), (1.0, 1.0, 1.0, 1.0, 1.0),False,False,False)
+        self.left_hand = Transform((0, 0, 0), (0, 0, 0, 1), (1.0, 1.0, 1.0, 1.0, 1.0),False,False,False,True)
+        self.right_hand = Transform((0, 0, 0), (0, 0, 0, 1), (1.0, 1.0, 1.0, 1.0, 1.0),False,False,False,True)
         self.vmt_init()
 
     def send_hand(self, is_left_hand, target: Transform):

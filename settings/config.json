@@ -1,7 +1,7 @@
 {
-    "Version": "0.7.2",
+    "Version": "0.7.2.2",
     "Setting": {
-        "priority": "NORMAL_PRIORITY_CLASS",
+        "priority": "ABOVE_NORMAL_PRIORITY_CLASS",
         "flip_x": false,
         "flip_y": false,
         "camera_width": 640,

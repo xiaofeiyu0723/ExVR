@@ -261,6 +261,11 @@ def hand_pred_handling(detection_result):
             hand_position[2] = hand_distance
 
             position_change_flag,_,swap_flag = hand_is_changed("position",hand_name,hand_landmarks,g.config["Tracking"]["Hand"]["position_change_points"],g.config["Tracking"]["Hand"]["position_change_threshold"])
+            if hand_name=="Left":
+                g.controller.left_hand.change_flag=position_change_flag
+            elif hand_name=="Right":
+                g.controller.right_hand.change_flag=position_change_flag
+
             rotation_change_flag,_,_ = hand_is_changed("rotation",hand_name,hand_landmarks,g.config["Tracking"]["Hand"]["rotation_change_points"],g.config["Tracking"]["Hand"]["rotation_change_threshold"])
             if not g.config["Tracking"]["Pose"]["enable"]:
                 if swap_flag and g.config["Tracking"]["Hand"]["enable_swap_strategy"]:
