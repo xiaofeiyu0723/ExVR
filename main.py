@@ -190,6 +190,20 @@ class VideoWindow(QMainWindow):
         layout.addWidget(self.priority_selection)
         self.priority_selection.setCurrentIndex(self.priority_selection.findText(g.config["Setting"]["priority"]))
 
+        # Language selection
+        language_layout = QHBoxLayout()
+        self.language_selection = QComboBox(self)
+        self.language_selection.addItem(self.tr("English"), "en-US")
+        self.language_selection.addItem(self.tr("Chinese"), "zh-CN")
+        current_lang_code = g.config["Setting"].get("language", "en-US")
+        index = self.language_selection.findData(current_lang_code)
+        if index != -1:
+            self.language_selection.setCurrentIndex(index)
+        self.language_selection.currentIndexChanged.connect(self.set_language)
+        language_layout.addWidget(QLabel(self.tr("Language:")))
+        language_layout.addWidget(self.language_selection)
+        layout.addLayout(language_layout)
+
         self.install_state, steamvr_driver_path, vrcfacetracking_path, check_steamvr_path = self.install_checking()
         if check_steamvr_path is not None:
             # Translated status
@@ -598,33 +612,13 @@ class VideoWindow(QMainWindow):
             self.label2.setText(f"y {slider_value:.2f}")
         elif axis == "z":
             g.config["Tracking"]["Hand"]["z_scalar"] = slider_value
-            self.label3.setText(f"z {slider_value:.2f}")
-        elif axis == "controller_x":
-            g.config["Tracking"]["LeftController"]["base_x"] = slider_value
-            g.config["Tracking"]["RightController"]["base_x"] = -slider_value
-            self.controller_label_x.setText(f"x {slider_value:.2f}")
-        elif axis == "controller_y":
-            g.config["Tracking"]["LeftController"]["base_y"] = slider_value
-            g.config["Tracking"]["RightController"]["base_y"] = slider_value
-            self.controller_label_y.setText(f"y {slider_value:.2f}")
-        elif axis == "controller_z":
-            g.config["Tracking"]["LeftController"]["base_z"] = slider_value
-            g.config["Tracking"]["RightController"]["base_z"] = slider_value
-            self.controller_label_z.setText(f"z {slider_value:.2f}")
-        elif axis == "controller_l":
-            g.config["Tracking"]["LeftController"]["length"] = slider_value
-            g.config["Tracking"]["RightController"]["length"] = slider_value
-            self.controller_label_l.setText(f"l {slider_value:.2f}")
-        elif axis == "mouse_x":
-            g.config["Mouse"]["scalar_x"]=slider_value*100
-            self.mouse_label_x.setText(f"x {int(slider_value*100)}")
-        elif axis == "mouse_y":
-            g.config["Mouse"]["scalar_y"]=slider_value*100
-            self.mouse_label_y.setText(f"y {int(slider_value*100)}")
-        elif axis == "mouse_dx":
-            g.config["Mouse"]["dx"]=slider_value
-            self.mouse_label_dx.setText(f"dx {slider_value:.2f}")
 
+    def set_language(self, index):
+        lang_code = self.language_selection.itemData(index)
+        if g.config["Setting"].get("language") != lang_code:
+            g.config["Setting"]["language"] = lang_code
+            g.save_configs()
+            QMessageBox.information(self, self.tr("Language Change"), self.tr("Please restart the application to apply language changes."))
 
     def update_sliders(self):
         x_scalar = g.config["Tracking"]["Hand"]["x_scalar"]
@@ -991,19 +985,14 @@ class VideoWindow(QMainWindow):
 if __name__ == "__main__":
     app = QApplication(sys.argv)
 
-    # Create and install translator
+    # Load translator
     translator = QTranslator()
-    # Load translation file based on configuration
-    current_dir = os.path.dirname(os.path.abspath(__file__))
-    language = g.config["Setting"]["language"]
-    translation_file_name = f"{language}.qm"
-    translation_file_path = os.path.join(current_dir, "translations", translation_file_name)
-
-    if translator.load(translation_file_path):
+    translations_path = os.path.join(os.path.dirname(__file__), "translations")
+    lang_code = g.config["Setting"].get("language", "en-US")
+    if translator.load(os.path.join(translations_path, f"{lang_code}.qm")):
         app.installTranslator(translator)
-        print(f"Loaded translation for {language}")
     else:
-        print(f"Translation for {language} not found, using default language")
+        print(f"Warning: Could not load translation file for {lang_code}")
 
     g.update_configs()
     window = VideoWindow()
