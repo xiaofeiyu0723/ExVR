@@ -11,3 +11,5 @@ __pycache__/
 main.spec
 
 /.idea/
+
+.venv/

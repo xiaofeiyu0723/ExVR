@@ -63,11 +63,11 @@ class ControllerApp(QThread):
         self.websocket_server = None
         self.websocket_thread = None
         self.websocket_loop = None
-        self.server_ip = self.get_default_ip()
         self.server_port = g.config["Controller"]["server_port"]
         self.websocket_port = g.config["Controller"]["websocket_port"]
         print("============================")
-        print(f"https://{self.server_ip}:{self.server_port}")
+        for ip in self.list_ips():
+            print(f"https://{ip}:{self.server_port}")
         print("============================")
 
         # OSC server variables
@@ -83,12 +83,12 @@ class ControllerApp(QThread):
         self.app.add_url_rule('/right', 'right_controller', self.right_controller)
 
     def get_server_ip(self):
-        server_ip = request.host.split(':')[0]  # 提取IP
-        return server_ip
+        return request.host.split(':')[0]  # 提取IP
 
-    def get_default_ip(self):
+    def list_ips(self):
         interfaces = psutil.net_if_addrs()
         stats = psutil.net_if_stats()
+        ips = set()
 
         for interface_name, addresses in interfaces.items():
             if_stats = stats.get(interface_name)
@@ -96,25 +96,24 @@ class ControllerApp(QThread):
                 continue  # 跳过未启用接口
 
             for addr in addresses:
-                if addr.family == socket.AF_INET and not addr.address.startswith('127.'):
-                    return addr.address
+                if addr.family == socket.AF_INET:
+                    ips.add(addr.address)
 
-        return '127.0.0.1'
+        return sorted(list(ips))
 
     def home(self):
-        self.server_ip = self.get_server_ip()
-        return render_template('index.html', server_ip=self.server_ip, server_port=self.websocket_port,
+        return render_template('index.html', server_ip=self.get_server_ip(), server_port=self.websocket_port,
                                send_interval=g.config["Controller"]["send_interval"])
 
-    def left_controller(self):
-        self.server_ip = self.get_server_ip()
-        return render_template('controller.html', hand='Left', server_ip=self.server_ip,
+    def controller(self, hand):
+        return render_template('controller.html', hand=hand, server_ip=self.get_server_ip(),
                                server_port=self.websocket_port, send_interval=g.config["Controller"]["send_interval"],gestures=g.gesture_config["Gestures"])
 
+    def left_controller(self):
+        return self.controller('Left')
+
     def right_controller(self):
-        self.server_ip = self.get_server_ip()
-        return render_template('controller.html', hand='Right', server_ip=self.server_ip,
-                               server_port=self.websocket_port, send_interval=g.config["Controller"]["send_interval"],gestures=g.gesture_config["Gestures"])
+        return self.controller('Right')
 
     async def websocket_handler(self, websocket, path):
         self.websocket_clients.add(websocket)
