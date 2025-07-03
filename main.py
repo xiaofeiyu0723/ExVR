@@ -24,7 +24,7 @@ from PyQt5.QtWidgets import (
 )
 from PyQt5.QtCore import QThread, pyqtSignal, Qt, QLocale
 from PyQt5.QtGui import QImage, QPixmap, QDoubleValidator
-from PyQt5.QtCore import QTranslator  # Add translator for localization
+from PyQt5.QtCore import QTranslator
 import winreg, shutil
 import cv2
 import utils.tracking
@@ -152,19 +152,19 @@ class VideoWindow(QMainWindow):
 
 
         flip_layout = QHBoxLayout()  # Create a QHBoxLayout for new reset buttons
-        self.flip_x_checkbox = QCheckBox(self.tr("Flip X"), self)  # Translated
+        self.flip_x_checkbox = QCheckBox(self.tr("Flip X"), self)
         self.flip_x_checkbox.clicked.connect(self.flip_x)
         self.flip_x_checkbox.setChecked(g.config["Setting"]["flip_x"])
         flip_layout.addWidget(self.flip_x_checkbox)
 
-        self.flip_y_checkbox = QCheckBox(self.tr("Flip Y"), self)  # Translated
+        self.flip_y_checkbox = QCheckBox(self.tr("Flip Y"), self)
         self.flip_y_checkbox.clicked.connect(self.flip_y)
         self.flip_y_checkbox.setChecked(g.config["Setting"]["flip_y"])
         flip_layout.addWidget(self.flip_y_checkbox)
         layout.addLayout(flip_layout)
 
         self.ip_camera_url_input = QLineEdit(self)
-        self.ip_camera_url_input.setPlaceholderText(self.tr("Enter IP camera URL"))  # Translated
+        self.ip_camera_url_input.setPlaceholderText(self.tr("Enter IP camera URL"))
         self.ip_camera_url_input.textChanged.connect(self.update_camera_ip)
         # use .get() to avoid KeyError with old config
         self.ip_camera_url_input.setText(g.config["Setting"].get("camera_ip", ""))
@@ -206,19 +206,15 @@ class VideoWindow(QMainWindow):
 
         self.install_state, steamvr_driver_path, vrcfacetracking_path, check_steamvr_path = self.install_checking()
         if check_steamvr_path is not None:
-            # Translated status
             self.steamvr_status_label.setText(self.tr("SteamVR Installed"))
             self.steamvr_status_label.setStyleSheet("color: green; font-weight: bold;")
         else:
-            # Translated status
             self.steamvr_status_label.setText(self.tr("SteamVR Not Installed"))
             self.steamvr_status_label.setStyleSheet("color: red; font-weight: bold;")
         if self.install_state:
-            # Translated button text
             self.install_button = QPushButton(self.tr("Uninstall Drivers"), self)
             self.install_button.setStyleSheet("")
         else:
-            # Translated button text
             self.install_button = QPushButton(self.tr("Install Drivers"), self)
             self.install_button.setStyleSheet(
                 "QPushButton { background-color: blue; color: white; }"
@@ -226,7 +222,6 @@ class VideoWindow(QMainWindow):
         self.install_button.clicked.connect(self.install_function)
         layout.addWidget(self.install_button)
 
-        # Translated button text
         self.toggle_button = QPushButton(self.tr("Start Tracking"), self)
         self.toggle_button.setStyleSheet(
             "QPushButton { background-color: green; color: white; }"
@@ -234,20 +229,16 @@ class VideoWindow(QMainWindow):
         self.toggle_button.clicked.connect(self.toggle_camera)
         layout.addWidget(self.toggle_button)
 
-        # Translated button text
         self.show_frame_button = QPushButton(self.tr("Show Frame"), self)
         self.show_frame_button.clicked.connect(self.toggle_video_display)
         layout.addWidget(self.show_frame_button)
 
         only_ingame_layout = QHBoxLayout()
-        # Translated checkbox text
         self.only_ingame_checkbox = QCheckBox(self.tr("Only Ingame"), self)
         self.only_ingame_checkbox.clicked.connect(lambda: self.toggle_only_in_game(self.only_ingame_checkbox.isChecked()))
         self.only_ingame_checkbox.setChecked(g.config["Setting"]["only_ingame"])
-        # Translated tooltip
         self.only_ingame_checkbox.setToolTip(self.tr("Currently this only applies to hotkeys and mouse input and not head movement"))
         self.only_ingame_game_input = QLineEdit(self)
-        # Translated placeholder text
         self.only_ingame_game_input.setPlaceholderText(self.tr("window title / process name / VRChat, VRChat.exe, javaw.exe"))
         self.only_ingame_game_input.textChanged.connect(self.update_mouse_only_in_game_name)
         self.only_ingame_game_input.setText(g.config["Setting"]["only_ingame_game"])
@@ -263,44 +254,36 @@ class VideoWindow(QMainWindow):
         layout.addWidget(separator_0)
 
         reset_layout = QHBoxLayout()  # Create a QHBoxLayout for new reset buttons
-        # Translated button text
         self.reset_head = QPushButton(self.tr("Reset Head"), self)
         self.reset_head.clicked.connect(reset_head)
         reset_layout.addWidget(self.reset_head)
-        # Translated button text
         self.reset_eyes = QPushButton(self.tr("Reset Eyes"), self)
         self.reset_eyes.clicked.connect(reset_eye)
         reset_layout.addWidget(self.reset_eyes)
-        # Translated button text
         self.reset_l_hand = QPushButton(self.tr("Reset LHand"), self)
         self.reset_l_hand.clicked.connect(lambda: reset_hand(True))
         reset_layout.addWidget(self.reset_l_hand)
-        # Translated button text
         self.reset_r_hand = QPushButton(self.tr("Reset RHand"), self)
         self.reset_r_hand.clicked.connect(lambda: reset_hand(False))
         reset_layout.addWidget(self.reset_r_hand)
         layout.addLayout(reset_layout)
 
         checkbox_layout = QHBoxLayout()
-        # Translated checkbox text
         self.checkbox1 = QCheckBox(self.tr("Head"), self)
         self.checkbox1.clicked.connect(
             lambda: self.set_tracking_config("Head", self.checkbox1.isChecked())
         )
         checkbox_layout.addWidget(self.checkbox1)
-        # Translated checkbox text
         self.checkbox2 = QCheckBox(self.tr("Face"), self)
         self.checkbox2.clicked.connect(
             lambda: self.set_tracking_config("Face", self.checkbox2.isChecked())
         )
         checkbox_layout.addWidget(self.checkbox2)
-        # Translated checkbox text
         self.checkbox3 = QCheckBox(self.tr("Tongue"), self)
         self.checkbox3.clicked.connect(
             lambda: self.set_tracking_config("Tongue", self.checkbox3.isChecked())
         )
         checkbox_layout.addWidget(self.checkbox3)
-        # Translated checkbox text
         self.checkbox4 = QCheckBox(self.tr("Hand"), self)
         self.checkbox4.clicked.connect(
             lambda: self.set_tracking_config("Hand", self.checkbox4.isChecked())
@@ -314,13 +297,11 @@ class VideoWindow(QMainWindow):
         layout.addLayout(checkbox_layout)
 
         checkbox_layout_1 = QHBoxLayout()
-        # Translated checkbox text
         self.checkbox5 = QCheckBox(self.tr("Hand Down"), self)
         self.checkbox5.clicked.connect(
             lambda: self.toggle_hand_down(self.checkbox5.isChecked())
         )
         checkbox_layout_1.addWidget(self.checkbox5)
-        # Translated checkbox text
         self.checkbox6 = QCheckBox(self.tr("Finger Action"), self)
         self.checkbox6.clicked.connect(
             lambda: self.toggle_hand_down(self.checkbox6.isChecked())
@@ -372,12 +353,10 @@ class VideoWindow(QMainWindow):
         # layout.addLayout(label_layout)
 
         controller_checkbox_layout = QHBoxLayout()
-        # Translated checkbox text
         self.controller_checkbox1 = QCheckBox(self.tr("Left Controller"), self)
         self.controller_checkbox1.clicked.connect(
             lambda: self.set_tracking_config("LeftController", self.controller_checkbox1.isChecked())
         )
-        # Translated checkbox text
         self.controller_checkbox2 = QCheckBox(self.tr("Right Controller"), self)
         self.controller_checkbox2.clicked.connect(
             lambda: self.set_tracking_config("RightController", self.controller_checkbox2.isChecked())
@@ -425,7 +404,6 @@ class VideoWindow(QMainWindow):
         separator_2.setFrameShadow(QFrame.Sunken)  # Give it a sunken shadow effect
         layout.addWidget(separator_2)
         mouse_layout = QHBoxLayout()
-        # Translated checkbox text
         self.mouse_checkbox = QCheckBox(self.tr("Mouse"), self)
         self.mouse_checkbox.clicked.connect(lambda: self.toggle_mouse(self.mouse_checkbox.isChecked()))
         self.mouse_checkbox.setChecked(g.config["Mouse"]["enable"])
@@ -462,23 +440,18 @@ class VideoWindow(QMainWindow):
         layout.addWidget(separator_3)
 
         config_layout = QHBoxLayout()
-        # Translated button text
         self.reset_hotkey_button = QPushButton(self.tr("Reset Hotkey"), self)
         self.reset_hotkey_button.clicked.connect(self.reset_hotkeys)
         config_layout.addWidget(self.reset_hotkey_button)
-        # Translated button text
         self.stop_hotkey_button = QPushButton(self.tr("Stop Hotkey"), self)
         self.stop_hotkey_button.clicked.connect(stop_hotkeys)
         config_layout.addWidget(self.stop_hotkey_button)
-        # Translated button text
         self.set_face_button = QPushButton(self.tr("Set Face"), self)
         self.set_face_button.clicked.connect(self.face_dialog)
         config_layout.addWidget(self.set_face_button)
-        # Translated button text
         self.update_config_button = QPushButton(self.tr("Update Config"), self)
         self.update_config_button.clicked.connect(lambda:(g.update_configs(),self.update_checkboxes(), self.update_sliders()))
         config_layout.addWidget(self.update_config_button)
-        # Translated button text
         self.save_config_button = QPushButton(self.tr("Save Config"), self)
         self.save_config_button.clicked.connect(g.save_configs)
         config_layout.addWidget(self.save_config_button)
@@ -509,7 +482,6 @@ class VideoWindow(QMainWindow):
 
     def face_dialog(self):
         self.dialog = QDialog(self)
-        # Translated dialog title
         self.dialog.setWindowTitle(self.tr("Face Setting"))
         self.dialog.resize(self.width, self.height)  # Set a fixed size for the dialog
 
@@ -524,7 +496,6 @@ class VideoWindow(QMainWindow):
         form_layout = QGridLayout(form_widget)  # Use a grid layout for better alignment
 
         # Add header labels for the form
-        # Translated column headers
         form_layout.addWidget(QLabel(self.tr("BlendShape")), 0, 0)
         form_layout.addWidget(QLabel(self.tr("Value")), 0, 1)
         form_layout.addWidget(QLabel(self.tr("Shifting")), 0, 2)
@@ -568,8 +539,7 @@ class VideoWindow(QMainWindow):
         scroll_area.setWidget(form_widget)
         layout.addWidget(scroll_area)  # Add the scroll area to the dialog layout
 
-        # Add a Save Config button
-        # Translated button text
+        # Save Config
         self.save_config_button = QPushButton(self.tr("Save Config"), self.dialog)
         self.save_config_button.clicked.connect(self.save_data)
         layout.addWidget(self.save_config_button)
@@ -761,11 +731,9 @@ class VideoWindow(QMainWindow):
             self.install_checking()
         )
         if check_steamvr_path is not None:
-            # Translated status
             self.steamvr_status_label.setText(self.tr("SteamVR Installed"))
             self.steamvr_status_label.setStyleSheet("color: green; font-weight: bold;")
         else:
-            # Translated status
             self.steamvr_status_label.setText(self.tr("SteamVR Not Installed"))
             self.steamvr_status_label.setStyleSheet("color: red; font-weight: bold;")
         if self.install_state:
@@ -792,7 +760,6 @@ class VideoWindow(QMainWindow):
             except PermissionError:
                 self.display_message("Error", "VRCFT is running, please close VRCFT and try again.")
                 return
-            # Translated button text
             self.install_button.setText(self.tr("Install Drivers"))
             self.install_button.setStyleSheet("QPushButton { background-color: blue; color: white; }")
         else:
@@ -809,7 +776,6 @@ class VideoWindow(QMainWindow):
             if not os.path.exists(dll_destination):
                 os.makedirs(os.path.dirname(dll_destination), exist_ok=True)
                 shutil.copy(dll_source, dll_destination)
-            # Translated button text
             self.install_button.setText(self.tr("Uninstall Drivers"))
             self.install_button.setStyleSheet("")
 
@@ -820,7 +786,6 @@ class VideoWindow(QMainWindow):
         self.update_camera_fps()
         if self.video_thread and self.video_thread.isRunning():
             stop_hotkeys()
-            # Translated button text
             self.toggle_button.setText(self.tr("Start Tracking"))
             self.toggle_button.setStyleSheet(
                 "QPushButton { background-color: green; color: white; }"
@@ -828,7 +793,6 @@ class VideoWindow(QMainWindow):
             self.thread_stopped()
         else:
             apply_hotkeys()
-            # Translated button text
             self.toggle_button.setText(self.tr("Stop Tracking"))
             self.toggle_button.setStyleSheet(
                 "QPushButton { background-color: red; color: white; }"
@@ -848,22 +812,17 @@ class VideoWindow(QMainWindow):
             self.controller_thread = ControllerApp()
             self.controller_thread.start()
 
-
-        # Translated button text
         self.show_frame_button.setText(self.tr("Show Frame"))
 
     def toggle_video_display(self):
         if self.video_thread:
             if self.video_thread.show_image:
                 self.video_thread.show_image = False
-                # Translated button text
                 self.show_frame_button.setText(self.tr("Show Frame"))
             else:
                 self.video_thread.show_image = True
-                # Translated button text
                 self.show_frame_button.setText(self.tr("Hide Frame"))
         else:
-            # Translated button text
             self.show_frame_button.setText(self.tr("Show Frame"))
         self.image_label.setPixmap(QPixmap())
 
