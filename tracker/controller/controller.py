@@ -116,11 +116,16 @@ class ControllerApp(QThread):
         """
         interfaces = psutil.net_if_addrs()
         stats = psutil.net_if_stats()
+        VIRTUAL_ADAPTER_KEYWORDS = ["virtual", "vmware", "vpn", "docker", "vethernet"]
 
         for interface_name, addresses in interfaces.items():
             if_stats = stats.get(interface_name)
             # Skip interfaces that are not up
             if not if_stats or not if_stats.isup:
+                continue
+
+            # Skip virtual adapters by checking for keywords in the interface name
+            if any(keyword in interface_name.lower() for keyword in VIRTUAL_ADAPTER_KEYWORDS):
                 continue
 
             for addr in addresses:
