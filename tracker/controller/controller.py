@@ -86,20 +86,49 @@ class ControllerApp(QThread):
         server_ip = request.host.split(':')[0]  # 提取IP
         return server_ip
 
-    def get_default_ip(self):
+    def _is_private_ip(self, ip: str) -> bool:
+        """Checks if an IP address is in the private A, B, or C ranges."""
+        try:
+            octets = [int(o) for o in ip.split('.')]
+            if len(octets) != 4:
+                return False
+
+            # Class A: 10.0.0.0/8
+            if octets[0] == 10:
+                return True
+
+            # Class B: 172.16.0.0/12
+            if octets[0] == 172 and 16 <= octets[1] <= 31:
+                return True
+
+            # Class C: 192.168.0.0/16
+            if octets[0] == 192 and octets[1] == 168:
+                return True
+
+        except (ValueError, IndexError):
+            return False
+
+        return False
+    
+    def get_default_ip(self) -> str:
+        """
+        Finds and returns a private IP address for the server, falling back to localhost.
+        """
         interfaces = psutil.net_if_addrs()
         stats = psutil.net_if_stats()
 
         for interface_name, addresses in interfaces.items():
             if_stats = stats.get(interface_name)
+            # Skip interfaces that are not up
             if not if_stats or not if_stats.isup:
-                continue  # 跳过未启用接口
+                continue
 
             for addr in addresses:
-                if addr.family == socket.AF_INET and not addr.address.startswith('127.'):
+                # Check for IPv4 addresses that are in the private ranges
+                if addr.family == socket.AF_INET and self._is_private_ip(addr.address):
                     return addr.address
 
-        return '127.0.0.1'
+        return '127.0.0.1'  # Fallback if no suitable IP is found
 
     def home(self):
         self.server_ip = self.get_server_ip()
@@ -284,6 +313,7 @@ class ControllerApp(QThread):
             self.send_haptic_feedback(hand, duration_ms),
             self.websocket_loop
         )
+
     def run(self):
         """Start the Flask server, WebSocket server, and OSC server."""
         ssl_context = ("./templates/ssl/cert.pem", "./templates/ssl/key.pem")
