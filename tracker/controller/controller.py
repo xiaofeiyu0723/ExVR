@@ -18,6 +18,7 @@ from pythonosc import osc_server
 import socket
 from copy import deepcopy
 from utils.actions import head_yaw,head_pitch
+from typing import List
 
 
 def setup_gestures():
@@ -63,11 +64,11 @@ class ControllerApp(QThread):
         self.websocket_server = None
         self.websocket_thread = None
         self.websocket_loop = None
-        self.server_ip = self.get_default_ip()
         self.server_port = g.config["Controller"]["server_port"]
         self.websocket_port = g.config["Controller"]["websocket_port"]
         print("============================")
-        print(f"https://{self.server_ip}:{self.server_port}")
+        for ip in self.list_ips():
+            print(f"https://{ip}:{self.server_port}")
         print("============================")
 
         # OSC server variables
@@ -88,35 +89,17 @@ class ControllerApp(QThread):
 
     def _is_private_ip(self, ip: str) -> bool:
         """Checks if an IP address is in the private A, B, or C ranges."""
-        try:
-            octets = [int(o) for o in ip.split('.')]
-            if len(octets) != 4:
-                return False
-
-            # Class A: 10.0.0.0/8
-            if octets[0] == 10:
-                return True
-
-            # Class B: 172.16.0.0/12
-            if octets[0] == 172 and 16 <= octets[1] <= 31:
-                return True
-
-            # Class C: 192.168.0.0/16
-            if octets[0] == 192 and octets[1] == 168:
-                return True
-
-        except (ValueError, IndexError):
-            return False
-
-        return False
+        return ip.count('.') == 3 and any(ip.startswith(prefix) 
+                        for prefix in ['10.', '172.16.', '192.168.'])
     
-    def get_default_ip(self) -> str:
+    def list_ips(self) -> List[str]:
         """
-        Finds and returns a private IP address for the server, falling back to localhost.
+        Finds and returns private IP addresses for the server, falling back to localhost.
         """
         interfaces = psutil.net_if_addrs()
         stats = psutil.net_if_stats()
-        VIRTUAL_ADAPTER_KEYWORDS = ["virtual", "vmware", "vpn", "docker", "vethernet"]
+        VIRTUAL_ADAPTER_KEYWORDS = ["virtual", "vmware", "vpn", "docker", "vethernet", "pseudo"]
+        ips = set()
 
         for interface_name, addresses in interfaces.items():
             if_stats = stats.get(interface_name)
@@ -131,24 +114,24 @@ class ControllerApp(QThread):
             for addr in addresses:
                 # Check for IPv4 addresses that are in the private ranges
                 if addr.family == socket.AF_INET and self._is_private_ip(addr.address):
-                    return addr.address
+                    ips.add(addr.address)
 
-        return '127.0.0.1'  # Fallback if no suitable IP is found
+        return sorted(list(ips or {'127.0.0.1'}))  # Fallback if no suitable IP is found
 
     def home(self):
         self.server_ip = self.get_server_ip()
         return render_template('index.html', server_ip=self.server_ip, server_port=self.websocket_port,
                                send_interval=g.config["Controller"]["send_interval"])
 
-    def left_controller(self):
-        self.server_ip = self.get_server_ip()
-        return render_template('controller.html', hand='Left', server_ip=self.server_ip,
+    def controller(self, hand):
+        return render_template('controller.html', hand=hand, server_ip=self.get_server_ip(),
                                server_port=self.websocket_port, send_interval=g.config["Controller"]["send_interval"],gestures=g.gesture_config["Gestures"])
 
+    def left_controller(self):
+        return self.controller('Left')
+
     def right_controller(self):
-        self.server_ip = self.get_server_ip()
-        return render_template('controller.html', hand='Right', server_ip=self.server_ip,
-                               server_port=self.websocket_port, send_interval=g.config["Controller"]["send_interval"],gestures=g.gesture_config["Gestures"])
+        return self.controller('Right')
 
     async def websocket_handler(self, websocket, path):
         self.websocket_clients.add(websocket)
