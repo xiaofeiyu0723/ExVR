@@ -827,12 +827,10 @@ class VideoWindow(QMainWindow):
         self.image_label.setPixmap(QPixmap())
 
     def get_camera_source(self, selected_camera_name):
-        # graph = FilterGraph()
         devices = enumerate_cameras(cv2.CAP_ANY)
-        # print(dev)
         for device in devices:
             if device.index > 1000:
-                device.name += " (MSMF - Discouraged)"
+                device.name += " (MSMF)"
             else:
                 device.name += " (DSHOW)"
         for device in devices:
@@ -860,12 +858,12 @@ class VideoWindow(QMainWindow):
         msmf_devices = []
         for device in devices:
             if device.index > 1000:
-                device.name += " (MSMF - Discouraged)"
+                device.name += " (MSMF)"
                 msmf_devices.append(device)
             else:
                 device.name += " (DSHOW)"
                 dshow_devices.append(device)
-        for device in dshow_devices + msmf_devices:
+        for device in msmf_devices + dshow_devices:
             self.camera_selection.addItem(device.name)
 
     def populate_resolution_list(self):
