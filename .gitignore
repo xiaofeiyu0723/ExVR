@@ -9,3 +9,5 @@ __pycache__/
 /VRCFaceTracking_5.2.3.0_x64
 
 /.idea/
+
+.venv*/
