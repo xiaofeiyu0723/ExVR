@@ -41,6 +41,16 @@ class ControllerState:
 
 
 class ControllerApp(QThread):
+    # --- Define all keyword lists as class constants for centralized management ---
+    # 1. Virtual adapter/software keywords
+    VIRTUAL_ADAPTER_KEYWORDS = [
+        "virtual", "vmware", "virtualbox", "vpn", "docker", "vethernet", 
+        "clash", "xray", "v2ray", "sing-box", "tun", "loopback"
+    ]
+    # 2. Wi-Fi keywords
+    WIFI_KEYWORDS = ['wlan', 'wi-fi', 'wireless', '无线']
+    # 3. Ethernet keywords
+    ETHERNET_KEYWORDS = ['ethernet', 'eth', '以太网']
     def __init__(self):
         super().__init__()
         self.app = Flask(__name__, template_folder=os.path.join(os.getcwd(), "templates"))
@@ -63,12 +73,15 @@ class ControllerApp(QThread):
         self.websocket_server = None
         self.websocket_thread = None
         self.websocket_loop = None
-        self.server_ip = self.get_default_ip()
         self.server_port = g.config["Controller"]["server_port"]
         self.websocket_port = g.config["Controller"]["websocket_port"]
+        
+        available_ips = self._get_available_ips()
+
         print("============================")
-        print(f"https://{self.server_ip}:{self.server_port}")
+        self.print_connection_urls(available_ips)
         print("============================")
+        
 
         # OSC server variables
         self.osc_server = None
@@ -83,7 +96,7 @@ class ControllerApp(QThread):
         self.app.add_url_rule('/right', 'right_controller', self.right_controller)
 
     def get_server_ip(self):
-        server_ip = request.host.split(':')[0]  # 提取IP
+        server_ip = request.host.split(':')[0]
         return server_ip
 
     def _is_private_ip(self, ip: str) -> bool:
@@ -109,31 +122,50 @@ class ControllerApp(QThread):
             return False
 
         return False
-    
-    def get_default_ip(self) -> str:
+
+    def _get_available_ips(self) -> list[tuple[str, str]]:
         """
-        Finds and returns a private IP address for the server, falling back to localhost.
+        Finds and returns a list of private IP addresses with their interface names,
+        filtering out virtual and loopback interfaces using class constants.
         """
+        ips = []
         interfaces = psutil.net_if_addrs()
         stats = psutil.net_if_stats()
-        VIRTUAL_ADAPTER_KEYWORDS = ["virtual", "vmware", "vpn", "docker", "vethernet"]
-
+        
         for interface_name, addresses in interfaces.items():
             if_stats = stats.get(interface_name)
-            # Skip interfaces that are not up
             if not if_stats or not if_stats.isup:
                 continue
 
-            # Skip virtual adapters by checking for keywords in the interface name
-            if any(keyword in interface_name.lower() for keyword in VIRTUAL_ADAPTER_KEYWORDS):
+            # Use class constants for filtering
+            if any(keyword in interface_name.lower() for keyword in self.VIRTUAL_ADAPTER_KEYWORDS):
                 continue
 
             for addr in addresses:
-                # Check for IPv4 addresses that are in the private ranges
                 if addr.family == socket.AF_INET and self._is_private_ip(addr.address):
-                    return addr.address
+                    ips.append((interface_name, addr.address))
+        return ips
 
-        return '127.0.0.1'  # Fallback if no suitable IP is found
+    def print_connection_urls(self, available_ips: list[tuple[str, str]]):
+        """Print all available connection URLs from a known IP list"""
+        print("Open one of the following URLs on your phone's browser to access the controller:")
+        print("(Ensure your phone is on the same Wi-Fi network as this computer)")
+        
+        print(f"  - https://127.0.0.1:{self.server_port} (For local machine)")
+
+        if not available_ips:
+            print("\nCould not find any other network interfaces.")
+        else:
+            for name, ip in available_ips:
+                extra_info = name
+                name_lower = name.lower()
+
+                if any(keyword in name_lower for keyword in self.WIFI_KEYWORDS):
+                    extra_info = "Wi-Fi/WLAN"
+                elif any(keyword in name_lower for keyword in self.ETHERNET_KEYWORDS):
+                    extra_info = "Ethernet"
+                
+                print(f"  - https://{ip}:{self.server_port} (For Interface: {extra_info})")
 
     def home(self):
         self.server_ip = self.get_server_ip()
