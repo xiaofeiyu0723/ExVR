@@ -63,11 +63,10 @@ class ControllerApp(QThread):
         self.websocket_server = None
         self.websocket_thread = None
         self.websocket_loop = None
-        self.server_ip = self.get_default_ip()
         self.server_port = g.config["Controller"]["server_port"]
         self.websocket_port = g.config["Controller"]["websocket_port"]
         print("============================")
-        print(f"https://{self.server_ip}:{self.server_port}")
+        print(f"https://{self.get_default_ip()}:{self.server_port}")
         print("============================")
 
         # OSC server variables
@@ -83,8 +82,7 @@ class ControllerApp(QThread):
         self.app.add_url_rule('/right', 'right_controller', self.right_controller)
 
     def get_server_ip(self):
-        server_ip = request.host.split(':')[0]  # 提取IP
-        return server_ip
+        return request.host.split(':')[0]  # 提取IP
 
     def _is_private_ip(self, ip: str) -> bool:
         """Checks if an IP address is in the private A, B, or C ranges."""
@@ -136,19 +134,18 @@ class ControllerApp(QThread):
         return '127.0.0.1'  # Fallback if no suitable IP is found
 
     def home(self):
-        self.server_ip = self.get_server_ip()
-        return render_template('index.html', server_ip=self.server_ip, server_port=self.websocket_port,
+        return render_template('index.html', server_ip=self.get_server_ip(), server_port=self.websocket_port,
                                send_interval=g.config["Controller"]["send_interval"])
 
-    def left_controller(self):
-        self.server_ip = self.get_server_ip()
-        return render_template('controller.html', hand='Left', server_ip=self.server_ip,
+    def controller(self, hand: str):
+        return render_template('controller.html', hand=hand, server_ip=self.get_server_ip(),
                                server_port=self.websocket_port, send_interval=g.config["Controller"]["send_interval"],gestures=g.gesture_config["Gestures"])
 
+    def left_controller(self):
+        return self.controller('Left')
+
     def right_controller(self):
-        self.server_ip = self.get_server_ip()
-        return render_template('controller.html', hand='Right', server_ip=self.server_ip,
-                               server_port=self.websocket_port, send_interval=g.config["Controller"]["send_interval"],gestures=g.gesture_config["Gestures"])
+        return self.controller('Right')
 
     async def websocket_handler(self, websocket, path):
         self.websocket_clients.add(websocket)
