@@ -18,6 +18,9 @@ from pythonosc import osc_server
 import socket
 from copy import deepcopy
 from utils.actions import head_yaw,head_pitch
+import sys
+import subprocess
+from typing import Dict
 
 
 def setup_gestures():
@@ -66,7 +69,14 @@ class ControllerApp(QThread):
         self.server_port = g.config["Controller"]["server_port"]
         self.websocket_port = g.config["Controller"]["websocket_port"]
         print("============================")
-        print(f"https://{self.get_default_ip()}:{self.server_port}")
+        ips = self.list_ips()
+        if len(ips) == 1:
+            print(f"https://{tuple(ips.keys())[0]}:{self.server_port}")
+        else:
+            for i in [False, True]:
+                for ip, interface_name in ips.items():
+                    if (interface_name == 'Maybe Hotspot') == i:
+                        print(f"https://{ip}:{self.server_port}\t# {interface_name}")
         print("============================")
 
         # OSC server variables
@@ -108,13 +118,14 @@ class ControllerApp(QThread):
 
         return False
     
-    def get_default_ip(self) -> str:
+    def list_ips(self) -> Dict[str, str]:
         """
-        Finds and returns a private IP address for the server, falling back to localhost.
+        Finds and returns private IP addresses for the server, falling back to localhost.
         """
         interfaces = psutil.net_if_addrs()
         stats = psutil.net_if_stats()
         VIRTUAL_ADAPTER_KEYWORDS = ["virtual", "vmware", "vpn", "docker", "vethernet"]
+        ips = {}
 
         for interface_name, addresses in interfaces.items():
             if_stats = stats.get(interface_name)
@@ -129,9 +140,35 @@ class ControllerApp(QThread):
             for addr in addresses:
                 # Check for IPv4 addresses that are in the private ranges
                 if addr.family == socket.AF_INET and self._is_private_ip(addr.address):
-                    return addr.address
+                    ips[addr.address] = interface_name
 
-        return '127.0.0.1'  # Fallback if no suitable IP is found
+        if ips and sys.platform.startswith('win'):
+            # Filter WiFi Direct Virtual Adapter
+            # Windows only
+            import ctypes
+            oldcp = ctypes.windll.kernel32.GetConsoleOutputCP()
+            ctypes.windll.kernel32.SetConsoleOutputCP(65001)
+            proc = subprocess.run('ipconfig /all', capture_output=True, encoding='utf-8', errors='ignore')
+            ctypes.windll.kernel32.SetConsoleOutputCP(oldcp)
+            IPv4_PREFIX = 'IPv4 Address'+'. '*11+': '
+            Dscp_PREFIX = 'Description '+'. '*11+': '
+            for info in proc.stdout.split('\n\n'):
+                virtual = False
+                target = None
+                for line in info.split('\n'):
+                    line = line.strip()
+                    if line.startswith(Dscp_PREFIX):
+                        virtual = 'virtual adapter' in line.lower()
+                    elif line.startswith(IPv4_PREFIX):
+                        for ip in ips:
+                            if line.startswith(IPv4_PREFIX+ip):
+                                target = ip
+                                break
+                    if virtual and target:
+                        ips[target] = 'Maybe Hotspot'
+                        break
+
+        return ips or {'127.0.0.1': 'Loopback'}  # Fallback if no suitable IP is found
 
     def home(self):
         return render_template('index.html', server_ip=self.get_server_ip(), server_port=self.websocket_port,
