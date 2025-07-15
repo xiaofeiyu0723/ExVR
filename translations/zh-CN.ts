@@ -119,6 +119,16 @@
         <translation>手指动作</translation>
     </message>
     <message>
+        <location filename="../main.py" line="301"/>
+        <source>Pose</source>
+        <translation>姿态</translation>
+    </message>
+    <message>
+        <location filename="../main.py" line="199"/>
+        <source>Language:</source>
+        <translation>语言:</translation>
+    </message>
+    <message>
         <location filename="../main.py" line="334"/>
         <source>Left Controller</source>
         <translation>左手控制器</translation>

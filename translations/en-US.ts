@@ -170,6 +170,16 @@
         <translation>Finger Action</translation>
     </message>
     <message>
+        <location filename="../main.py" line="301"/>
+        <source>Pose</source>
+        <translation>Pose</translation>
+    </message>
+    <message>
+        <location filename="../main.py" line="199"/>
+        <source>Language:</source>
+        <translation>Language:</translation>
+    </message>
+    <message>
         <location filename="../main.py" line="361"/>
         <location filename="../main.py" line="458"/>
         <source>Left Controller</source>

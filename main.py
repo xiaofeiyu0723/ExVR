@@ -194,7 +194,7 @@ class VideoWindow(QMainWindow):
         language_layout = QHBoxLayout()
         self.language_selection = QComboBox(self)
         self.language_selection.addItem(self.tr("English"), "en-US")
-        self.language_selection.addItem(self.tr("Chinese"), "zh-CN")
+        self.language_selection.addItem(self.tr("简体中文"), "zh-CN")
         current_lang_code = g.config["Setting"].get("language", "en-US")
         index = self.language_selection.findData(current_lang_code)
         if index != -1:
@@ -289,7 +289,7 @@ class VideoWindow(QMainWindow):
             lambda: self.set_tracking_config("Hand", self.checkbox4.isChecked())
         )
         checkbox_layout.addWidget(self.checkbox4)
-        self.checkbox5 = QCheckBox("Pose", self)
+        self.checkbox5 = QCheckBox(self.tr("Pose"), self)
         self.checkbox5.clicked.connect(
             lambda: self.set_tracking_config("Pose", self.checkbox5.isChecked())
         )
