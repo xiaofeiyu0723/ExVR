@@ -304,14 +304,10 @@ class VideoWindow(QMainWindow):
         checkbox_layout_1.addWidget(self.checkbox5)
         self.checkbox6 = QCheckBox(self.tr("Finger Action"), self)
         self.checkbox6.clicked.connect(
-            lambda: self.toggle_hand_down(self.checkbox6.isChecked())
+            lambda: self.toggle_finger_action_new(self.checkbox6.isChecked())
         )
         checkbox_layout_1.addWidget(self.checkbox6)
-        self.checkbox7 = QCheckBox("Finger Action", self)
-        self.checkbox7.clicked.connect(
-            lambda: self.toggle_finger_action(self.checkbox7.isChecked())
-        )
-        checkbox_layout_1.addWidget(self.checkbox7)
+
         layout.addLayout(checkbox_layout_1)
 
         slider_layout = QHBoxLayout()
@@ -566,8 +562,8 @@ class VideoWindow(QMainWindow):
         self.checkbox3.setChecked(g.config["Tracking"]["Tongue"]["enable"])
         self.checkbox4.setChecked(g.config["Tracking"]["Hand"]["enable"])
         self.checkbox5.setChecked(g.config["Tracking"]["Pose"]["enable"])
-        self.checkbox6.setChecked(g.config["Tracking"]["Hand"]["enable_hand_down"])
-        self.checkbox7.setChecked(g.config["Tracking"]["Hand"]["enable_finger_action"])
+        self.checkbox6.setChecked(g.config["Tracking"]["Hand"]["enable_finger_action"])
+
         self.controller_checkbox1.setChecked(g.config["Tracking"]["LeftController"]["enable"])
         self.controller_checkbox2.setChecked(g.config["Tracking"]["RightController"]["enable"])
         self.mouse_checkbox.setChecked(g.config["Mouse"]["enable"])
@@ -650,8 +646,10 @@ class VideoWindow(QMainWindow):
     def toggle_hand_down(self, value):
         g.config["Tracking"]["Hand"]["enable_hand_down"] = value
 
-    def toggle_finger_action(self, value):
+    def toggle_finger_action_new(self, value):
         g.config["Tracking"]["Hand"]["enable_finger_action"] = value
+
+
 
     def install_checking(self):
         # Open registry key to get Steam installation path
