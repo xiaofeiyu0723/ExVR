@@ -585,6 +585,7 @@ class VideoWindow(QMainWindow):
             g.config["Setting"]["language"] = lang_code
             g.save_configs()
             QMessageBox.information(self, self.tr("Language Change"), self.tr("Please restart the application to apply language changes."))
+            QApplication.instance().quit()
 
     def update_sliders(self):
         x_scalar = g.config["Tracking"]["Hand"]["x_scalar"]
