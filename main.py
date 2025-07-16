@@ -650,8 +650,6 @@ class VideoWindow(QMainWindow):
     def toggle_finger_action_new(self, value):
         g.config["Tracking"]["Hand"]["enable_finger_action"] = value
 
-
-
     def install_checking(self):
         # Open registry key to get Steam installation path
         try:
