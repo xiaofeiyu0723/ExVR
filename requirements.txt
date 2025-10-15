@@ -5,7 +5,7 @@ keyboard
 pynput
 mediapipe
 python-osc
-PyQt5
+PySide6
 pygrabber
 cv2_enumerate_cameras
 torch

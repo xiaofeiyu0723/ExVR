@@ -4,7 +4,7 @@ from flask import Flask, render_template, request
 from dataclasses import dataclass
 import os
 import threading
-from PyQt5.QtCore import QThread
+from PySide6.QtCore import QThread
 import time
 from werkzeug.serving import make_server
 from scipy.spatial.transform import Rotation as R

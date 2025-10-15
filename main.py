@@ -3,7 +3,7 @@ import pyuac
 if not pyuac.isUserAdmin():
     pyuac.runAsAdmin()
     sys.exit(0)
-from PyQt5.QtWidgets import (
+from PySide6.QtWidgets import (
     QApplication,
     QMainWindow,
     QLabel,
@@ -21,8 +21,8 @@ from PyQt5.QtWidgets import (
     QScrollArea,
     QGridLayout, QSizePolicy
 )
-from PyQt5.QtCore import QThread, pyqtSignal, Qt
-from PyQt5.QtGui import QImage, QPixmap, QDoubleValidator
+from PySide6.QtCore import QThread, Signal, Qt
+from PySide6.QtGui import QImage, QPixmap, QDoubleValidator
 import winreg, shutil
 import cv2
 import utils.tracking
@@ -44,7 +44,7 @@ warnings.filterwarnings("ignore")
 
 
 class VideoCaptureThread(QThread):
-    frame_ready = pyqtSignal(QImage)
+    frame_ready = Signal(QImage)
 
     def __init__(self, source,width=640, height=480, fps=60):
         super().__init__()
