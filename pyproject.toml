@@ -12,7 +12,6 @@ dependencies = [
     "matplotlib==3.9.2",
     "mediapipe==0.10.13",
     "numpy==2.1.3",
-    "onnxruntime-directml==1.20.0",
     "opencv-python==4.10.0.84",
     "psutil==7.0.0",
     "pygrabber==0.2",
@@ -25,8 +24,46 @@ dependencies = [
     "scikit-learn==1.6.1",
     "scipy==1.14.1",
     "screeninfo==0.8.1",
-    "torch==2.5.1",
-    "torchvision==0.20.1",
     "websockets==10.4",
     "werkzeug==3.1.3",
 ]
+
+[tool.uv]
+conflicts = [
+    [
+        { extra = "cuda" },
+        { extra = "directml" },
+    ],
+]
+
+[project.optional-dependencies]
+cuda = [
+    "onnxruntime-gpu",
+    "torch>=2.8.0",
+    "torchvision>=0.23.0",
+]
+directml = [
+    "onnxruntime-directml==1.20.0",
+    "torch==2.5.1",
+    "torchvision==0.20.1",
+]
+
+[tool.uv.sources]
+torch = [
+    { index = "pytorch-cuda", extra = "cuda" },
+    { index = "pytorch-cpu", extra = "directml" },
+]
+torchvision = [
+    { index = "pytorch-cuda", extra = "cuda" },
+    { index = "pytorch-cpu", extra = "directml" },
+]
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
+
+[[tool.uv.index]]
+name = "pytorch-cuda"
+url = "https://download.pytorch.org/whl/cu129"
+explicit = true
