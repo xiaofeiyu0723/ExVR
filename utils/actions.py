@@ -66,15 +66,6 @@ def prone():
         squat_flag=False
         prone_flag=False
 
-
-def left():
-    g.data["Position"][0]["s"] -= 5
-
-
-def right():
-    g.data["Position"][0]["s"] += 5
-
-
 def head_pitch(flag=True,value=5):
     temp_0=g.data["Rotation"][1]["s"]
     if flag:
@@ -96,7 +87,7 @@ def set_head_pitch(value):
     g.data["Rotation"][1]["s"] = value % 360
 
 def set_head_yaw(value):
-    g.data["Rotation"][0]["s"] = -value % 360
+    g.data["Rotation"][0]["s"] = value % 360
 
 grab_status = {True: False, False: False}
 def grab(value, index):

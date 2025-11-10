@@ -19,6 +19,12 @@ def get_value_without_shifting(value, value_d):
     else:
         return value_d["v"]
 
+def get_shift(value, value_d):
+    if value["e"]:
+        return value["s"]
+    else:
+        return value_d["s"]
+
 def pack_data(data, default_data):
     packed_data = b""
     for value, value_d in zip(data["BlendShapes"][1:], default_data["BlendShapes"][1:]):
@@ -31,29 +37,26 @@ def pack_data(data, default_data):
     return packed_data
 
 def pack_hmd_data(data, default_data):
+    yaw = get_value(data["Rotation"][0], default_data["Rotation"][0])
+    pitch = get_value(data["Rotation"][1], default_data["Rotation"][1])
+    roll = get_value(data["Rotation"][2], default_data["Rotation"][2])
+    ori_rotation = R.from_euler('xzy', [pitch, roll , -yaw], degrees=True)
+    qx,qy,qz,qw=ori_rotation.as_quat()
+
     x = get_value_without_shifting(data["Position"][0], default_data["Position"][0])
     y = get_value_without_shifting(data["Position"][1], default_data["Position"][1])
     z = get_value_without_shifting(data["Position"][2], default_data["Position"][2])
-    yaw_calibration = g.data["Rotation"][0]["s"]
-    calibration_rot = R.from_euler("z", -yaw_calibration, degrees=True)
-    calibrated_diff = calibration_rot.apply([
-        g.data["Position"][0]["s"],
-        g.data["Position"][1]["s"],
-        g.data["Position"][2]["s"]
-    ])
-    x += calibrated_diff[0]
-    y += calibrated_diff[1]
-    z += calibrated_diff[2]
+    yaw_shift=get_shift(g.data["Rotation"][0], default_data["Rotation"][0])
+    rotation_shift = R.from_euler('z', [yaw_shift], degrees=True)
+    x_shift=get_shift(data["Position"][0], default_data["Position"][0])
+    y_shift=get_shift(data["Position"][1], default_data["Position"][1])
+    z_shift=get_shift(data["Position"][2], default_data["Position"][2])
+    x_shift,y_shift,z_shift=rotation_shift.apply([x_shift,y_shift,z_shift])[0]
+    x += x_shift
+    y += y_shift
+    z += z_shift
 
-    yaw = get_value_without_shifting(data["Rotation"][0], default_data["Rotation"][0])
-    pitch = get_value_without_shifting(data["Rotation"][1], default_data["Rotation"][1])
-    roll = get_value_without_shifting(data["Rotation"][2], default_data["Rotation"][2])
-    yaw_shifting=data["Rotation"][0]["s"]
-    pitch_shifting=data["Rotation"][1]["s"]
-    roll_shifting=data["Rotation"][2]["s"]
-    # packed_hmd_data = struct.pack("6d", x, y, z, yaw, pitch, roll)
-    packed_hmd_data = struct.pack("9d", x, y, z, yaw, pitch, roll, yaw_shifting, pitch_shifting, roll_shifting)
-
+    packed_hmd_data = struct.pack("7d", x, y, z, qw, qx, qy, qz)
     return packed_hmd_data
 
 def calculate_endpoint(start_point, length, euler_angles):

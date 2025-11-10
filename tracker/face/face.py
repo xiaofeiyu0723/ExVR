@@ -74,10 +74,7 @@ def is_hand_in_face():
         return normalized_area
     return 0.0
 
-head_position_prev=None
-head_position=None
 def face_pred_handling(detection_result, output_image, timestamp_ms, tongue_model):
-    global head_position_prev,head_position
     # For each face detected
     for idx in range(len(detection_result.face_landmarks)):
         g.face_landmarks = detection_result.face_landmarks
@@ -119,20 +116,7 @@ def face_pred_handling(detection_result, output_image, timestamp_ms, tongue_mode
         position_x = -mat[0][3] * g.config["Tracking"]["Head"]["x_scalar"]
         position_y = -mat[2][3] * g.config["Tracking"]["Head"]["z_scalar"]
         position_z = mat[1][3] * g.config["Tracking"]["Head"]["y_scalar"]
-        head_position_temp=np.array([position_x, position_y,position_z])
-        if head_position_prev is None:
-            head_position_prev = head_position_temp.copy()
-            head_position = head_position_temp.copy()
-        else:
-            head_position_diff = head_position_temp - head_position_prev
-            head_position_prev = head_position_temp.copy()
-            yaw_calibration = g.data["Rotation"][0]["s"]
-            # pitch_calibration = g.data["Rotation"][1]["s"]
-            # roll_calibration = g.data["Rotation"][2]["s"]
-            calibration_rot = R.from_euler("z", -yaw_calibration, degrees=True)
-            calibration_matrix = calibration_rot.as_matrix()
-            calibrated_diff = calibration_matrix @ head_position_diff
-            head_position += calibrated_diff
+        head_position=np.array([position_x, position_y,position_z])
 
         rotation_yaw = (
             -np.arctan2(-mat[2, 0], np.sqrt(mat[2, 1] ** 2 + mat[2, 2] ** 2))
