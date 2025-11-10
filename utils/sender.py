@@ -52,10 +52,9 @@ def pack_hmd_data(data, default_data):
     y_shift=get_shift(data["Position"][1], default_data["Position"][1])
     z_shift=get_shift(data["Position"][2], default_data["Position"][2])
     x_shift,y_shift,z_shift=rotation_shift.apply([x_shift,y_shift,z_shift])[0]
-    x += x_shift
-    y += y_shift
-    z += z_shift
-
+    x = x + g.position_movement[0] + x_shift
+    y = y + g.position_movement[1] + y_shift
+    z = z + g.position_movement[2] + z_shift
     packed_hmd_data = struct.pack("7d", x, y, z, qw, qx, qy, qz)
     return packed_hmd_data
 

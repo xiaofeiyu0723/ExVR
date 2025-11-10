@@ -1,8 +1,8 @@
 import sys
 import pyuac
-# if not pyuac.isUserAdmin():
-#     pyuac.runAsAdmin()
-#     sys.exit(0)
+if not pyuac.isUserAdmin():
+    pyuac.runAsAdmin()
+    sys.exit(0)
 from PyQt5.QtWidgets import (
     QApplication,
     QMainWindow,

@@ -30,6 +30,7 @@ def reset_head():
         g.data["Position"][i]["s"] = g.default_data["Position"][i]["s"]
     for i in range(0, 3):
         g.data["Rotation"][i]["s"] = -g.data["Rotation"][i]["v"]
+    g.position_movement=[0,0,0]
 
 def up():
     g.data["Position"][2]["s"] += 5
@@ -65,6 +66,28 @@ def prone():
         stand_flag=True
         squat_flag=False
         prone_flag=False
+
+def left():
+    if g.data["Rotation"][0]["e"]:
+        yaw_shift = g.data["Rotation"][0]["s"]
+    else:
+        yaw_shift = g.default_data["Rotation"][0]["s"]
+    rotation_shift = R.from_euler('z', [yaw_shift], degrees=True)
+    x_shift,y_shift,z_shift=rotation_shift.apply([-5,0,0])[0]
+    g.position_movement[0]+=x_shift
+    g.position_movement[1]+=y_shift
+    g.position_movement[2]+=z_shift
+
+def right():
+    if g.data["Rotation"][0]["e"]:
+        yaw_shift = g.data["Rotation"][0]["s"]
+    else:
+        yaw_shift = g.default_data["Rotation"][0]["s"]
+    rotation_shift = R.from_euler('z', [yaw_shift], degrees=True)
+    x_shift,y_shift,z_shift=rotation_shift.apply([5,0,0])[0]
+    g.position_movement[0]+=x_shift
+    g.position_movement[1]+=y_shift
+    g.position_movement[2]+=z_shift
 
 def head_pitch(flag=True,value=5):
     temp_0=g.data["Rotation"][1]["s"]

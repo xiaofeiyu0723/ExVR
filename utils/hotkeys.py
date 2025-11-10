@@ -25,6 +25,8 @@ actions = {
     "reset_head": reset_head,
     "up": up,
     "down": down,
+    "left": left,
+    "right": right,
     "squat": squat,
     "prone": prone,
     "head_pitch_up": lambda: head_pitch(True),
