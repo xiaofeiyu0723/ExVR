@@ -1,0 +1,217 @@
+{
+	"app_key": "system.generated.virtualmotioncapture.exe",
+	"bindings": {
+		"/actions/buggy": {
+			"chords": [],
+			"haptics": [],
+			"poses": [],
+			"skeleton": [],
+			"sources": []
+		},
+		"/actions/default": {
+			"chords": [],
+			"haptics": [],
+			"poses": [],
+			"skeleton": [{
+					"output": "/actions/default/in/skeletonlefthand",
+					"path": "/user/hand/left/input/skeleton/left"
+				},
+				{
+					"output": "/actions/default/in/skeletonrighthand",
+					"path": "/user/hand/right/input/skeleton/right"
+				}
+			],
+			"sources": [{
+					"inputs": {
+						"click": {
+							"output": "/actions/default/in/clicksystem"
+						},
+						"touch": {
+							"output": "/actions/default/in/touchsystem"
+						}
+					},
+					"mode": "button",
+					"path": "/user/hand/left/input/Button0"
+				},
+				{
+					"inputs": {
+						"click": {
+							"output": "/actions/default/in/clicksystem"
+						},
+						"touch": {
+							"output": "/actions/default/in/touchsystem"
+						}
+					},
+					"mode": "button",
+					"path": "/user/hand/right/input/Button0"
+				},
+				{
+					"inputs": {
+						"click": {
+							"output": "/actions/default/in/clicktrigger"
+						},
+						"pull": {
+							"output": "/actions/default/in/pulltrigger"
+						},
+						"touch": {
+							"output": "/actions/default/in/touchtrigger"
+						}
+					},
+					"mode": "trigger",
+					"path": "/user/hand/left/input/Button1"
+				},
+				{
+					"inputs": {
+						"click": {
+							"output": "/actions/default/in/clicktrigger"
+						},
+						"pull": {
+							"output": "/actions/default/in/pulltrigger"
+						},
+						"touch": {
+							"output": "/actions/default/in/touchtrigger"
+						}
+					},
+					"mode": "trigger",
+					"path": "/user/hand/right/input/Button1"
+				},
+				{
+					"inputs": {
+						"position": {
+							"output": "/actions/default/in/positiontrackpad"
+						},
+						"touch": {
+							"output": "/actions/default/in/touchtrackpad"
+						}
+					},
+					"mode": "trackpad",
+					"path": "/user/hand/left/input/Joystick0"
+				},
+				{
+					"inputs": {
+						"position": {
+							"output": "/actions/default/in/positiontrackpad"
+						},
+						"touch": {
+							"output": "/actions/default/in/touchtrackpad"
+						}
+					},
+					"mode": "trackpad",
+					"path": "/user/hand/right/input/Joystick0"
+				},
+				{
+					"inputs": {
+						"click": {
+							"output": "/actions/default/in/clickthumbstick"
+						},
+						"position": {
+							"output": "/actions/default/in/positionthumbstick"
+						},
+						"touch": {
+							"output": "/actions/default/in/touchthumbstick"
+						}
+					},
+					"mode": "joystick",
+					"path": "/user/hand/left/input/Joystick1"
+				},
+				{
+					"inputs": {
+						"click": {
+							"output": "/actions/default/in/clickthumbstick"
+						},
+						"position": {
+							"output": "/actions/default/in/positionthumbstick"
+						},
+						"touch": {
+							"output": "/actions/default/in/touchthumbstick"
+						}
+					},
+					"mode": "joystick",
+					"path": "/user/hand/right/input/Joystick1"
+				},
+				{
+					"inputs": {
+						"click": {
+							"output": "/actions/default/in/clickgrip"
+						},
+						"touch": {
+							"output": "/actions/default/in/touchgrip"
+						}
+					},
+					"mode": "button",
+					"path": "/user/hand/left/input/Trigger1"
+				},
+				{
+					"inputs": {
+						"click": {
+							"output": "/actions/default/in/clickgrip"
+						},
+						"touch": {
+							"output": "/actions/default/in/touchgrip"
+						}
+					},
+					"mode": "button",
+					"path": "/user/hand/right/input/Trigger1"
+				},
+				{
+					"inputs": {
+						"click": {
+							"output": "/actions/default/in/clickabutton"
+						},
+						"touch": {
+							"output": "/actions/default/in/touchabutton"
+						}
+					},
+					"mode": "button",
+					"path": "/user/hand/left/input/Button1"
+				},
+				{
+					"inputs": {
+						"click": {
+							"output": "/actions/default/in/clickabutton"
+						},
+						"touch": {
+							"output": "/actions/default/in/touchabutton"
+						}
+					},
+					"mode": "button",
+					"path": "/user/hand/right/input/Button1"
+				},
+				{
+					"inputs": {
+						"click": {
+							"output": "/actions/default/in/clickbbutton"
+						},
+						"touch": {
+							"output": "/actions/default/in/touchbbutton"
+						}
+					},
+					"mode": "button",
+					"path": "/user/hand/left/input/Button3"
+				},
+				{
+					"inputs": {
+						"click": {
+							"output": "/actions/default/in/clickbbutton"
+						},
+						"touch": {
+							"output": "/actions/default/in/touchbbutton"
+						}
+					},
+					"mode": "button",
+					"path": "/user/hand/right/input/Button3"
+				}
+			]
+		},
+		"/actions/platformer": {
+			"chords": [],
+			"haptics": [],
+			"poses": [],
+			"skeleton": [],
+			"sources": []
+		}
+	},
+	"controller_type": "vmt",
+	"description": "",
+	"name": "VirtualMotionCapture configuration for vmt"
+}
