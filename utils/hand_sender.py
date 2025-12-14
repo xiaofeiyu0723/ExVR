@@ -42,10 +42,11 @@ class GloveControllerSender:
             "HMD",  # serial
         ]
 
-        if target.follow:
-            self.client.send_message("/VMT/Follow/Driver", message)
-        else:
-            self.client.send_message("/VMT/Joint/Driver", message)
+        # if target.follow:
+        #     self.client.send_message("/VMT/Follow/Driver", message)
+        # else:
+        #     self.client.send_message("/VMT/Joint/Driver", message)
+        self.client.send_message("/VMT/Joint/Driver", message)
 
     def disable_hand(self,is_left_hand):
         message = [1 if is_left_hand else 2, 0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0]

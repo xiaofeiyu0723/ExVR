@@ -71,6 +71,7 @@ class VideoCaptureThread(QThread):
         self.video_capture.set(cv2.CAP_PROP_FRAME_HEIGHT, self.height)
         self.video_capture.set(cv2.CAP_PROP_FPS, self.fps)
         print(self.video_capture.get(cv2.CAP_PROP_FRAME_WIDTH), self.video_capture.get(cv2.CAP_PROP_FRAME_HEIGHT),self.video_capture.get(cv2.CAP_PROP_FPS))
+        g.current_fps =self.video_capture.get(cv2.CAP_PROP_FPS);
         self.video_capture.set(cv2.CAP_PROP_BUFFERSIZE, 1)
         while self.is_running:
             ret, frame = self.video_capture.read()
@@ -862,7 +863,7 @@ class VideoWindow(QMainWindow):
             else:
                 device.name += " (DSHOW)"
                 dshow_devices.append(device)
-        for device in msmf_devices + dshow_devices:
+        for device in dshow_devices + msmf_devices:
             self.camera_selection.addItem(device.name)
 
     def populate_resolution_list(self):

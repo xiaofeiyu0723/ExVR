@@ -42,7 +42,7 @@
             "shifting": 64,
             "dt_multiplier": 20,
               "kalman_params": {
-                "q_process": 0.005,
+                "q_process": 0.01,
                 "r_measure": 0.03
               }
         },
@@ -64,7 +64,7 @@
             "shifting": 73,
             "dt_multiplier": 90,
               "kalman_params": {
-                "q_process": 0.01,
+                "q_process": 0.02,
                 "r_measure": 0.02
               }
         },
@@ -75,7 +75,7 @@
             "shifting": 79,
             "dt_multiplier": 90,
               "kalman_params": {
-                "q_process": 0.01,
+                "q_process": 0.02,
                 "r_measure": 0.02
               }
         },
@@ -86,7 +86,7 @@
             "shifting": 70,
             "dt_multiplier": 120,
               "kalman_params": {
-                "q_process": 0.01,
+                "q_process": 0.02,
                 "r_measure": 0.03
               }
         },
@@ -97,7 +97,7 @@
             "shifting": 76,
             "dt_multiplier": 120,
               "kalman_params": {
-                "q_process": 0.01,
+                "q_process": 0.04,
                 "r_measure": 0.03
               }
         },
@@ -108,7 +108,7 @@
             "shifting": 82,
             "dt_multiplier": 60,
               "kalman_params": {
-                "q_process": 0.005,
+                "q_process": 0.02,
                 "r_measure": 0.03
               }
         },
@@ -119,7 +119,7 @@
             "shifting": 87,
             "dt_multiplier": 60,
               "kalman_params": {
-                "q_process": 0.005,
+                "q_process": 0.02,
                 "r_measure": 0.03
               }
         },

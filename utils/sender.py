@@ -116,31 +116,11 @@ def handling_hand_data(data, default_data):
     quat_r = R.from_euler("xyz", [yaw_r, pitch_r, roll_r], degrees=True).as_quat()
     matrix_r=R.from_euler("xyz", [yaw_r, pitch_r, roll_r], degrees=True).as_matrix()
 
-    if not g.config["Tracking"]["Pose"]["enable"]:
-        center_l = np.array([g.config["Tracking"]["Hand"]["center_l_x"], g.config["Tracking"]["Hand"]["center_l_y"],
-                           g.config["Tracking"]["Hand"]["center_l_z"]])
-    else:
-        center_l = np.array([g.config["Tracking"]["Pose"]["center_l_x"], g.config["Tracking"]["Pose"]["center_l_y"],
-                           g.config["Tracking"]["Pose"]["center_l_z"]])
-
     wrist_position_l = (x_l, y_l, z_l)
-    wrist_position_l = np.array(wrist_position_l)
-    wrist_position_l = matrix_l @ center_l + wrist_position_l
-    wrist_position_l=(wrist_position_l[0], wrist_position_l[1] ,wrist_position_l[2])
     g.controller.left_hand.position = wrist_position_l
     g.controller.left_hand.rotation = quat_l
 
-    if not g.config["Tracking"]["Pose"]["enable"]:
-        center_r = np.array([g.config["Tracking"]["Hand"]["center_r_x"], g.config["Tracking"]["Hand"]["center_r_y"],
-                           g.config["Tracking"]["Hand"]["center_r_z"]])
-    else:
-        center_r = np.array([g.config["Tracking"]["Pose"]["center_r_x"], g.config["Tracking"]["Pose"]["center_r_y"],
-                           g.config["Tracking"]["Pose"]["center_r_z"]])
-
     wrist_position_r = (x_r, y_r, z_r)
-    wrist_position_r = np.array(wrist_position_r)
-    wrist_position_r = matrix_r @ center_r + wrist_position_r
-    wrist_position_r=(wrist_position_r[0], wrist_position_r[1] ,wrist_position_r[2])
     g.controller.right_hand.position = wrist_position_r
     g.controller.right_hand.rotation = quat_r
 
