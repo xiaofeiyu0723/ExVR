@@ -4,7 +4,7 @@ from flask import Flask, render_template, request
 from dataclasses import dataclass
 import os
 import threading
-from PyQt5.QtCore import QThread
+from PySide6.QtCore import QThread
 import time
 from werkzeug.serving import make_server
 from scipy.spatial.transform import Rotation as R
@@ -182,7 +182,7 @@ class ControllerApp(QThread):
         return render_template('controller.html', hand='Right', server_ip=self.server_ip,
                                server_port=self.websocket_port, send_interval=g.config["Controller"]["send_interval"],gestures=g.gesture_config["Gestures"])
 
-    async def websocket_handler(self, websocket, path):
+    async def websocket_handler(self, websocket):
         self.websocket_clients.add(websocket)
         try:
             async for message in websocket:
