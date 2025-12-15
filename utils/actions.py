@@ -68,26 +68,10 @@ def prone():
         prone_flag=False
 
 def left():
-    if g.data["Rotation"][0]["e"]:
-        yaw_shift = g.data["Rotation"][0]["s"]
-    else:
-        yaw_shift = g.default_data["Rotation"][0]["s"]
-    rotation_shift = R.from_euler('z', [yaw_shift], degrees=True)
-    x_shift,y_shift,z_shift=rotation_shift.apply([-5,0,0])[0]
-    g.position_movement[0]+=x_shift
-    g.position_movement[1]+=y_shift
-    g.position_movement[2]+=z_shift
+    g.data["Position"][0]["s"]-=5
 
 def right():
-    if g.data["Rotation"][0]["e"]:
-        yaw_shift = g.data["Rotation"][0]["s"]
-    else:
-        yaw_shift = g.default_data["Rotation"][0]["s"]
-    rotation_shift = R.from_euler('z', [yaw_shift], degrees=True)
-    x_shift,y_shift,z_shift=rotation_shift.apply([5,0,0])[0]
-    g.position_movement[0]+=x_shift
-    g.position_movement[1]+=y_shift
-    g.position_movement[2]+=z_shift
+    g.data["Position"][0]["s"]+=5
 
 def head_pitch(flag=True,value=5):
     temp_0=g.data["Rotation"][1]["s"]

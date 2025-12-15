@@ -36,27 +36,21 @@ def pack_data(data, default_data):
         )
     return packed_data
 
-def pack_hmd_data(data, default_data):
-    yaw = get_value(data["Rotation"][0], default_data["Rotation"][0])
-    pitch = get_value(data["Rotation"][1], default_data["Rotation"][1])
-    roll = get_value(data["Rotation"][2], default_data["Rotation"][2])
-    ori_rotation = R.from_euler('xzy', [pitch, roll , -yaw], degrees=True)
-    qx,qy,qz,qw=ori_rotation.as_quat()
-
-    x = get_value_without_shifting(data["Position"][0], default_data["Position"][0])
-    y = get_value_without_shifting(data["Position"][1], default_data["Position"][1])
-    z = get_value_without_shifting(data["Position"][2], default_data["Position"][2])
-    yaw_shift=get_shift(g.data["Rotation"][0], default_data["Rotation"][0])
-    rotation_shift = R.from_euler('z', [yaw_shift], degrees=True)
-    x_shift=get_shift(data["Position"][0], default_data["Position"][0])
-    y_shift=get_shift(data["Position"][1], default_data["Position"][1])
-    z_shift=get_shift(data["Position"][2], default_data["Position"][2])
-    x_shift,y_shift,z_shift=rotation_shift.apply([x_shift,y_shift,z_shift])[0]
-    x = x + g.position_movement[0] + x_shift
-    y = y + g.position_movement[1] + y_shift
-    z = z + g.position_movement[2] + z_shift
-    packed_hmd_data = struct.pack("7d", x, y, z, qw, qx, qy, qz)
-    return packed_hmd_data
+hmd_data_prev=None
+hmd_data_curr=None
+def pack_hmd_data(data, default):
+    global hmd_data_prev, hmd_data_curr
+    rot = [get_value(a, b) for a, b in zip(data["Rotation"], default["Rotation"])]
+    pos = [get_value(a, b) for a, b in zip(data["Position"], default["Position"])]
+    qx, qy, qz, qw = R.from_euler('xzy', [rot[1], rot[2], -rot[0]], degrees=True).as_quat()
+    if hmd_data_prev is None:
+        hmd_data_prev = hmd_data_curr = pos
+    delta = R.from_euler(
+        'z', get_shift(data["Rotation"][0], default["Rotation"][0]), degrees=True
+    ).apply([p - q for p, q in zip(pos, hmd_data_prev)])
+    hmd_data_curr = [c + d for c, d in zip(hmd_data_curr, delta)]
+    hmd_data_prev = pos
+    return struct.pack("7d", *hmd_data_curr, qw, qx, qy, qz)
 
 def calculate_endpoint(start_point, length, euler_angles):
     rotation = R.from_euler('xyz', euler_angles, degrees=True)

@@ -11,7 +11,6 @@ from copy import deepcopy
 config=setup_config()
 data,default_data = setup_data()
 latest_data = [0.0] * (64 + 6 + 12 + 10 + 12 + 10 + 3 + 2)
-position_movement=[0,0,0]
 current_fps = 30
 stop_event = Event()
 controller=setup_controller()
