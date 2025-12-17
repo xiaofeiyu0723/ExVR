@@ -9,7 +9,8 @@
         "camera_fps": 60,
         "camera_ip": "",
         "only_ingame": false,
-        "only_ingame_game": ""
+        "only_ingame_game": "",
+        "language": "en-US"
     },
     "Hotkey": {
         "enable": true
