@@ -279,8 +279,6 @@ def hand_pred_handling(detection_result):
 
             wrist_matrix = np.vstack((x, y, z)).T
             wrist_rot = R.from_matrix(wrist_matrix).as_euler("xyz", degrees=True)
-
-            # exit()
             if g.config["Tracking"]["Finger"]["enable"]:
                 finger_curl=finger_handling(hand_pose)
                 finger_0, finger_1, finger_2, finger_3, finger_4 = finger_curl["thumb"],finger_curl["index"],finger_curl["middle"],finger_curl["ring"],finger_curl["pinky"]
@@ -312,7 +310,7 @@ def hand_pred_handling(detection_result):
                     if position_change_flag:
                         if not g.config["Tracking"]["Pose"]["enable"]:
                             g.latest_data[70] = hand_position[0]
-                            g.latest_data[71] = hand_position[1]+g.config["Tracking"]["Hand"]["shift_l_y"]
+                            g.latest_data[71] = hand_position[1]
                         g.latest_data[72] = hand_position[2]
 
                     g.latest_data[82] = finger_0
@@ -328,7 +326,7 @@ def hand_pred_handling(detection_result):
                     if position_change_flag:
                         if not g.config["Tracking"]["Pose"]["enable"]:
                             g.data["LeftHandPosition"][0]["v"] = hand_position[0]
-                            g.data["LeftHandPosition"][1]["v"] = hand_position[1]+g.config["Tracking"]["Hand"]["shift_l_y"]
+                            g.data["LeftHandPosition"][1]["v"] = hand_position[1]
                         g.data["LeftHandPosition"][2]["v"] = hand_position[2]
 
                     g.data["LeftHandFinger"][0]["v"] = finger_0
@@ -346,7 +344,7 @@ def hand_pred_handling(detection_result):
                     if position_change_flag:
                         if not g.config["Tracking"]["Pose"]["enable"]:
                             g.latest_data[76] = hand_position[0]
-                            g.latest_data[77] = hand_position[1]+g.config["Tracking"]["Hand"]["shift_r_y"]
+                            g.latest_data[77] = hand_position[1]
                         g.latest_data[78] = hand_position[2]
 
                     g.latest_data[87] = finger_0
@@ -362,7 +360,7 @@ def hand_pred_handling(detection_result):
                     if position_change_flag:
                         if not g.config["Tracking"]["Pose"]["enable"]:
                             g.data["RightHandPosition"][0]["v"] = hand_position[0]
-                            g.data["RightHandPosition"][1]["v"] = hand_position[1]+g.config["Tracking"]["Hand"]["shift_r_y"]
+                            g.data["RightHandPosition"][1]["v"] = hand_position[1]
                         g.data["RightHandPosition"][2]["v"] = hand_position[2]
 
                     g.data["RightHandFinger"][0]["v"] = finger_0
@@ -393,15 +391,7 @@ def hand_pred_handling(detection_result):
             g.data["LeftHandPosition"] = deepcopy(g.default_data["LeftHandPosition"])
             g.data["LeftHandRotation"] = deepcopy(g.default_data["LeftHandRotation"])
             g.data["LeftHandFinger"] = deepcopy(g.default_data["LeftHandFinger"])
-        if g.config["Tracking"]["Hand"]["follow"]:
-            g.controller.left_hand.follow = False
-        else:
-            # g.controller.left_hand.follow = True
-            g.controller.left_hand.follow = False
         g.controller.left_hand.enable = False
-    else:
-        # g.controller.left_hand.follow = True
-        g.controller.left_hand.follow = False
 
 
     if hand_detection_counts["Right"] <= g.config["Tracking"]["Hand"]["hand_detection_lower_threshold"] and \
@@ -424,15 +414,7 @@ def hand_pred_handling(detection_result):
             g.data["RightHandPosition"] = deepcopy(g.default_data["RightHandPosition"])
             g.data["RightHandRotation"] = deepcopy(g.default_data["RightHandRotation"])
             g.data["RightHandFinger"] = deepcopy(g.default_data["RightHandFinger"])
-        if g.config["Tracking"]["Hand"]["follow"]:
-            g.controller.right_hand.follow = False
-        else:
-            # g.controller.right_hand.follow = True
-            g.controller.right_hand.follow = False
         g.controller.right_hand.enable = False
-    else:
-        # g.controller.right_hand.follow = True
-        g.controller.right_hand.follow = False
 
 # class HandDetector:
 

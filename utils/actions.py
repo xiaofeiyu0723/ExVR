@@ -30,6 +30,7 @@ def reset_head():
         g.data["Position"][i]["s"] = g.default_data["Position"][i]["s"]
     for i in range(0, 3):
         g.data["Rotation"][i]["s"] = -g.data["Rotation"][i]["v"]
+    g.position_movement=[0,0,0]
 
 def up():
     g.data["Position"][2]["s"] += 5
@@ -66,14 +67,11 @@ def prone():
         squat_flag=False
         prone_flag=False
 
-
 def left():
-    g.data["Position"][0]["s"] -= 5
-
+    g.data["Position"][0]["s"]-=5
 
 def right():
-    g.data["Position"][0]["s"] += 5
-
+    g.data["Position"][0]["s"]+=5
 
 def head_pitch(flag=True,value=5):
     temp_0=g.data["Rotation"][1]["s"]
@@ -96,7 +94,7 @@ def set_head_pitch(value):
     g.data["Rotation"][1]["s"] = value % 360
 
 def set_head_yaw(value):
-    g.data["Rotation"][0]["s"] = -value % 360
+    g.data["Rotation"][0]["s"] = value % 360
 
 grab_status = {True: False, False: False}
 def grab(value, index):

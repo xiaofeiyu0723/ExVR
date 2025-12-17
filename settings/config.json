@@ -1,5 +1,5 @@
 {
-    "Version": "0.7.2.3",
+    "Version": "0.7.2.5",
     "Setting": {
         "priority": "ABOVE_NORMAL_PRIORITY_CLASS",
         "flip_x": false,
@@ -79,26 +79,12 @@
             "mouth_close_threshold": 0.1
         },
         "Pose": {
-            "enable": true,
-            "center_l_x": 0.05,
-            "center_l_y": -0.07,
-            "center_l_z": -0.12,
-            "center_r_x": -0.05,
-            "center_r_y": -0.07,
-            "center_r_z": -0.12,
+            "enable": false,
             "shift_l_y": 0.25,
             "shift_r_y": 0.25
         },
         "Hand": {
             "enable": true,
-            "center_l_x": 0.05,
-            "center_l_y": -0.07,
-            "center_l_z": -0.12,
-            "center_r_x": -0.05,
-            "center_r_y": -0.07,
-            "center_r_z": -0.12,
-            "shift_l_y": 0.0,
-            "shift_r_y": 0.0,
             "x_scalar": 1.1,
             "y_scalar": 1.0,
             "z_scalar": 0.55,
@@ -126,8 +112,7 @@
                 17
             ],
             "rotation_change_threshold": 0.05,
-            "only_front": true,
-            "follow": true
+            "only_front": true
         },
         "Finger": {
             "enable": true,

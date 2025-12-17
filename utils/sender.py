@@ -19,6 +19,12 @@ def get_value_without_shifting(value, value_d):
     else:
         return value_d["v"]
 
+def get_shift(value, value_d):
+    if value["e"]:
+        return value["s"]
+    else:
+        return value_d["s"]
+
 def pack_data(data, default_data):
     packed_data = b""
     for value, value_d in zip(data["BlendShapes"][1:], default_data["BlendShapes"][1:]):
@@ -30,31 +36,21 @@ def pack_data(data, default_data):
         )
     return packed_data
 
-def pack_hmd_data(data, default_data):
-    x = get_value_without_shifting(data["Position"][0], default_data["Position"][0])
-    y = get_value_without_shifting(data["Position"][1], default_data["Position"][1])
-    z = get_value_without_shifting(data["Position"][2], default_data["Position"][2])
-    yaw_calibration = g.data["Rotation"][0]["s"]
-    calibration_rot = R.from_euler("z", -yaw_calibration, degrees=True)
-    calibrated_diff = calibration_rot.apply([
-        g.data["Position"][0]["s"],
-        g.data["Position"][1]["s"],
-        g.data["Position"][2]["s"]
-    ])
-    x += calibrated_diff[0]
-    y += calibrated_diff[1]
-    z += calibrated_diff[2]
-
-    yaw = get_value_without_shifting(data["Rotation"][0], default_data["Rotation"][0])
-    pitch = get_value_without_shifting(data["Rotation"][1], default_data["Rotation"][1])
-    roll = get_value_without_shifting(data["Rotation"][2], default_data["Rotation"][2])
-    yaw_shifting=data["Rotation"][0]["s"]
-    pitch_shifting=data["Rotation"][1]["s"]
-    roll_shifting=data["Rotation"][2]["s"]
-    # packed_hmd_data = struct.pack("6d", x, y, z, yaw, pitch, roll)
-    packed_hmd_data = struct.pack("9d", x, y, z, yaw, pitch, roll, yaw_shifting, pitch_shifting, roll_shifting)
-
-    return packed_hmd_data
+hmd_data_prev=None
+hmd_data_curr=None
+def pack_hmd_data(data, default):
+    global hmd_data_prev, hmd_data_curr
+    rot = [get_value(a, b) for a, b in zip(data["Rotation"], default["Rotation"])]
+    pos = [get_value(a, b) for a, b in zip(data["Position"], default["Position"])]
+    qx, qy, qz, qw = R.from_euler('xzy', [rot[1], rot[2], -rot[0]], degrees=True).as_quat()
+    if hmd_data_prev is None:
+        hmd_data_prev = hmd_data_curr = pos
+    delta = R.from_euler(
+        'z', get_shift(data["Rotation"][0], default["Rotation"][0]), degrees=True
+    ).apply([p - q for p, q in zip(pos, hmd_data_prev)])
+    hmd_data_curr = [c + d for c, d in zip(hmd_data_curr, delta)]
+    hmd_data_prev = pos
+    return struct.pack("7d", *hmd_data_curr, qw, qx, qy, qz)
 
 def calculate_endpoint(start_point, length, euler_angles):
     rotation = R.from_euler('xyz', euler_angles, degrees=True)
@@ -114,31 +110,11 @@ def handling_hand_data(data, default_data):
     quat_r = R.from_euler("xyz", [yaw_r, pitch_r, roll_r], degrees=True).as_quat()
     matrix_r=R.from_euler("xyz", [yaw_r, pitch_r, roll_r], degrees=True).as_matrix()
 
-    if not g.config["Tracking"]["Pose"]["enable"]:
-        center_l = np.array([g.config["Tracking"]["Hand"]["center_l_x"], g.config["Tracking"]["Hand"]["center_l_y"],
-                           g.config["Tracking"]["Hand"]["center_l_z"]])
-    else:
-        center_l = np.array([g.config["Tracking"]["Pose"]["center_l_x"], g.config["Tracking"]["Pose"]["center_l_y"],
-                           g.config["Tracking"]["Pose"]["center_l_z"]])
-
     wrist_position_l = (x_l, y_l, z_l)
-    wrist_position_l = np.array(wrist_position_l)
-    wrist_position_l = matrix_l @ center_l + wrist_position_l
-    wrist_position_l=(wrist_position_l[0], wrist_position_l[1] ,wrist_position_l[2])
     g.controller.left_hand.position = wrist_position_l
     g.controller.left_hand.rotation = quat_l
 
-    if not g.config["Tracking"]["Pose"]["enable"]:
-        center_r = np.array([g.config["Tracking"]["Hand"]["center_r_x"], g.config["Tracking"]["Hand"]["center_r_y"],
-                           g.config["Tracking"]["Hand"]["center_r_z"]])
-    else:
-        center_r = np.array([g.config["Tracking"]["Pose"]["center_r_x"], g.config["Tracking"]["Pose"]["center_r_y"],
-                           g.config["Tracking"]["Pose"]["center_r_z"]])
-
     wrist_position_r = (x_r, y_r, z_r)
-    wrist_position_r = np.array(wrist_position_r)
-    wrist_position_r = matrix_r @ center_r + wrist_position_r
-    wrist_position_r=(wrist_position_r[0], wrist_position_r[1] ,wrist_position_r[2])
     g.controller.right_hand.position = wrist_position_r
     g.controller.right_hand.rotation = quat_r
 

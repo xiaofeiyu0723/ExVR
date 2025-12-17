@@ -24,7 +24,7 @@ class VectorKalmanFilter:
         if self.x is None:
             return  # filter not initialised yet
         # Simple random‑walk model ⇒ F = I, so only P changes
-        self.P += self.Q * dt
+        self.P += self.Q * dt * 60 / g.current_fps
 
     def update(self, z, is_rotation: bool = False):
         """Measurement‑update (correction) step.
