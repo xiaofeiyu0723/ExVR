@@ -168,6 +168,7 @@
         }
     },
     "Model": {
+        "provider": "GPU",
         "Face": {
             "min_face_detection_confidence": 0.5,
             "min_face_presence_confidence": 0.5,
@@ -180,8 +181,7 @@
         },
         "Pose": {
             "model_complexity": 1,
-            "min_pose_detection_confidence": 0.3,
-            "model_provider": "DmlExecutionProvider"
+            "min_pose_detection_confidence": 0.3
         }
     }
 }

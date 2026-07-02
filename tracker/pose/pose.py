@@ -1,10 +1,11 @@
+import onnxruntime as ort
 import cv2
 import numpy as np
 import threading
-import queue
-import onnxruntime as ort
 from typing import Tuple
 import utils.globals as g
+from utils.model_provider import providers_for, session_options_for
+from utils.ort_scheduler import ORT_PRIORITY_POSE, run_ort
 
 def pose_pred_handling(detection_result):
     g.pose_landmarks = detection_result
@@ -58,12 +59,19 @@ def draw_pose_landmarks(rgb_image):
 
 
 class PoseDetector:
-    def __init__(self, model_path="your_model.onnx", provider="DmlExecutionProvider"):
-        self.session = ort.InferenceSession(model_path, providers=[provider])
+    def __init__(self, model_path="your_model.onnx", provider="GPU"):
+        self.session = ort.InferenceSession(
+            model_path,
+            session_options_for(provider),
+            providers=providers_for(provider),
+        )
+        self.model_provider = provider
         h, w = self.session.get_inputs()[0].shape[2:]
         self.input_size = (w, h)
 
-        self._frame_queue = queue.Queue(maxsize=1)
+        self._condition = threading.Condition()
+        self._latest_frame = None
+        self._busy = False
         self._stop_event = threading.Event()
         self._worker = threading.Thread(target=self._worker_loop, daemon=True, name="PoseWorker")
         self._worker.start()
@@ -71,29 +79,42 @@ class PoseDetector:
     def __del__(self):
         self.close()
 
-    def detect_async(self, image: np.ndarray) -> None:
-        if not self._frame_queue.full():
-            self._frame_queue.put_nowait(image)
-        else:
-            try:
-                _ = self._frame_queue.get_nowait()
-            except queue.Empty:
-                pass
-            self._frame_queue.put_nowait(image)
+    def process_frame(self, image: np.ndarray) -> None:
+        if not self._stop_event.is_set():
+            with self._condition:
+                self._latest_frame = image
+                self._condition.notify()
 
     def close(self):
         if hasattr(self, "_stop_event") and not self._stop_event.is_set():
             self._stop_event.set()
+            with self._condition:
+                self._latest_frame = None
+                self._condition.notify_all()
             if hasattr(self, "_worker") and self._worker.is_alive():
-                self._worker.join(timeout=1.0)
+                self._worker.join()
+
+    def join(self):
+        with self._condition:
+            while self._busy or self._latest_frame is not None:
+                self._condition.wait()
 
     def _worker_loop(self):
-        while not self._stop_event.is_set():
+        while True:
+            with self._condition:
+                while self._latest_frame is None and not self._stop_event.is_set():
+                    self._condition.wait()
+                if self._stop_event.is_set() and self._latest_frame is None:
+                    return
+                frame = self._latest_frame
+                self._latest_frame = None
+                self._busy = True
             try:
-                frame = self._frame_queue.get(timeout=0.1)
-            except queue.Empty:
-                continue
-            self._detect_and_handle(frame)
+                self._detect_and_handle(frame)
+            finally:
+                with self._condition:
+                    self._busy = False
+                    self._condition.notify_all()
 
     def _detect_and_handle(self, image: np.ndarray):
         resized_img, center, scale = self._preprocess(image)
@@ -113,7 +134,7 @@ class PoseDetector:
     def _inference(self, img):
         input_tensor = img.transpose(2, 0, 1)[None].astype(np.float32)
         inputs = {self.session.get_inputs()[0].name: input_tensor}
-        return self.session.run(None, inputs)
+        return run_ort(self.session, None, inputs, priority=ORT_PRIORITY_POSE)
 
     def _postprocess(self, outputs, center, scale, image_shape):
         keypoints, scores = self._decode(outputs[0], outputs[1])
@@ -195,4 +216,4 @@ def initialize_pose():
         model_path="./models/pose_1.onnx"
     else:
         model_path="./models/pose_1.onnx"
-    return PoseDetector(model_path=model_path, provider=g.config["Model"]["Pose"]["model_provider"])
+    return PoseDetector(model_path=model_path, provider=g.config["Model"]["provider"])

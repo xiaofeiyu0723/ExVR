@@ -249,9 +249,11 @@ def enable_hand():
         g.controller.left_hand.position = (-0.1, -0.4, -0.2)
         g.controller.left_hand.rotation = (0.0, 0.0, 0.0, 1.0)
         g.controller.left_hand.finger = (0.0, 0.0, 0.0, 0.0, 0.0)
+        g.controller.left_hand.splay = (0.0, 0.0, 0.0, 0.0, 0.0)
         g.controller.right_hand.position = (0.1, -0.4, -0.2)
         g.controller.right_hand.rotation = (0.0, 0.0, 0.0, 1.0)
         g.controller.right_hand.finger = (0.0, 0.0, 0.0, 0.0, 0.0)
+        g.controller.right_hand.splay = (0.0, 0.0, 0.0, 0.0, 0.0)
         g.controller.update()
 
 
@@ -302,4 +304,3 @@ def set_tongue():
     g.data["BlendShapes"][62]["v"] = 0.0
     g.data["BlendShapes"][63]["v"] = 0.0
 
-    

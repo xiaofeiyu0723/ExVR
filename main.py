@@ -1,4 +1,5 @@
 import sys
+import onnxruntime as _onnxruntime_preload
 import pyuac
 if not pyuac.isUserAdmin():
     pyuac.runAsAdmin()
@@ -23,7 +24,7 @@ from PyQt5.QtWidgets import (
 )
 from PyQt5.QtCore import QThread, pyqtSignal, Qt
 from PyQt5.QtGui import QImage, QPixmap, QDoubleValidator
-import winreg, shutil
+import filecmp, os, winreg, shutil
 import cv2
 import utils.tracking
 from utils.actions import *
@@ -84,7 +85,7 @@ class VideoCaptureThread(QThread):
                 if g.config["Setting"]["flip_y"]:
                     rgb_image = cv2.flip(rgb_image, 0)
 
-                self.tracker.process_frames(rgb_image)
+                self.tracker.process_frame(rgb_image)
                 if self.show_image:
                     if g.config["Tracking"]["Head"]["enable"] or g.config["Tracking"]["Face"]["enable"]:
                         rgb_image = draw_face_landmarks(rgb_image)
@@ -182,6 +183,17 @@ class VideoWindow(QMainWindow):
         camera_layout.addWidget(self.camera_fps_selection)
         layout.addLayout(camera_layout)
 
+        model_provider_layout = QHBoxLayout()
+        model_provider_layout.addWidget(QLabel("Model Provider", self))
+        self.model_provider_selection = QComboBox(self)
+        self.model_provider_selection.addItems(["GPU", "CPU"])
+        self.model_provider_selection.currentIndexChanged.connect(self.update_model_provider)
+        model_provider_layout.addWidget(self.model_provider_selection)
+        layout.addLayout(model_provider_layout)
+        self.model_provider_selection.setCurrentIndex(
+            self.model_provider_selection.findText(g.config["Model"]["provider"])
+        )
+
         self.priority_selection = QComboBox(self)
         self.priority_selection.addItems(["IDLE_PRIORITY_CLASS", "BELOW_NORMAL_PRIORITY_CLASS", "NORMAL_PRIORITY_CLASS", "ABOVE_NORMAL_PRIORITY_CLASS", "HIGH_PRIORITY_CLASS", "REALTIME_PRIORITY_CLASS"])
         self.priority_selection.currentIndexChanged.connect(self.set_process_priority)
@@ -189,12 +201,15 @@ class VideoWindow(QMainWindow):
         self.priority_selection.setCurrentIndex(self.priority_selection.findText(g.config["Setting"]["priority"]))
 
         self.install_state, steamvr_driver_path, vrcfacetracking_path, check_steamvr_path = self.install_checking()
+        sync_error = self.sync_installed_components(steamvr_driver_path, vrcfacetracking_path)
         if check_steamvr_path is not None:
             self.steamvr_status_label.setText("SteamVR Installed")
             self.steamvr_status_label.setStyleSheet("color: green; font-weight: bold;")
         else:
             self.steamvr_status_label.setText("SteamVR Not Installed")
             self.steamvr_status_label.setStyleSheet("color: red; font-weight: bold;")
+        if sync_error:
+            self.display_message("Driver Update", sync_error)
         if self.install_state:
             self.install_button = QPushButton("Uninstall Drivers", self)
             self.install_button.setStyleSheet("")
@@ -429,7 +444,7 @@ class VideoWindow(QMainWindow):
         self.set_face_button.clicked.connect(self.face_dialog)
         config_layout.addWidget(self.set_face_button)
         self.update_config_button = QPushButton("Update Config", self)
-        self.update_config_button.clicked.connect(lambda:(g.update_configs(),self.update_checkboxes(), self.update_sliders()))
+        self.update_config_button.clicked.connect(lambda:(g.update_configs(),self.update_checkboxes(), self.update_sliders(), self.update_model_provider_selection()))
         config_layout.addWidget(self.update_config_button)
         self.save_config_button = QPushButton("Save Config", self)
         self.save_config_button.clicked.connect(g.save_configs)
@@ -438,6 +453,7 @@ class VideoWindow(QMainWindow):
 
         self.update_checkboxes()
         self.update_sliders()
+        self.update_model_provider_selection()
 
         self.video_thread = None
         self.controller_thread = None
@@ -652,6 +668,54 @@ class VideoWindow(QMainWindow):
     def toggle_finger_action(self, value):
         g.config["Tracking"]["Hand"]["enable_finger_action"] = value
 
+    def copy_changed_file(self, source, destination):
+        if not os.path.exists(source):
+            return False
+        if os.path.exists(destination) and filecmp.cmp(source, destination, shallow=False):
+            return False
+        os.makedirs(os.path.dirname(destination), exist_ok=True)
+        shutil.copy2(source, destination)
+        return True
+
+    def copy_changed_tree(self, source_root, destination_root):
+        if not os.path.exists(source_root):
+            return False
+        changed = False
+        for dir_path, _, filenames in os.walk(source_root):
+            rel_dir = os.path.relpath(dir_path, source_root)
+            target_dir = destination_root if rel_dir == "." else os.path.join(destination_root, rel_dir)
+            os.makedirs(target_dir, exist_ok=True)
+            for filename in filenames:
+                source = os.path.join(dir_path, filename)
+                destination = os.path.join(target_dir, filename)
+                changed = self.copy_changed_file(source, destination) or changed
+        return changed
+
+    def sync_installed_components(self, steamvr_driver_path, vrcfacetracking_path):
+        if steamvr_driver_path is None:
+            return None
+
+        app_root = os.path.dirname(os.path.abspath(__file__))
+        updated = []
+        try:
+            for driver in ["vmt", "vrto3d"]:
+                source = os.path.join(app_root, "drivers", driver)
+                destination = os.path.join(steamvr_driver_path, driver)
+                if os.path.exists(destination) and self.copy_changed_tree(source, destination):
+                    updated.append(driver)
+
+            if vrcfacetracking_path is not None:
+                dll_source = os.path.join(app_root, "drivers", "VRCFT-MediapipePro.dll")
+                dll_destination = os.path.join(vrcfacetracking_path, "VRCFT-MediapipePro.dll")
+                if os.path.exists(dll_destination) and self.copy_changed_file(dll_source, dll_destination):
+                    updated.append("VRCFT-MediapipePro.dll")
+        except (PermissionError, OSError) as exc:
+            return f"Could not update installed drivers. Close SteamVR/VRCFaceTracking and reopen ExVR.\n\n{exc}"
+
+        if updated:
+            print("Updated installed components:", ", ".join(updated))
+        return None
+
     def install_checking(self):
         # Open registry key to get Steam installation path
         try:
@@ -716,6 +780,17 @@ class VideoWindow(QMainWindow):
         print("Finished setting priority")
         g.config["Setting"]["priority"] = priority_key
 
+    def update_model_provider_selection(self):
+        self.model_provider_selection.setCurrentIndex(
+            self.model_provider_selection.findText(g.config["Model"]["provider"])
+        )
+
+    def update_model_provider(self):
+        provider = self.model_provider_selection.currentText()
+        if provider:
+            g.config["Model"]["provider"] = provider
+            print(f"Model provider updated to: {provider}")
+
     def display_message(self,title,message,style=""):
         msg_box = QMessageBox()
         msg_box.setIcon(QMessageBox.Critical)
@@ -763,18 +838,23 @@ class VideoWindow(QMainWindow):
             self.install_button.setStyleSheet("QPushButton { background-color: blue; color: white; }")
         else:
             # Install process
+            app_root = os.path.dirname(os.path.abspath(__file__))
             for driver in ["vmt", "vrto3d"]:
-                source = os.path.join("./drivers", driver)
+                source = os.path.join(app_root, "drivers", driver)
                 destination = os.path.join(steamvr_driver_path, driver)
                 if not os.path.exists(destination):
                     shutil.copytree(source, destination)
-            dll_source = os.path.join("./drivers", "VRCFT-MediapipePro.dll")
+                else:
+                    self.copy_changed_tree(source, destination)
+            dll_source = os.path.join(app_root, "drivers", "VRCFT-MediapipePro.dll")
             dll_destination = os.path.join(
                 vrcfacetracking_path, "VRCFT-MediapipePro.dll"
             )
             if not os.path.exists(dll_destination):
                 os.makedirs(os.path.dirname(dll_destination), exist_ok=True)
                 shutil.copy(dll_source, dll_destination)
+            else:
+                self.copy_changed_file(dll_source, dll_destination)
             self.install_button.setText("Uninstall Drivers")
             self.install_button.setStyleSheet("")
 
@@ -783,6 +863,7 @@ class VideoWindow(QMainWindow):
         self.update_sliders()
         self.update_camera_resolution()
         self.update_camera_fps()
+        self.update_model_provider()
         if self.video_thread and self.video_thread.isRunning():
             stop_hotkeys()
             self.toggle_button.setText("Start Tracking")

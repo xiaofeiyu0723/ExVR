@@ -1,16 +1,25 @@
+import onnxruntime as _onnxruntime_preload
 import cv2
-from mediapipe import solutions
-from mediapipe.framework.formats import landmark_pb2
 import numpy as np
-import mediapipe as mp
 from scipy.spatial.transform import Rotation as R
 from copy import deepcopy
 import utils.globals as g
 import joblib
-from sklearn.linear_model import LinearRegression
-from sklearn.preprocessing import PolynomialFeatures
+from tracker.hand.directml_hands import DirectMLHands, HAND_CONNECTIONS
 # from collections import deque
 # import threading, queue
+
+
+class HandDepthPredictor:
+    def __init__(self, feature_model, regression_model):
+        self.powers = feature_model.powers_.astype(np.int16)
+        self.coef = regression_model.coef_.astype(np.float64)
+        self.intercept = float(regression_model.intercept_)
+
+    def predict(self, data):
+        values = np.asarray(data, dtype=np.float64)
+        monomials = np.prod(values[:, None, :] ** self.powers[None, :, :], axis=2)
+        return monomials @ self.coef + self.intercept
 
 def draw_hand_landmarks(rgb_image):
     MARGIN = 10  # pixels
@@ -26,24 +35,18 @@ def draw_hand_landmarks(rgb_image):
 
     # Loop through each detected hand using zip
     for idx, (hand, hand_landmarks) in enumerate(zip(g.handedness, g.hand_landmarks)):
-        # Draw the hand landmarks.
-        hand_landmarks_proto = landmark_pb2.NormalizedLandmarkList()
-        hand_landmarks_proto.landmark.extend(
-            [
-                landmark_pb2.NormalizedLandmark(x=landmark.x, y=landmark.y, z=landmark.z)
-                for landmark in hand_landmarks.landmark  # Access through .landmark
-            ]
-        )
-        solutions.drawing_utils.draw_landmarks(
-            rgb_image,
-            hand_landmarks_proto,
-            solutions.hands.HAND_CONNECTIONS,
-            solutions.drawing_styles.get_default_hand_landmarks_style(),
-            solutions.drawing_styles.get_default_hand_connections_style(),
-        )
+        height, width, _ = rgb_image.shape
+        points = [
+            (int(round(landmark.x * width)), int(round(landmark.y * height)))
+            for landmark in hand_landmarks.landmark
+        ]
+        for start, end in HAND_CONNECTIONS:
+            if start < len(points) and end < len(points):
+                cv2.line(rgb_image, points[start], points[end], (255, 214, 0), 2, cv2.LINE_AA)
+        for point in points:
+            cv2.circle(rgb_image, point, 3, (255, 214, 0), -1, cv2.LINE_AA)
 
         # Get the top left corner of the detected hand's bounding box.
-        height, width, _ = rgb_image.shape
         x_coordinates = [landmark.x for landmark in hand_landmarks.landmark]
         y_coordinates = [landmark.y for landmark in hand_landmarks.landmark]
         text_x = int(min(x_coordinates) * width)
@@ -77,30 +80,128 @@ def calc_angle(vec1, vec2):
         dot = np.dot(vec1, vec2)
         return np.degrees(np.abs(np.arctan2(cross, dot)))
 
-def finger_handling(hand_pose):
-    global finger_mapper
-    finger_curl= {}
-    finger_names = ["thumb", "index", "middle", "ring", "pinky"]
-    for name in finger_names:
-        cfg = g.config["Tracking"]["Finger"]
-        base_start, base_end = cfg[f"{name}_base"]
-        tip_start, tip_end = cfg[f"{name}_tip"]
-        min_val = cfg[f"{name}_min"]
-        max_val = cfg[f"{name}_max"]
-        base_vec = hand_pose[base_end] - hand_pose[base_start]
-        tip_vec = hand_pose[tip_end] - hand_pose[tip_start]
-        if np.linalg.norm(base_vec) < 1e-6 or np.linalg.norm(tip_vec) < 1e-6:
-            raw_angle = 0.0
-        else:
-            raw_angle = calc_angle(base_vec, tip_vec)
-        clamped = np.clip(raw_angle, min_val, max_val)
-        range_val = max_val - min_val
-        norm_value = 1 - (clamped - min_val) / range_val
-        norm_value = np.clip(norm_value, 0.1, 1.0)
-        finger_curl[name] = round(norm_value,1)
-        # finger_curl[name] = finger_mapper[name]["mapper"](round(norm_value,1))
+FINGER_NAMES = ("thumb", "index", "middle", "ring", "pinky")
+_VRC_EPSILON = np.float32(9.999999747378752e-06)
+_VRC_HALF = np.float32(0.5)
+_VRC_ONE = np.float32(1.0)
+_VRC_CONFIDENCE_MIN = np.float32(0.800000011920929)
+_VRC_C8_NEUTRAL = np.float32(0.6000000238418579)
+_VRC_DOT_TO_CURL_SCALE = np.float32(0.44999998807907104)
+_SPLAY_MAX_ANGLE_DEG = np.float32(24.0)
+_SPLAY_OUTWARD_SIDE = np.asarray([1.0, 1.0, 0.0, -1.0, -1.0], dtype=np.float32)
+_SPLAY_OUT_GAIN = np.asarray([0.65, 0.72, 0.82, 0.38, 0.24], dtype=np.float32)
+_SPLAY_IN_GAIN = np.asarray([0.85, 1.20, 0.82, 1.45, 1.55], dtype=np.float32)
+_SPLAY_CLOSE_BIAS = np.asarray([0.0, -0.22, 0.0, 0.46, 0.86], dtype=np.float32)
+_SPLAY_CLOSE_FADE_ANGLE_DEG = np.float32(32.0)
 
-    return finger_curl
+
+def _f32(value):
+    return np.float32(value)
+
+
+def _clamp01(value):
+    return _f32(max(0.0, min(1.0, float(_f32(value)))))
+
+
+def _unit(v):
+    v = np.asarray(v, dtype=np.float32)
+    n = _f32(np.linalg.norm(v))
+    if not (n > _VRC_EPSILON):
+        return np.zeros(3, dtype=np.float32)
+    return (v / n).astype(np.float32)
+
+
+def _unit2(v):
+    v = np.asarray(v, dtype=np.float32)
+    n = _f32(np.linalg.norm(v))
+    if not (n > _VRC_EPSILON):
+        return np.zeros(2, dtype=np.float32)
+    return (v / n).astype(np.float32)
+
+
+def _dot(a, b):
+    a = np.asarray(a, dtype=np.float32)
+    b = np.asarray(b, dtype=np.float32)
+    return _f32(_f32(a[0] * b[0] + a[1] * b[1]) + _f32(a[2] * b[2]))
+
+
+def _neutral_blend(value, neutral, alpha):
+    neutral = _f32(neutral)
+    return _f32(_f32(value - neutral) * alpha + neutral)
+
+
+def _vrchat_internal_hand_pose(normalized_pose):
+    internal = np.asarray(normalized_pose, dtype=np.float32).copy()
+    internal[:, 0] = internal[:, 0] - _VRC_HALF
+    internal[:, 1] = _VRC_HALF - internal[:, 1]
+    internal[:, 2] = -internal[:, 2]
+    return internal
+
+
+def _splay_from_landmarks(internal, curl):
+    forward = _unit2(internal[9, :2] - internal[0, :2])
+    if not np.any(forward):
+        return np.zeros(5, dtype=np.float32)
+
+    index_side = internal[5, :2] - internal[17, :2]
+    right = np.asarray([forward[1], -forward[0]], dtype=np.float32)
+    if np.dot(right, index_side) < 0:
+        right = -right
+
+    chains = ((1, 4), (5, 8), (9, 12), (13, 16), (17, 20))
+    values = []
+    for i, (mcp, tip) in enumerate(chains):
+        direction = _unit2(internal[tip, :2] - internal[mcp, :2])
+        if not np.any(direction):
+            values.append(0.0)
+            continue
+        lateral = _f32(np.dot(direction, right))
+        forward_component = _f32(np.dot(direction, forward))
+        angle = _f32(np.degrees(np.arctan2(lateral, forward_component)))
+        side = _SPLAY_OUTWARD_SIDE[i]
+        gain = _SPLAY_OUT_GAIN[i] if side == 0.0 or angle * side >= 0.0 else _SPLAY_IN_GAIN[i]
+        open_weight = _clamp01((curl[i] - _f32(0.2)) / _f32(0.7))
+        close_weight = _clamp01(_VRC_ONE - _f32(abs(float(angle)) / _SPLAY_CLOSE_FADE_ANGLE_DEG))
+        raw_splay = _f32((angle / _SPLAY_MAX_ANGLE_DEG) * gain + _f32(_SPLAY_CLOSE_BIAS[i] * close_weight))
+        values.append(float(np.clip(raw_splay * open_weight, -1.0, 1.0)))
+    return np.asarray(values, dtype=np.float32)
+
+
+def finger_handling(normalized_pose, score=1.0):
+    internal = _vrchat_internal_hand_pose(normalized_pose)
+    score = _f32(score)
+    alpha = _clamp01(_f32(score - _VRC_CONFIDENCE_MIN) * _f32(5.0))
+
+    axis_a = internal[13] - internal[0]
+    axis_a_unit = _unit(axis_a)
+    index_tip = _unit(internal[8] - internal[7])
+    middle_tip = _unit(internal[12] - internal[11])
+    ring_tip = _unit(internal[16] - internal[15])
+    pinky_tip = _unit(internal[20] - internal[19])
+    thumb_tip = _unit(internal[4] - internal[3])
+    thumb_base = _unit(internal[1] - internal[0])
+
+    thumb_curl = _clamp01(
+        _f32(_f32(_f32(_dot(thumb_base, thumb_tip) + _VRC_ONE) * _VRC_DOT_TO_CURL_SCALE) - _f32(0.15000000596046448))
+    )
+    raw_curl = np.asarray(
+        [
+            thumb_curl,
+            _f32(_f32(_dot(axis_a_unit, index_tip) + _VRC_ONE) * _VRC_DOT_TO_CURL_SCALE),
+            _f32(_f32(_dot(axis_a_unit, middle_tip) + _VRC_ONE) * _VRC_DOT_TO_CURL_SCALE),
+            _f32(_f32(_dot(axis_a_unit, ring_tip) + _VRC_ONE) * _VRC_DOT_TO_CURL_SCALE),
+            _f32(_f32(_dot(axis_a_unit, pinky_tip) + _VRC_ONE) * _VRC_DOT_TO_CURL_SCALE),
+        ],
+        dtype=np.float32,
+    )
+
+    curl = np.asarray([_neutral_blend(v, _VRC_C8_NEUTRAL, alpha) for v in raw_curl], dtype=np.float32)
+    splay = _splay_from_landmarks(internal, curl)
+
+    return (
+        {name: float(np.clip(value, 0.0, 1.0)) for name, value in zip(FINGER_NAMES, curl)},
+        {name: float(value) for name, value in zip(FINGER_NAMES, splay)},
+    )
 
 def compute_bounding_size(reference_kp):
     xs = [kp.x for kp in reference_kp]
@@ -160,10 +261,9 @@ def hand_is_changed(key, hand_name, hand_landmarks, change_points, change_thresh
 
 
 hand_detection_counts = {"Left":0,"Right":0}
-finger_action_threshold = {"Left":0,"Right":0}
 prev_distance_scalar = None
 def hand_pred_handling(detection_result):
-    global hand_detection_counts, finger_action_threshold,prev_distance_scalar
+    global hand_detection_counts, prev_distance_scalar
 
     g.hand_landmarks = detection_result.multi_hand_landmarks
     g.handedness = detection_result.multi_handedness
@@ -241,8 +341,7 @@ def hand_pred_handling(detection_result):
             data = data[keypoints].flatten()
             data = np.array(data)
             data = data.reshape(1, -1)  # Reshape to 2D array
-            data_transformed = g.hand_feature_model.transform(data)
-            pred_distance = g.hand_regression_model.predict(data_transformed)
+            pred_distance = g.hand_regression_model.predict(data)
             hand_distance_temp=pred_distance[0]
 
             rounded_value = np.round(g.data["HeadImagePosition"][2]["v"], 2)
@@ -280,26 +379,19 @@ def hand_pred_handling(detection_result):
             wrist_matrix = np.vstack((x, y, z)).T
             wrist_rot = R.from_matrix(wrist_matrix).as_euler("xyz", degrees=True)
             if g.config["Tracking"]["Finger"]["enable"]:
-                finger_curl=finger_handling(hand_pose)
+                hand_score = hand.classification[0].score
+                finger_curl, finger_splay = finger_handling(image_hand_pose, hand_score)
                 finger_0, finger_1, finger_2, finger_3, finger_4 = finger_curl["thumb"],finger_curl["index"],finger_curl["middle"],finger_curl["ring"],finger_curl["pinky"]
+                splay_0, splay_1, splay_2, splay_3, splay_4 = finger_splay["thumb"],finger_splay["index"],finger_splay["middle"],finger_splay["ring"],finger_splay["pinky"]
                 if g.config["Tracking"]["Hand"]["enable_finger_action"]:
                     if finger_1 < g.config["Tracking"]["Hand"]["trigger_threshold"]:
                         g.controller.send_trigger(True if hand_name=="Left" else False, 0, 1)
                     else:
                         g.controller.send_trigger(True if hand_name=="Left" else False, 0, 0)
-                    if finger_1>0.3 and finger_3>0.3 and finger_4 >0.5 and finger_0<0.7 and finger_2<0.4:
-                        finger_action_threshold[hand_name] = g.config["Tracking"]["Hand"]["finger_action_threshold"]
-                    else:
-                        finger_action_threshold[hand_name] = max(0,finger_action_threshold[hand_name]-1)
-                    if finger_action_threshold[hand_name] != 0:
-                        finger_1 = 1.0
-                        finger_3 = 1.0
-                        finger_4 = 1.0
-                        finger_0 = 0.0
-                        finger_2 = 0.25
 
             else:
                 finger_0, finger_1, finger_2, finger_3, finger_4 = 1.0, 1.0, 1.0, 1.0, 1.0
+                splay_0, splay_1, splay_2, splay_3, splay_4 = 0.0, 0.0, 0.0, 0.0, 0.0
 
             if hand_name == "Left":
                 if g.config["Smoothing"]["enable"]:
@@ -318,6 +410,11 @@ def hand_pred_handling(detection_result):
                     g.latest_data[84] = finger_2
                     g.latest_data[85] = finger_3
                     g.latest_data[86] = finger_4
+                    g.latest_data[119] = splay_0
+                    g.latest_data[120] = splay_1
+                    g.latest_data[121] = splay_2
+                    g.latest_data[122] = splay_3
+                    g.latest_data[123] = splay_4
                 else:
                     if rotation_change_flag:
                         g.data["LeftHandRotation"][0]["v"] = wrist_rot[0]
@@ -334,6 +431,11 @@ def hand_pred_handling(detection_result):
                     g.data["LeftHandFinger"][2]["v"] = finger_2
                     g.data["LeftHandFinger"][3]["v"] = finger_3
                     g.data["LeftHandFinger"][4]["v"] = finger_4
+                    g.data["LeftHandSplay"][0]["v"] = splay_0
+                    g.data["LeftHandSplay"][1]["v"] = splay_1
+                    g.data["LeftHandSplay"][2]["v"] = splay_2
+                    g.data["LeftHandSplay"][3]["v"] = splay_3
+                    g.data["LeftHandSplay"][4]["v"] = splay_4
                 g.controller.left_hand.enable = True
             else:
                 if g.config["Smoothing"]["enable"]:
@@ -352,6 +454,11 @@ def hand_pred_handling(detection_result):
                     g.latest_data[89] = finger_2
                     g.latest_data[90] = finger_3
                     g.latest_data[91] = finger_4
+                    g.latest_data[124] = splay_0
+                    g.latest_data[125] = splay_1
+                    g.latest_data[126] = splay_2
+                    g.latest_data[127] = splay_3
+                    g.latest_data[128] = splay_4
                 else:
                     if rotation_change_flag:
                         g.data["RightHandRotation"][0]["v"] = wrist_rot[0]
@@ -368,6 +475,11 @@ def hand_pred_handling(detection_result):
                     g.data["RightHandFinger"][2]["v"] = finger_2
                     g.data["RightHandFinger"][3]["v"] = finger_3
                     g.data["RightHandFinger"][4]["v"] = finger_4
+                    g.data["RightHandSplay"][0]["v"] = splay_0
+                    g.data["RightHandSplay"][1]["v"] = splay_1
+                    g.data["RightHandSplay"][2]["v"] = splay_2
+                    g.data["RightHandSplay"][3]["v"] = splay_3
+                    g.data["RightHandSplay"][4]["v"] = splay_4
                 g.controller.right_hand.enable = True
 
     if hand_detection_counts["Left"] <= g.config["Tracking"]["Hand"]["hand_detection_lower_threshold"] and \
@@ -387,10 +499,16 @@ def hand_pred_handling(detection_result):
             g.latest_data[84] = g.default_data["LeftHandFinger"][2]["v"]
             g.latest_data[85] = g.default_data["LeftHandFinger"][3]["v"]
             g.latest_data[86] = g.default_data["LeftHandFinger"][4]["v"]
+            g.latest_data[119] = g.default_data["LeftHandSplay"][0]["v"]
+            g.latest_data[120] = g.default_data["LeftHandSplay"][1]["v"]
+            g.latest_data[121] = g.default_data["LeftHandSplay"][2]["v"]
+            g.latest_data[122] = g.default_data["LeftHandSplay"][3]["v"]
+            g.latest_data[123] = g.default_data["LeftHandSplay"][4]["v"]
         else:
             g.data["LeftHandPosition"] = deepcopy(g.default_data["LeftHandPosition"])
             g.data["LeftHandRotation"] = deepcopy(g.default_data["LeftHandRotation"])
             g.data["LeftHandFinger"] = deepcopy(g.default_data["LeftHandFinger"])
+            g.data["LeftHandSplay"] = deepcopy(g.default_data["LeftHandSplay"])
         g.controller.left_hand.enable = False
 
 
@@ -410,72 +528,26 @@ def hand_pred_handling(detection_result):
             g.latest_data[89] = g.default_data["RightHandFinger"][2]["v"]
             g.latest_data[90] = g.default_data["RightHandFinger"][3]["v"]
             g.latest_data[91] = g.default_data["RightHandFinger"][4]["v"]
+            g.latest_data[124] = g.default_data["RightHandSplay"][0]["v"]
+            g.latest_data[125] = g.default_data["RightHandSplay"][1]["v"]
+            g.latest_data[126] = g.default_data["RightHandSplay"][2]["v"]
+            g.latest_data[127] = g.default_data["RightHandSplay"][3]["v"]
+            g.latest_data[128] = g.default_data["RightHandSplay"][4]["v"]
         else:
             g.data["RightHandPosition"] = deepcopy(g.default_data["RightHandPosition"])
             g.data["RightHandRotation"] = deepcopy(g.default_data["RightHandRotation"])
             g.data["RightHandFinger"] = deepcopy(g.default_data["RightHandFinger"])
+            g.data["RightHandSplay"] = deepcopy(g.default_data["RightHandSplay"])
         g.controller.right_hand.enable = False
 
-# class HandDetector:
-
-#     def __init__(self):
-#         mp_hands = mp.solutions.hands
-#         self.hands = mp_hands.Hands(
-#             model_complexity         = g.config["Model"]["Hand"]["model_complexity"],
-#             max_num_hands            = 2,
-#             min_detection_confidence = g.config["Model"]["Hand"]["min_hand_detection_confidence"],
-#             min_tracking_confidence  = g.config["Model"]["Hand"]["min_tracking_confidence"]
-#         )
-#
-#         self._frame_queue = queue.Queue(maxsize=1)
-#         self._stop_event  = threading.Event()
-#         self._worker      = threading.Thread(
-#             target=self._worker_loop,
-#             daemon=True,
-#             name="HandWorker"
-#         )
-#         self._worker.start()
-#
-#     def detect_async(self, image_bgr: np.ndarray) -> None:
-#         if self._frame_queue.full():
-#             try:
-#                 _ = self._frame_queue.get_nowait()   # 丢弃旧帧
-#             except queue.Empty:
-#                 pass
-#         self._frame_queue.put_nowait(image_bgr)
-#
-#     def close(self):
-#         if not self._stop_event.is_set():
-#             self._stop_event.set()
-#             if self._worker.is_alive():
-#                 self._worker.join(timeout=1.0)
-#         if hasattr(self, "hands"):
-#             self.hands.close()
-#
-#     def __del__(self):
-#         self.close()
-#
-#     def _worker_loop(self):
-#         while not self._stop_event.is_set():
-#             try:
-#                 frame_bgr = self._frame_queue.get(timeout=0.02)
-#             except queue.Empty:
-#                 continue
-#
-#             frame_rgb = cv2.cvtColor(frame_bgr, cv2.COLOR_BGR2RGB)
-#             result    = self.hands.process(frame_rgb)
-#
-#             hand_pred_handling(result)
-
 def initialize_hand():
-    mp_hands = mp.solutions.hands
-    return mp_hands.Hands(model_complexity=g.config["Model"]["Hand"]["model_complexity"], max_num_hands=2,
-                          min_detection_confidence=g.config["Model"]["Hand"]["min_hand_detection_confidence"],
-                          min_tracking_confidence=g.config["Model"]["Hand"]["min_tracking_confidence"])
-# def initialize_hand():
-#     return HandDetector()
+    return DirectMLHands(model_complexity=g.config["Model"]["Hand"]["model_complexity"], max_num_hands=2,
+                         min_detection_confidence=g.config["Model"]["Hand"]["min_hand_detection_confidence"],
+                         min_tracking_confidence=g.config["Model"]["Hand"]["min_tracking_confidence"],
+                         provider=g.config["Model"]["provider"])
+
 
 def initialize_hand_depth():
     feature_model = joblib.load('./models/hand_feature_model.pkl')
     hand_regression_model = joblib.load('./models/hand_regression_model.pkl')
-    return feature_model, hand_regression_model
+    return None, HandDepthPredictor(feature_model, hand_regression_model)

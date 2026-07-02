@@ -126,10 +126,26 @@ def handling_hand_data(data, default_data):
         get_value(v, v_d)
         for v, v_d in zip(data[f"Right{right_hand_type}Finger"], default_data[f"Right{right_hand_type}Finger"])
     )
+    if left_hand_type == "Hand" and "LeftHandSplay" in data:
+        splay_l = tuple(
+            get_value(v, v_d)
+            for v, v_d in zip(data["LeftHandSplay"], default_data["LeftHandSplay"])
+        )
+    else:
+        splay_l = (0.0, 0.0, 0.0, 0.0, 0.0)
+    if right_hand_type == "Hand" and "RightHandSplay" in data:
+        splay_r = tuple(
+            get_value(v, v_d)
+            for v, v_d in zip(data["RightHandSplay"], default_data["RightHandSplay"])
+        )
+    else:
+        splay_r = (0.0, 0.0, 0.0, 0.0, 0.0)
     # print(f"Right{right_hand_type}Finger",finger_r)
 
     g.controller.left_hand.finger = finger_l
     g.controller.right_hand.finger = finger_r
+    g.controller.left_hand.splay = splay_l
+    g.controller.right_hand.splay = splay_r
 
 prev_x=None
 prev_y=None

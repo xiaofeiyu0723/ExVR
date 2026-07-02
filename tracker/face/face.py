@@ -1,11 +1,29 @@
-import mediapipe as mp
+import cv2
 import numpy as np
 import math
 from tracker.face.tongue import mouth_roi_on_image, detect_tongue
 import utils.globals as g
-from mediapipe.framework.formats import landmark_pb2
-from mediapipe import solutions
-from scipy.spatial.transform import Rotation as R
+from tracker.face.directml_face import DirectMLFaceLandmarker
+
+
+FACE_CONNECTIONS = (
+    (61, 146), (146, 91), (91, 181), (181, 84), (84, 17), (17, 314),
+    (314, 405), (405, 321), (321, 375), (375, 291), (61, 185),
+    (185, 40), (40, 39), (39, 37), (37, 0), (0, 267), (267, 269),
+    (269, 270), (270, 409), (409, 291), (33, 7), (7, 163),
+    (163, 144), (144, 145), (145, 153), (153, 154), (154, 155),
+    (155, 133), (263, 249), (249, 390), (390, 373), (373, 374),
+    (374, 380), (380, 381), (381, 382), (382, 362), (10, 338),
+    (338, 297), (297, 332), (332, 284), (284, 251), (251, 389),
+    (389, 356), (356, 454), (454, 323), (323, 361), (361, 288),
+    (288, 397), (397, 365), (365, 379), (379, 378), (378, 400),
+    (400, 377), (377, 152), (152, 148), (148, 176), (176, 149),
+    (149, 150), (150, 136), (136, 172), (172, 58), (58, 132),
+    (132, 93), (93, 234), (234, 127), (127, 162), (162, 21),
+    (21, 54), (54, 103), (103, 67), (67, 109), (109, 10),
+    (469, 470), (470, 471), (471, 472), (472, 469),
+    (474, 475), (475, 476), (476, 477), (477, 474),
+)
 
 def draw_face_landmarks(rgb_image):
     face_landmarks_list = g.face_landmarks
@@ -13,32 +31,13 @@ def draw_face_landmarks(rgb_image):
     if face_landmarks_list is None:
         return rgb_image
 
+    height, width, _ = rgb_image.shape
     for idx in range(len(face_landmarks_list)):
         face_landmarks = face_landmarks_list[idx]
-
-        face_landmarks_proto = landmark_pb2.NormalizedLandmarkList()
-        face_landmarks_proto.landmark.extend([landmark_pb2.NormalizedLandmark(x=landmark.x, y=landmark.y, z=landmark.z) for landmark in face_landmarks])
-        solutions.drawing_utils.draw_landmarks(
-            image=rgb_image,
-            landmark_list=face_landmarks_proto,
-            connections=mp.solutions.face_mesh.FACEMESH_TESSELATION,
-            landmark_drawing_spec=None,
-            connection_drawing_spec=mp.solutions.drawing_styles
-            .get_default_face_mesh_tesselation_style())
-        solutions.drawing_utils.draw_landmarks(
-            image=rgb_image,
-            landmark_list=face_landmarks_proto,
-            connections=mp.solutions.face_mesh.FACEMESH_CONTOURS,
-            landmark_drawing_spec=None,
-            connection_drawing_spec=mp.solutions.drawing_styles
-            .get_default_face_mesh_contours_style())
-        solutions.drawing_utils.draw_landmarks(
-            image=rgb_image,
-            landmark_list=face_landmarks_proto,
-            connections=mp.solutions.face_mesh.FACEMESH_IRISES,
-            landmark_drawing_spec=None,
-            connection_drawing_spec=mp.solutions.drawing_styles
-            .get_default_face_mesh_iris_connections_style())
+        points = [(int(lm.x * width), int(lm.y * height)) for lm in face_landmarks]
+        for start, end in FACE_CONNECTIONS:
+            if start < len(points) and end < len(points):
+                cv2.line(rgb_image, points[start], points[end], (80, 220, 80), 1, cv2.LINE_AA)
 
     return rgb_image
 
@@ -87,7 +86,14 @@ def face_pred_handling(detection_result, output_image, timestamp_ms, tongue_mode
         head_image_position_y = detection_result.face_landmarks[0][4].y
         head_image_position_z = detection_result.face_landmarks[0][4].z
 
-        if not coverage_ratio > g.config["Tracking"]["Face"]["face_block_threshold"]:
+        has_blendshapes = bool(detection_result.face_blendshapes)
+        has_transform = bool(detection_result.facial_transformation_matrixes)
+
+        if (
+            has_blendshapes
+            and g.config["Tracking"]["Face"]["enable"]
+            and not coverage_ratio > g.config["Tracking"]["Face"]["face_block_threshold"]
+        ):
             for i in range(len(detection_result.face_blendshapes[0])):
                 if g.config["Smoothing"]["enable"]:
                     g.latest_data[i] = detection_result.face_blendshapes[0][i].score
@@ -101,8 +107,9 @@ def face_pred_handling(detection_result, output_image, timestamp_ms, tongue_mode
 
         # Tongue detection
         if g.config["Tracking"]["Tongue"]["enable"]:
+            image_view = output_image if isinstance(output_image, np.ndarray) else output_image.numpy_view()
             mouth_image = mouth_roi_on_image(
-                output_image.numpy_view(), detection_result.face_landmarks[0]
+                image_view, detection_result.face_landmarks[0]
             )
             # cv2.imwrite("test.png",mouth_image)
             tongue_out, tongue_x, tongue_y = detect_tongue(
@@ -112,31 +119,34 @@ def face_pred_handling(detection_result, output_image, timestamp_ms, tongue_mode
             tongue_out, tongue_x, tongue_y= None, None, None
 
         # Head Position
-        mat = np.array(detection_result.facial_transformation_matrixes[0])
-        position_x = -mat[0][3] * g.config["Tracking"]["Head"]["x_scalar"]
-        position_y = -mat[2][3] * g.config["Tracking"]["Head"]["z_scalar"]
-        position_z = mat[1][3] * g.config["Tracking"]["Head"]["y_scalar"]
-        head_position=np.array([position_x, position_y,position_z])
+        head_position = None
+        head_rotation = None
+        if has_transform:
+            mat = np.array(detection_result.facial_transformation_matrixes[0])
+            position_x = -mat[0][3] * g.config["Tracking"]["Head"]["x_scalar"]
+            position_y = -mat[2][3] * g.config["Tracking"]["Head"]["z_scalar"]
+            position_z = mat[1][3] * g.config["Tracking"]["Head"]["y_scalar"]
+            head_position=np.array([position_x, position_y,position_z])
 
-        rotation_yaw = (
-            -np.arctan2(-mat[2, 0], np.sqrt(mat[2, 1] ** 2 + mat[2, 2] ** 2))
+            rotation_yaw = (
+                -np.arctan2(-mat[2, 0], np.sqrt(mat[2, 1] ** 2 + mat[2, 2] ** 2))
+                    * 180
+                    / math.pi
+                * g.config["Tracking"]["Head"]["yaw_rotation_scalar"]
+            )
+            rotation_pitch = (
+                -np.arctan2(mat[2, 1], mat[2, 2])
                 * 180
                 / math.pi
-            * g.config["Tracking"]["Head"]["yaw_rotation_scalar"]
-        )
-        rotation_pitch = (
-            -np.arctan2(mat[2, 1], mat[2, 2])
-            * 180
-            / math.pi
-            * g.config["Tracking"]["Head"]["pitch_rotation_scalar"]
-        )
-        rotation_roll = (
-            -np.arctan2(mat[1, 0], mat[0, 0])
-            * 180
-            / math.pi
-            * g.config["Tracking"]["Head"]["roll_rotation_scalar"]
-        )
-        head_rotation=np.array([rotation_yaw, rotation_pitch,rotation_roll])
+                * g.config["Tracking"]["Head"]["pitch_rotation_scalar"]
+            )
+            rotation_roll = (
+                -np.arctan2(mat[1, 0], mat[0, 0])
+                * 180
+                / math.pi
+                * g.config["Tracking"]["Head"]["roll_rotation_scalar"]
+            )
+            head_rotation=np.array([rotation_yaw, rotation_pitch,rotation_roll])
 
         # Update g.latest_data or data directly
         if g.config["Smoothing"]["enable"]:
@@ -160,7 +170,7 @@ def face_pred_handling(detection_result, output_image, timestamp_ms, tongue_mode
                     g.latest_data[62] = tongue_x
                     g.latest_data[63] = tongue_y
 
-            if g.config["Tracking"]["Head"]["enable"]:
+            if g.config["Tracking"]["Head"]["enable"] and head_position is not None and head_rotation is not None:
                 if not coverage_ratio > g.config["Tracking"]["Face"]["position_block_threshold"]:
                     # Head Position
                     g.latest_data[64] = head_position[0]
@@ -197,7 +207,7 @@ def face_pred_handling(detection_result, output_image, timestamp_ms, tongue_mode
                     g.data["BlendShapes"][52]["v"] = tongue_out
                     g.data["BlendShapes"][62]["v"] = tongue_x
                     g.data["BlendShapes"][63]["v"] = tongue_y
-            if g.config["Tracking"]["Head"]["enable"]:
+            if g.config["Tracking"]["Head"]["enable"] and head_position is not None and head_rotation is not None:
                 if not coverage_ratio > g.config["Tracking"]["Face"]["position_block_threshold"]:
                     # Head Position
                     g.data["Position"][0]["v"] = head_position[0]
@@ -217,23 +227,12 @@ def face_pred_handling(detection_result, output_image, timestamp_ms, tongue_mode
 
 
 def initialize_face(tongue_model):
-    BaseOptions = mp.tasks.BaseOptions
-    FaceLandmarker = mp.tasks.vision.FaceLandmarker
-    FaceLandmarkerOptions = mp.tasks.vision.FaceLandmarkerOptions
-    VisionRunningMode = mp.tasks.vision.RunningMode
-
-    model = BaseOptions(model_asset_path="./models/face_landmarker.task")
-    options = FaceLandmarkerOptions(
-        base_options=model,
-        output_face_blendshapes=True,
-        output_facial_transformation_matrixes=True,
-        min_face_detection_confidence=g.config["Model"]["Face"]["min_face_detection_confidence"],
-        min_face_presence_confidence=g.config["Model"]["Face"]["min_face_presence_confidence"],
-        min_tracking_confidence=g.config["Model"]["Face"]["min_tracking_confidence"],
-        num_faces=1,
-        # running_mode=VisionRunningMode.IMAGE,
-        running_mode=VisionRunningMode.LIVE_STREAM,
+    return DirectMLFaceLandmarker(
         result_callback=lambda detection_result, output_image, timestamp_ms: face_pred_handling(
-            detection_result, output_image, timestamp_ms, tongue_model),
+            detection_result, output_image, timestamp_ms, tongue_model
+        ),
+        min_detection_confidence=g.config["Model"]["Face"]["min_face_detection_confidence"],
+        min_presence_confidence=g.config["Model"]["Face"]["min_face_presence_confidence"],
+        min_tracking_confidence=g.config["Model"]["Face"]["min_tracking_confidence"],
+        provider=g.config["Model"]["provider"],
     )
-    return FaceLandmarker.create_from_options(options)

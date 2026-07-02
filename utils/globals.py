@@ -10,7 +10,7 @@ from copy import deepcopy
 
 config=setup_config()
 data,default_data = setup_data()
-latest_data = [0.0] * (64 + 6 + 12 + 10 + 12 + 10 + 3 + 2)
+latest_data = [0.0] * (64 + 6 + 12 + 10 + 12 + 10 + 3 + 2 + 10)
 current_fps = 30
 stop_event = Event()
 controller=setup_controller()
@@ -34,7 +34,7 @@ def update_configs():
     global config, data,default_data,latest_data,head_pos,controller,hotkey_config,smoothing_config,gesture_config
     config = setup_config()
     data,default_data=setup_data()
-    latest_data = [0.0] * (64 + 6 + 12 + 10 + 12 + 10 + 3 + 2)
+    latest_data = [0.0] * (64 + 6 + 12 + 10 + 12 + 10 + 3 + 2 + 10)
     controller=setup_controller()
     hotkey_config=setup_hotkeys()
     smoothing_config=setup_smoothing()

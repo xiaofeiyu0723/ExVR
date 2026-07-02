@@ -123,6 +123,28 @@
                 "r_measure": 0.03
               }
         },
+        "LeftHandSplay": {
+            "key": "LeftHandSplay",
+            "is_rotation": false,
+            "indices": [119, 120, 121, 122, 123],
+            "shifting": 119,
+            "dt_multiplier": 60,
+              "kalman_params": {
+                "q_process": 0.02,
+                "r_measure": 0.03
+              }
+        },
+        "RightHandSplay": {
+            "key": "RightHandSplay",
+            "is_rotation": false,
+            "indices": [124, 125, 126, 127, 128],
+            "shifting": 124,
+            "dt_multiplier": 60,
+              "kalman_params": {
+                "q_process": 0.02,
+                "r_measure": 0.03
+              }
+        },
         "LeftControllerRotation": {
             "key": "LeftControllerRotation",
             "is_rotation": true,

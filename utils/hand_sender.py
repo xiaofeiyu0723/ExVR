@@ -12,6 +12,7 @@ class Transform:
     position: tuple  # (x, y, z)
     rotation: tuple  # (x, y, z, w)
     finger: tuple  # (0,1,2,3,4)
+    splay: tuple  # (0,1,2,3,4), normalized -1..1
     follow: bool
     enable: bool
     force_enable: bool
@@ -23,8 +24,8 @@ class GloveControllerSender:
         # Initialize OSC client
         self.client = udp_client.SimpleUDPClient(osc_ip, osc_port)
 
-        self.left_hand = Transform((0, 0, 0), (0, 0, 0, 1), (1.0, 1.0, 1.0, 1.0, 1.0),False,False,False,True)
-        self.right_hand = Transform((0, 0, 0), (0, 0, 0, 1), (1.0, 1.0, 1.0, 1.0, 1.0),False,False,False,True)
+        self.left_hand = Transform((0, 0, 0), (0, 0, 0, 1), (1.0, 1.0, 1.0, 1.0, 1.0), (0.0, 0.0, 0.0, 0.0, 0.0),False,False,False,True)
+        self.right_hand = Transform((0, 0, 0), (0, 0, 0, 1), (1.0, 1.0, 1.0, 1.0, 1.0), (0.0, 0.0, 0.0, 0.0, 0.0),False,False,False,True)
         self.vmt_init()
 
     def send_hand(self, is_left_hand, target: Transform):
@@ -63,6 +64,12 @@ class GloveControllerSender:
                 0,
             ]
             self.client.send_message("/VMT/Skeleton/Scalar", message_0)
+        for i, value in enumerate(target.splay):
+            index = i + 1
+            self.client.send_message(
+                "/VMT/Skeleton/Splay",
+                [1 if is_left_hand else 2, int(index), float(value)],
+            )
         message_1 = [1 if is_left_hand else 2, 0.0]  # lefthand ? 1 : 2
         self.client.send_message("/VMT/Skeleton/Apply", message_1)
 
