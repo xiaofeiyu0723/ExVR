@@ -96,45 +96,59 @@ def set_head_pitch(value):
 def set_head_yaw(value):
     g.data["Rotation"][0]["s"] = value % 360
 
+controller_enablement_timer = {True: None, False: None}
+
+def _controller_tracking_key(value):
+    return "LeftController" if value else "RightController"
+
+def _controller_transform(value):
+    return g.controller.left_hand if value else g.controller.right_hand
+
+def _controller_needs_temporary_enable(value):
+    return not g.config["Tracking"][_controller_tracking_key(value)]["enable"]
+
+def _temporarily_enable_controller(value):
+    global controller_enablement_timer
+    if _controller_needs_temporary_enable(value):
+        _controller_transform(value).force_enable = True
+    if controller_enablement_timer[value] is not None:
+        controller_enablement_timer[value].cancel()
+        controller_enablement_timer[value] = None
+
+def _schedule_controller_disable(value):
+    global controller_enablement_timer
+    def hand_disablement(value):
+        if _controller_needs_temporary_enable(value):
+            _controller_transform(value).force_enable = False
+        controller_enablement_timer[value] = None
+
+    if _controller_needs_temporary_enable(value) and controller_enablement_timer[value] is None:
+        controller_enablement_timer[value] = Timer(
+            g.config["Tracking"]["Hand"]["enable_hand_time"],
+            hand_disablement,
+            args=(value,),
+        )
+        controller_enablement_timer[value].start()
+
 grab_status = {True: False, False: False}
 def grab(value, index):
     grab_status[value] = not grab_status[value]
     # print(value, grab_status[value])
     if grab_status[value]:
+        _temporarily_enable_controller(value)
         g.controller.send_trigger(value, index, 1.0)
     else:
         g.controller.send_trigger(value, index, 0.0)
+        _schedule_controller_disable(value)
 
 
-controller_enablement_timer = {True: None, False: None}
 def trigger_press(value, index):
-    global controller_enablement_timer
-    if (not g.config["Tracking"]["LeftController"]["enable"] and value) or (
-            not g.config["Tracking"]["RightController"]["enable"] and not value):
-        if value:
-            g.controller.left_hand.force_enable = True
-        else:
-            g.controller.right_hand.force_enable = True
-    if controller_enablement_timer[value] is not None:
-        controller_enablement_timer[value].cancel()
-        controller_enablement_timer[value] = None
+    _temporarily_enable_controller(value)
     g.controller.send_trigger(value, index, 1.0)
 
 def trigger_release(value, index):
-    global controller_enablement_timer
-    def hand_disablement(value):
-        if (not g.config["Tracking"]["LeftController"]["enable"] and value) or (
-                not g.config["Tracking"]["RightController"]["enable"] and not value):
-            if value:
-                g.controller.left_hand.force_enable = False
-            else:
-                g.controller.right_hand.force_enable = False
-    if (not g.config["Tracking"]["LeftController"]["enable"] and value) or (
-            not g.config["Tracking"]["RightController"]["enable"] and not value):
-        if controller_enablement_timer[value] is None:
-            controller_enablement_timer[value] = Timer(g.config["Tracking"]["Hand"]["enable_hand_time"],hand_disablement, args=(value,))
-            controller_enablement_timer[value].start()
     g.controller.send_trigger(value, index, 0.0)
+    _schedule_controller_disable(value)
 
 
 joystick_value = 1.0
@@ -143,6 +157,7 @@ joystick_step = 0.2
 angle = math.atan2(joystick_status[1], joystick_status[0])
 def joystick_up(value, index):
     global joystick_status, joystick_step, angle, joystick_value
+    _temporarily_enable_controller(value)
     angle += joystick_step
     x = round(joystick_value * math.cos(angle), 1)
     y = round(joystick_value * math.sin(angle), 1)
@@ -151,6 +166,7 @@ def joystick_up(value, index):
 
 def joystick_down(value, index):
     global joystick_status, joystick_step, angle, joystick_value
+    _temporarily_enable_controller(value)
     angle -= joystick_step
     x = round(joystick_value * math.cos(angle), 1)
     y = round(joystick_value * math.sin(angle), 1)
@@ -163,6 +179,7 @@ def joystick_middle(value, index):
     global joystick_status,joystick_value
     g.controller.send_joystick(value, index, 0.0, 0.0)
     joystick_status = (0.0, joystick_value)
+    _schedule_controller_disable(value)
     # print(joystick_status)
 
 
@@ -174,6 +191,7 @@ def joystick_middle_delay(value, index):
         global joystick_middle_timer, joystick_status
         g.controller.send_joystick(value, index, 0.0, 0.0)
         joystick_status = (0.0, joystick_value)
+        _schedule_controller_disable(value)
         # print(joystick_status)
         if joystick_middle_timer is not None:
             joystick_middle_timer.cancel()

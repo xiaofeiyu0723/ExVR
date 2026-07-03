@@ -126,6 +126,9 @@ _VRC_ONE = np.float32(1.0)
 _VRC_CONFIDENCE_MIN = np.float32(0.800000011920929)
 _VRC_C8_NEUTRAL = np.float32(0.6000000238418579)
 _VRC_DOT_TO_CURL_SCALE = np.float32(0.44999998807907104)
+_CURL_ENDPOINT_LOW = np.asarray([0.12, 0.18, 0.18, 0.18, 0.18], dtype=np.float32)
+_CURL_ENDPOINT_HIGH = np.asarray([0.72, 0.84, 0.84, 0.84, 0.84], dtype=np.float32)
+_CURL_ENDPOINT_GAIN = np.float32(1.08)
 _SPLAY_MAX_ANGLE_DEG = np.float32(24.0)
 _SPLAY_OUTWARD_SIDE = np.asarray([1.0, 1.0, 0.0, -1.0, -1.0], dtype=np.float32)
 _SPLAY_OUT_GAIN = np.asarray([0.65, 0.72, 0.82, 0.38, 0.24], dtype=np.float32)
@@ -167,6 +170,14 @@ def _dot(a, b):
 def _neutral_blend(value, neutral, alpha):
     neutral = _f32(neutral)
     return _f32(_f32(value - neutral) * alpha + neutral)
+
+
+def _expand_curl_endpoints(curl):
+    curl = np.asarray(curl, dtype=np.float32)
+    span = _CURL_ENDPOINT_HIGH - _CURL_ENDPOINT_LOW
+    expanded = (curl - _CURL_ENDPOINT_LOW) / span
+    expanded = (expanded - _VRC_HALF) * _CURL_ENDPOINT_GAIN + _VRC_HALF
+    return np.clip(expanded, 0.0, 1.0).astype(np.float32)
 
 
 def _vrchat_internal_hand_pose(normalized_pose):
@@ -235,6 +246,7 @@ def finger_handling(normalized_pose, score=1.0):
     )
 
     curl = np.asarray([_neutral_blend(v, _VRC_C8_NEUTRAL, alpha) for v in raw_curl], dtype=np.float32)
+    curl = _expand_curl_endpoints(curl)
     splay = _splay_from_landmarks(internal, curl)
 
     return (
