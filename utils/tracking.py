@@ -4,7 +4,6 @@ import cv2
 from tracker.face.tongue import initialize_tongue_model
 from tracker.face.face import initialize_face
 from tracker.hand.hand import initialize_hand,hand_pred_handling,initialize_hand_depth
-from tracker.pose.pose import initialize_pose, pose_pred_handling
 from utils.sender import data_send_thread
 from utils.smoothing import apply_smoothing
 import utils.globals as g
@@ -79,8 +78,6 @@ class Tracker:
             g.face_detector = initialize_face(g.tongue_model)
             g.hand_detector = initialize_hand()
             g.hand_feature_model, g.hand_regression_model = initialize_hand_depth()
-        if g.config["Tracking"]["Pose"]["enable"] and g.pose_detector is None:
-            g.pose_detector = initialize_pose()
 
         self.hand_worker = LatestFrameWorker("HandWorker", self._process_hand_frame)
         self.face_worker = LatestFrameWorker("FaceWorker", self._process_face_frame)
@@ -144,7 +141,6 @@ class Tracker:
             or g.config["Tracking"]["Head"]["enable"]
             or g.config["Tracking"]["Face"]["enable"]
             or g.config["Tracking"]["Tongue"]["enable"]
-            or g.config["Tracking"]["Pose"]["enable"]
         )
         frame = image_rgb.copy() if needs_frame else image_rgb
         if g.config["Tracking"]["Hand"]["enable"]:
@@ -155,18 +151,11 @@ class Tracker:
             or g.config["Tracking"]["Tongue"]["enable"]
         ):
             self.face_worker.submit(frame, timestamp_ms)
-        if g.config["Tracking"]["Pose"]["enable"]:
-            if g.pose_detector is None:
-                g.pose_detector = initialize_pose()
-            g.pose_detector.process_frame(frame)
 
     def stop(self):
         self.is_running = False
         self.hand_worker.close()
         self.face_worker.close()
-        if g.pose_detector is not None:
-            g.pose_detector.close()
-            g.pose_detector = None
         g.stop_event.set()
         if self.smoothing_thread:
             self.smoothing_thread.join()

@@ -2,8 +2,11 @@
     "Version": "0.7.2.5",
     "Setting": {
         "priority": "ABOVE_NORMAL_PRIORITY_CLASS",
+        "language": "system",
         "flip_x": false,
         "flip_y": false,
+        "camera_aspect": "4:3",
+        "camera_performance": 3,
         "camera_width": 640,
         "camera_height": 480,
         "camera_fps": 60,
@@ -41,17 +44,17 @@
     "Tracking": {
         "LeftController": {
             "enable": false,
-            "base_x": -0.18,
-            "base_y": -0.3,
+            "base_x": -0.3,
+            "base_y": -0.38,
             "base_z": -0.15,
-            "length": 0.4
+            "length": 0.38
         },
         "RightController": {
             "enable": false,
-            "base_x": 0.18,
-            "base_y": -0.3,
+            "base_x": 0.3,
+            "base_y": -0.38,
             "base_z": -0.15,
-            "length": 0.4
+            "length": 0.38
         },
         "Head": {
             "enable": true,
@@ -77,11 +80,6 @@
             "tongue_y_scalar": 3.0,
             "mouth_close_threshold": 0.1
         },
-        "Pose": {
-            "enable": false,
-            "shift_l_y": 0.25,
-            "shift_r_y": 0.25
-        },
         "Hand": {
             "enable": true,
             "x_scalar": 0.8,
@@ -93,6 +91,7 @@
             "enable_hand_auto_reset": true,
             "enable_hand_down": true,
             "enable_hand_time": 5,
+            "hand_return_time": 0.5,
             "trigger_threshold": 0.5,
             "finger_action_threshold": 10,
             "enable_finger_action": true,
@@ -179,10 +178,6 @@
             "model_complexity": 1,
             "min_hand_detection_confidence": 0.8,
             "min_tracking_confidence": 0.4
-        },
-        "Pose": {
-            "model_complexity": 1,
-            "min_pose_detection_confidence": 0.3
         }
     }
 }

@@ -50,8 +50,8 @@ class GloveControllerSender:
         self.client.send_message("/VMT/Joint/Driver", message)
 
     def disable_hand(self,is_left_hand):
-        message = [1 if is_left_hand else 2, 0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0]
-        self.client.send_message("/VMT/Room/Unity", message)
+        message = [1 if is_left_hand else 2, 0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+        self.client.send_message("/VMT/Raw/Driver", message)
 
     def send_finger(self, is_left_hand, target: Transform):
         for i, value in enumerate(target.finger):

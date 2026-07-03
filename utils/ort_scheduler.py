@@ -5,7 +5,6 @@ import threading
 
 ORT_PRIORITY_HAND = 0
 ORT_PRIORITY_FACE = 10
-ORT_PRIORITY_POSE = 20
 
 
 class _OrtRunScheduler:

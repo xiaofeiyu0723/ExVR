@@ -20,14 +20,12 @@ gesture_config = setup_gestures()
 face_landmarks=None
 hand_landmarks=None
 handedness=None
-pose_landmarks=None
 
 tongue_model=None
 face_detector=None
 hand_detector=None
 hand_feature_model=None
 hand_regression_model=None
-pose_detector=None
 start_time=cv2.getTickCount()
 
 def update_configs():

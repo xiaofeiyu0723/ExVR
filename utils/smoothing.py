@@ -87,7 +87,7 @@ def setup_smoothing():
     Returns the parsed configuration so that callers can inspect it if they
     need to.
     """
-    smoothing_config = load_json("./settings/smoothing.json")
+    smoothing_config = load_json("settings/smoothing.json")
 
     g.kalman_filters = {}
     g.indices_map = {}

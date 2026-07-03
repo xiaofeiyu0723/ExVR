@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from pathlib import Path
-
 import onnxruntime as ort
 import cv2
 import math
@@ -11,12 +9,13 @@ from scipy.ndimage import uniform_filter
 import utils.globals as g
 from utils.model_provider import providers_for, session_options_for
 from utils.ort_scheduler import ORT_PRIORITY_FACE, run_ort
+from utils.paths import app_path
 
 
 class OnnxTongueModel:
-    def __init__(self, model_path: str = "./modules/tongue_keypoint.onnx", provider: str = "GPU") -> None:
+    def __init__(self, model_path: str = "modules/tongue_keypoint.onnx", provider: str = "GPU") -> None:
         self.session = ort.InferenceSession(
-            str(Path(model_path)),
+            str(app_path(model_path)),
             session_options_for(provider),
             providers=providers_for(provider),
         )

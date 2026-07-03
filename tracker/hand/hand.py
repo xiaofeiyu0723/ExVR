@@ -5,7 +5,9 @@ from scipy.spatial.transform import Rotation as R
 from copy import deepcopy
 import utils.globals as g
 import joblib
+import time
 from tracker.hand.directml_hands import DirectMLHands, HAND_CONNECTIONS
+from utils.paths import app_path
 # from collections import deque
 # import threading, queue
 
@@ -298,9 +300,12 @@ def hand_is_changed(key, hand_name, hand_landmarks, change_points, change_thresh
 
 
 hand_detection_counts = {"Left":0,"Right":0}
+hand_last_valid_time = {"Left":0.0,"Right":0.0}
 prev_distance_scalar = None
 def hand_pred_handling(detection_result):
-    global hand_detection_counts, prev_distance_scalar
+    global hand_detection_counts, hand_last_valid_time, prev_distance_scalar
+    now = time.monotonic()
+    hand_seen_this_frame = {"Left": False, "Right": False}
 
     g.hand_landmarks = detection_result.multi_hand_landmarks
     g.handedness = detection_result.multi_handedness
@@ -378,9 +383,8 @@ def hand_pred_handling(detection_result):
                 g.controller.right_hand.change_flag=position_change_flag
 
             rotation_change_flag,_,_ = hand_is_changed("rotation",hand_name,hand_landmarks,g.config["Tracking"]["Hand"]["rotation_change_points"],g.config["Tracking"]["Hand"]["rotation_change_threshold"])
-            if not g.config["Tracking"]["Pose"]["enable"]:
-                if swap_flag and g.config["Tracking"]["Hand"]["enable_swap_strategy"]:
-                    continue
+            if swap_flag and g.config["Tracking"]["Hand"]["enable_swap_strategy"]:
+                continue
             z = hand_pose[0] - hand_pose[17]
             x = np.cross(hand_pose[1] - hand_pose[0], z)
             y = np.cross(z, x)
@@ -405,15 +409,17 @@ def hand_pred_handling(detection_result):
                 finger_0, finger_1, finger_2, finger_3, finger_4 = 1.0, 1.0, 1.0, 1.0, 1.0
                 splay_0, splay_1, splay_2, splay_3, splay_4 = 0.0, 0.0, 0.0, 0.0, 0.0
 
+            hand_last_valid_time[hand_name] = now
+            hand_seen_this_frame[hand_name] = True
+
             if hand_name == "Left":
                 if g.config["Smoothing"]["enable"]:
                     if rotation_change_flag:
                         g.latest_data[73] = wrist_rot[0]
                         g.latest_data[74] = wrist_rot[1]
                         g.latest_data[75] = wrist_rot[2]
-                    if not g.config["Tracking"]["Pose"]["enable"]:
-                        g.latest_data[70] = hand_position[0]
-                        g.latest_data[71] = hand_position[1]
+                    g.latest_data[70] = hand_position[0]
+                    g.latest_data[71] = hand_position[1]
                     g.latest_data[72] = hand_position[2]
 
                     g.latest_data[82] = finger_0
@@ -431,9 +437,8 @@ def hand_pred_handling(detection_result):
                         g.data["LeftHandRotation"][0]["v"] = wrist_rot[0]
                         g.data["LeftHandRotation"][1]["v"] = wrist_rot[1]
                         g.data["LeftHandRotation"][2]["v"] = wrist_rot[2]
-                    if not g.config["Tracking"]["Pose"]["enable"]:
-                        g.data["LeftHandPosition"][0]["v"] = hand_position[0]
-                        g.data["LeftHandPosition"][1]["v"] = hand_position[1]
+                    g.data["LeftHandPosition"][0]["v"] = hand_position[0]
+                    g.data["LeftHandPosition"][1]["v"] = hand_position[1]
                     g.data["LeftHandPosition"][2]["v"] = hand_position[2]
 
                     g.data["LeftHandFinger"][0]["v"] = finger_0
@@ -453,9 +458,8 @@ def hand_pred_handling(detection_result):
                         g.latest_data[79] = wrist_rot[0]
                         g.latest_data[80] = wrist_rot[1]
                         g.latest_data[81] = wrist_rot[2]
-                    if not g.config["Tracking"]["Pose"]["enable"]:
-                        g.latest_data[76] = hand_position[0]
-                        g.latest_data[77] = hand_position[1]
+                    g.latest_data[76] = hand_position[0]
+                    g.latest_data[77] = hand_position[1]
                     g.latest_data[78] = hand_position[2]
 
                     g.latest_data[87] = finger_0
@@ -473,9 +477,8 @@ def hand_pred_handling(detection_result):
                         g.data["RightHandRotation"][0]["v"] = wrist_rot[0]
                         g.data["RightHandRotation"][1]["v"] = wrist_rot[1]
                         g.data["RightHandRotation"][2]["v"] = wrist_rot[2]
-                    if not g.config["Tracking"]["Pose"]["enable"]:
-                        g.data["RightHandPosition"][0]["v"] = hand_position[0]
-                        g.data["RightHandPosition"][1]["v"] = hand_position[1]
+                    g.data["RightHandPosition"][0]["v"] = hand_position[0]
+                    g.data["RightHandPosition"][1]["v"] = hand_position[1]
                     g.data["RightHandPosition"][2]["v"] = hand_position[2]
 
                     g.data["RightHandFinger"][0]["v"] = finger_0
@@ -490,7 +493,8 @@ def hand_pred_handling(detection_result):
                     g.data["RightHandSplay"][4]["v"] = splay_4
                 g.controller.right_hand.enable = True
 
-    if hand_detection_counts["Left"] <= g.config["Tracking"]["Hand"]["hand_detection_lower_threshold"] and \
+    hand_return_time = float(g.config["Tracking"]["Hand"].get("hand_return_time", 0.5))
+    if not hand_seen_this_frame["Left"] and now - hand_last_valid_time["Left"] >= hand_return_time and \
             g.config["Tracking"]["Hand"]["enable_hand_auto_reset"] and not g.config["Tracking"]["LeftController"][
         "enable"]:
         if g.config["Smoothing"]["enable"]:
@@ -520,7 +524,7 @@ def hand_pred_handling(detection_result):
         g.controller.left_hand.enable = False
 
 
-    if hand_detection_counts["Right"] <= g.config["Tracking"]["Hand"]["hand_detection_lower_threshold"] and \
+    if not hand_seen_this_frame["Right"] and now - hand_last_valid_time["Right"] >= hand_return_time and \
             g.config["Tracking"]["Hand"]["enable_hand_auto_reset"] and not g.config["Tracking"]["RightController"]["enable"]:
         if g.config["Smoothing"]["enable"]:
             g.latest_data[79] = g.default_data["RightHandRotation"][0]["v"]
@@ -556,6 +560,6 @@ def initialize_hand():
 
 
 def initialize_hand_depth():
-    feature_model = joblib.load("./models/hand_feature_model.pkl")
-    hand_regression_model = joblib.load("./models/hand_regression_model.pkl")
+    feature_model = joblib.load(app_path("models", "hand_feature_model.pkl"))
+    hand_regression_model = joblib.load(app_path("models", "hand_regression_model.pkl"))
     return None, HandDepthPredictor(feature_model, hand_regression_model)

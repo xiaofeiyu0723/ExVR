@@ -2,14 +2,14 @@ import asyncio
 import json
 from flask import Flask, render_template, request
 from dataclasses import dataclass
-import os
 import threading
-from PyQt5.QtCore import QThread
+from PyQt5.QtCore import QThread, pyqtSignal
 import time
 from werkzeug.serving import make_server
 from scipy.spatial.transform import Rotation as R
 import utils.globals as g
 from utils.json_manager import load_json
+from utils.paths import app_str
 import websockets
 import ssl
 import psutil
@@ -21,7 +21,7 @@ from utils.actions import head_yaw,head_pitch
 
 
 def setup_gestures():
-    gesture_config = load_json("./settings/gestures.json")
+    gesture_config = load_json("settings/gestures.json")
     return gesture_config
 
 @dataclass
@@ -41,6 +41,8 @@ class ControllerState:
 
 
 class ControllerApp(QThread):
+    controller_connection_changed = pyqtSignal(str, bool)
+
     # --- Define all keyword lists as class constants for centralized management ---
     # 1. Virtual adapter/software keywords
     VIRTUAL_ADAPTER_KEYWORDS = [
@@ -53,7 +55,7 @@ class ControllerApp(QThread):
     ETHERNET_KEYWORDS = ['ethernet', 'eth', '以太网']
     def __init__(self):
         super().__init__()
-        self.app = Flask(__name__, template_folder=os.path.join(os.getcwd(), "templates"))
+        self.app = Flask(__name__, template_folder=app_str("templates"))
         self.controllers = {
             "Left": ControllerState(
                 buttons={"system": False, "button0": False, "button1": False, "trigger": False, "grab": False}),
@@ -70,6 +72,8 @@ class ControllerApp(QThread):
         self.setup_routes()
         # WebSocket server variables
         self.websocket_clients = set()
+        self.websocket_client_hands = {}
+        self.controller_clients = {"Left": set(), "Right": set()}
         self.websocket_server = None
         self.websocket_thread = None
         self.websocket_loop = None
@@ -192,6 +196,7 @@ class ControllerApp(QThread):
                 if not controller:
                     await websocket.send(json.dumps({"status": "error", "message": "Invalid controller"}))
                     continue
+                self.register_controller_client(websocket, hand)
                 quaternion = data.get('quaternion', {})
                 controller.w = quaternion.get('w', 0)
                 controller.x = quaternion.get('x', 0)
@@ -210,7 +215,73 @@ class ControllerApp(QThread):
                 self.update_controller(hand, controller)
                 # await websocket.send(json.dumps({"status": "success"}))
         finally:
-            self.websocket_clients.remove(websocket)
+            self.unregister_controller_client(websocket)
+            self.websocket_clients.discard(websocket)
+
+    def register_controller_client(self, websocket, hand):
+        previous_hand = self.websocket_client_hands.get(websocket)
+        if previous_hand == hand:
+            return
+        if previous_hand in self.controller_clients:
+            self.controller_clients[previous_hand].discard(websocket)
+            if not self.controller_clients[previous_hand]:
+                self.set_controller_connected(previous_hand, False)
+        self.websocket_client_hands[websocket] = hand
+        self.controller_clients[hand].add(websocket)
+        self.set_controller_connected(hand, True)
+
+    def unregister_controller_client(self, websocket):
+        hand = self.websocket_client_hands.pop(websocket, None)
+        if hand not in self.controller_clients:
+            return
+        self.controller_clients[hand].discard(websocket)
+        if not self.controller_clients[hand]:
+            self.set_controller_connected(hand, False)
+
+    def set_controller_connected(self, hand, connected):
+        key = f"{hand}Controller"
+        if key not in g.config["Tracking"]:
+            return
+        target = g.controller.left_hand if hand == "Left" else g.controller.right_hand
+        changed = (
+            g.config["Tracking"][key]["enable"] != connected
+            or target.force_enable != connected
+        )
+        g.config["Tracking"][key]["enable"] = connected
+        target.force_enable = connected
+        if not connected:
+            self.release_controller_inputs(hand)
+        if changed:
+            self.controller_connection_changed.emit(hand, connected)
+            print(f"{hand} controller {'connected' if connected else 'disconnected'}")
+
+    def release_controller_inputs(self, hand):
+        is_left = hand == "Left"
+        state = self.controllers[hand]
+        previous = self.previous_states[hand]
+        state.slider = 0
+        state.sliderClicked = False
+        state.dial = (0, 0)
+        state.dialClicked = False
+        state.joystick = (0, 0)
+        state.joystickClicked = False
+        state.buttons = {btn: False for btn in state.buttons}
+        state.fingers = [1, 1, 1, 1, 1]
+        previous["slider"] = 0
+        previous["sliderClicked"] = False
+        previous["dial"] = (0, 0)
+        previous["dialClicked"] = False
+        previous["joystick"] = (0, 0)
+        previous["joystickClicked"] = False
+        previous["buttons"] = {btn: False for btn in previous["buttons"]}
+        previous["fingers"] = [1, 1, 1, 1, 1]
+        g.controller.send_trigger(is_left, 0, 0)
+        g.controller.send_trigger(is_left, 2, 0)
+        g.controller.send_button(is_left, 0, 0)
+        g.controller.send_button(is_left, 1, 0)
+        g.controller.send_button(is_left, 3, 0)
+        g.controller.send_joystick(is_left, 1, 0, 0)
+        g.controller.send_joystick_click(is_left, 1, 0)
 
     def update_controller_data(self, hand_name, hand_position, wrist_rot, finger_states):
         if g.config["Smoothing"]["enable"]:
@@ -296,8 +367,8 @@ class ControllerApp(QThread):
 
     async def start_websocket_server(self):
         ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
-        ssl_context.load_cert_chain(certfile="./templates/ssl/cert.pem",
-                                    keyfile="./templates/ssl/key.pem")
+        ssl_context.load_cert_chain(certfile=app_str("templates", "ssl", "cert.pem"),
+                                    keyfile=app_str("templates", "ssl", "key.pem"))
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         sock.bind(("0.0.0.0", self.websocket_port))
@@ -330,7 +401,7 @@ class ControllerApp(QThread):
             "duration": duration
         })
         print(message)
-        for client in self.websocket_clients:
+        for client in list(self.websocket_clients):
             try:
                 await client.send(message)
             except Exception as e:
@@ -353,7 +424,10 @@ class ControllerApp(QThread):
 
     def run(self):
         """Start the Flask server, WebSocket server, and OSC server."""
-        ssl_context = ("./templates/ssl/cert.pem", "./templates/ssl/key.pem")
+        ssl_context = (
+            app_str("templates", "ssl", "cert.pem"),
+            app_str("templates", "ssl", "key.pem"),
+        )
         self.server = make_server('0.0.0.0', self.server_port, self.app, ssl_context=ssl_context)
         self.server_thread = threading.Thread(target=self.server.serve_forever)
         self.server_thread.daemon = True
@@ -378,7 +452,7 @@ class ControllerApp(QThread):
             self.server_thread.join()
         if self.websocket_server and self.websocket_loop:
             async def shutdown():
-                for client in self.websocket_clients:
+                for client in list(self.websocket_clients):
                     await client.close()
                 self.websocket_server.close()
                 await self.websocket_server.wait_closed()

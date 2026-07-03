@@ -31,17 +31,32 @@ from utils.actions import *
 import utils.globals as g
 from utils.data import setup_data,save_data
 from utils.hotkeys import stop_hotkeys, apply_hotkeys
+from utils.language import LANGUAGE_OPTIONS, LANGUAGE_SYSTEM, install_language, tr
 from tracker.face.face import draw_face_landmarks
 from tracker.face.tongue import draw_tongue_position
 from tracker.hand.hand import draw_hand_landmarks
-from tracker.pose.pose import draw_pose_landmarks
 
 from ctypes import windll
 from cv2_enumerate_cameras import enumerate_cameras
 from tracker.controller.controller import *
-import numpy as np
 import warnings
 warnings.filterwarnings("ignore")
+
+CAMERA_PERFORMANCE_PRESETS = [
+    ("Max Performance", {"4:3": (192, 144), "16:9": (256, 144)}),
+    ("Performance", {"4:3": (320, 240), "16:9": (320, 180)}),
+    ("Balanced", {"4:3": (640, 480), "16:9": (640, 360)}),
+    ("Quality", {"4:3": (800, 600), "16:9": (800, 450)}),
+]
+CAMERA_TARGET_FPS = 60
+PROCESS_PRIORITY_OPTIONS = [
+    ("IDLE_PRIORITY_CLASS", "Idle"),
+    ("BELOW_NORMAL_PRIORITY_CLASS", "Below Normal"),
+    ("NORMAL_PRIORITY_CLASS", "Normal"),
+    ("ABOVE_NORMAL_PRIORITY_CLASS", "Above Normal"),
+    ("HIGH_PRIORITY_CLASS", "High"),
+    ("REALTIME_PRIORITY_CLASS", "Realtime"),
+]
 
 
 class VideoCaptureThread(QThread):
@@ -54,32 +69,66 @@ class VideoCaptureThread(QThread):
         self.is_running = True
         self.show_image = False
         self.tracker = utils.tracking.Tracker()
-        if width < 640 or height < 480:
-            aspect_ratio = width / height
-            if aspect_ratio == 1280 / 720:
-                self.width, self.height = 1280, 720
-            elif aspect_ratio == 640 / 480:
-                self.width, self.height = 640, 480
-            else:
-                self.width, self.height = width, height
-        else:
-            self.width, self.height = width, height
+        self.width = int(width)
+        self.height = int(height)
+        self.capture_width, self.capture_height = self.capture_request_size(self.width, self.height)
         self.fps = fps
+
+    @staticmethod
+    def capture_request_size(width, height):
+        if width <= 0 or height <= 0:
+            return 640, 480
+        aspect_ratio = width / height
+        if abs(aspect_ratio - 16 / 9) < abs(aspect_ratio - 4 / 3):
+            if width <= 1280 and height <= 720:
+                return 1280, 720
+            return width, height
+        if width <= 640 and height <= 480:
+            return 640, 480
+        if width <= 800 and height <= 600:
+            return 800, 600
+        return width, height
+
+    def resize_for_processing(self, rgb_image):
+        image_height, image_width = rgb_image.shape[:2]
+        if image_width <= 0 or image_height <= 0:
+            return rgb_image
+        target_ratio = self.width / self.height
+        image_ratio = image_width / image_height
+        if abs(image_ratio - target_ratio) > 0.01:
+            if image_ratio > target_ratio:
+                crop_width = int(round(image_height * target_ratio))
+                x0 = max(0, (image_width - crop_width) // 2)
+                rgb_image = rgb_image[:, x0:x0 + crop_width]
+            else:
+                crop_height = int(round(image_width / target_ratio))
+                y0 = max(0, (image_height - crop_height) // 2)
+                rgb_image = rgb_image[y0:y0 + crop_height, :]
+        if rgb_image.shape[1] != self.width or rgb_image.shape[0] != self.height:
+            rgb_image = cv2.resize(rgb_image, (self.width, self.height), interpolation=cv2.INTER_AREA)
+        return rgb_image
 
     def run(self):
         self.video_capture = cv2.VideoCapture(self.source, cv2.CAP_ANY)
-        self.video_capture.set(cv2.CAP_PROP_FRAME_WIDTH, self.width)
-        self.video_capture.set(cv2.CAP_PROP_FRAME_HEIGHT, self.height)
+        self.video_capture.set(cv2.CAP_PROP_FRAME_WIDTH, self.capture_width)
+        self.video_capture.set(cv2.CAP_PROP_FRAME_HEIGHT, self.capture_height)
         self.video_capture.set(cv2.CAP_PROP_FPS, self.fps)
-        print(self.video_capture.get(cv2.CAP_PROP_FRAME_WIDTH), self.video_capture.get(cv2.CAP_PROP_FRAME_HEIGHT),self.video_capture.get(cv2.CAP_PROP_FPS))
+        print(
+            "capture",
+            self.video_capture.get(cv2.CAP_PROP_FRAME_WIDTH),
+            self.video_capture.get(cv2.CAP_PROP_FRAME_HEIGHT),
+            self.video_capture.get(cv2.CAP_PROP_FPS),
+            "process",
+            self.width,
+            self.height,
+        )
         g.current_fps =self.video_capture.get(cv2.CAP_PROP_FPS);
         self.video_capture.set(cv2.CAP_PROP_BUFFERSIZE, 1)
         while self.is_running:
             ret, frame = self.video_capture.read()
             if ret:
                 rgb_image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-                if g.config["Setting"]["camera_width"]<640 or g.config["Setting"]["camera_height"]<480:
-                    rgb_image = cv2.resize(rgb_image, (g.config["Setting"]["camera_width"], g.config["Setting"]["camera_height"]))
+                rgb_image = self.resize_for_processing(rgb_image)
                 if g.config["Setting"]["flip_x"]:
                     rgb_image = cv2.flip(rgb_image, 1)
                 if g.config["Setting"]["flip_y"]:
@@ -91,11 +140,8 @@ class VideoCaptureThread(QThread):
                         rgb_image = draw_face_landmarks(rgb_image)
                     if g.config["Tracking"]["Tongue"]["enable"]:
                         rgb_image = draw_tongue_position(rgb_image)
-                    if g.config["Tracking"]["Pose"]["enable"]:
-                        rgb_image = draw_pose_landmarks(rgb_image)
                     if g.config["Tracking"]["Hand"]["enable"]:
                         rgb_image = draw_hand_landmarks(rgb_image)
-                    rgb_image = cv2.resize(rgb_image, (640, 480))
                     h, w, ch = rgb_image.shape
                     bytes_per_line = ch * w
                     convert_to_Qt_format = QImage(
@@ -145,25 +191,31 @@ class VideoWindow(QMainWindow):
 
         top_right_layout = QHBoxLayout()
         top_right_layout.addStretch()
+        self.language_label = QLabel(self)
+        top_right_layout.addWidget(self.language_label)
+        self.language_selection = QComboBox(self)
+        self.populate_language_list()
+        self.language_selection.currentIndexChanged.connect(self.update_language)
+        top_right_layout.addWidget(self.language_selection)
         self.steamvr_status_label = QLabel(self)
         top_right_layout.addWidget(self.steamvr_status_label)
         layout.insertLayout(0, top_right_layout)
 
 
         flip_layout = QHBoxLayout()  # Create a QHBoxLayout for new reset buttons
-        self.flip_x_checkbox = QCheckBox("Flip X", self)
+        self.flip_x_checkbox = QCheckBox(self)
         self.flip_x_checkbox.clicked.connect(self.flip_x)
         self.flip_x_checkbox.setChecked(g.config["Setting"]["flip_x"])
         flip_layout.addWidget(self.flip_x_checkbox)
 
-        self.flip_y_checkbox = QCheckBox("Flip Y", self)
+        self.flip_y_checkbox = QCheckBox(self)
         self.flip_y_checkbox.clicked.connect(self.flip_y)
         self.flip_y_checkbox.setChecked(g.config["Setting"]["flip_y"])
         flip_layout.addWidget(self.flip_y_checkbox)
         layout.addLayout(flip_layout)
 
         self.ip_camera_url_input = QLineEdit(self)
-        self.ip_camera_url_input.setPlaceholderText("Enter IP camera URL")
+        self.ip_camera_url_input.setPlaceholderText(tr("Enter IP camera URL"))
         self.ip_camera_url_input.textChanged.connect(self.update_camera_ip)
         # use .get() to avoid KeyError with old config
         self.ip_camera_url_input.setText(g.config["Setting"].get("camera_ip", ""))
@@ -173,18 +225,23 @@ class VideoWindow(QMainWindow):
         self.camera_selection = QComboBox(self)
         self.populate_camera_list()
         camera_layout.addWidget(self.camera_selection)
-        self.camera_resolution_selection = QComboBox(self)
-        self.populate_resolution_list()
-        self.camera_resolution_selection.currentIndexChanged.connect(self.update_camera_resolution)
-        camera_layout.addWidget(self.camera_resolution_selection)
-        self.camera_fps_selection = QComboBox(self)
-        self.populate_fps_list()
-        self.camera_fps_selection.currentIndexChanged.connect(self.update_camera_fps)
-        camera_layout.addWidget(self.camera_fps_selection)
+        self.camera_performance_label = QLabel(self)
+        camera_layout.addWidget(self.camera_performance_label)
+        self.camera_performance_selection = QComboBox(self)
+        camera_layout.addWidget(self.camera_performance_selection)
+        self.camera_aspect_label = QLabel(self)
+        camera_layout.addWidget(self.camera_aspect_label)
+        self.camera_aspect_selection = QComboBox(self)
+        self.populate_camera_aspect_list()
+        self.populate_camera_performance_list()
+        self.camera_performance_selection.currentIndexChanged.connect(lambda: self.update_camera_performance())
+        self.camera_aspect_selection.currentIndexChanged.connect(lambda: self.update_camera_performance())
+        camera_layout.addWidget(self.camera_aspect_selection)
         layout.addLayout(camera_layout)
 
         model_provider_layout = QHBoxLayout()
-        model_provider_layout.addWidget(QLabel("Model Provider", self))
+        self.model_provider_label = QLabel(self)
+        model_provider_layout.addWidget(self.model_provider_label)
         self.model_provider_selection = QComboBox(self)
         self.model_provider_selection.addItems(["GPU", "CPU"])
         self.model_provider_selection.currentIndexChanged.connect(self.update_model_provider)
@@ -194,51 +251,63 @@ class VideoWindow(QMainWindow):
             self.model_provider_selection.findText(g.config["Model"]["provider"])
         )
 
+        priority_layout = QHBoxLayout()
+        self.priority_label = QLabel(self)
+        priority_layout.addWidget(self.priority_label)
         self.priority_selection = QComboBox(self)
-        self.priority_selection.addItems(["IDLE_PRIORITY_CLASS", "BELOW_NORMAL_PRIORITY_CLASS", "NORMAL_PRIORITY_CLASS", "ABOVE_NORMAL_PRIORITY_CLASS", "HIGH_PRIORITY_CLASS", "REALTIME_PRIORITY_CLASS"])
+        self.populate_priority_list()
         self.priority_selection.currentIndexChanged.connect(self.set_process_priority)
-        layout.addWidget(self.priority_selection)
-        self.priority_selection.setCurrentIndex(self.priority_selection.findText(g.config["Setting"]["priority"]))
+        priority_layout.addWidget(self.priority_selection)
+        layout.addLayout(priority_layout)
 
         self.install_state, steamvr_driver_path, vrcfacetracking_path, check_steamvr_path = self.install_checking()
-        sync_error = self.sync_installed_components(steamvr_driver_path, vrcfacetracking_path)
-        if check_steamvr_path is not None:
-            self.steamvr_status_label.setText("SteamVR Installed")
+        sync_result = self.sync_installed_components(steamvr_driver_path, vrcfacetracking_path)
+        if sync_result["error"] is None:
+            self.install_state, steamvr_driver_path, vrcfacetracking_path, check_steamvr_path = self.install_checking()
+        self.steamvr_installed = check_steamvr_path is not None
+        if self.steamvr_installed:
+            self.steamvr_status_label.setText(tr("SteamVR Installed"))
             self.steamvr_status_label.setStyleSheet("color: green; font-weight: bold;")
         else:
-            self.steamvr_status_label.setText("SteamVR Not Installed")
+            self.steamvr_status_label.setText(tr("SteamVR Not Installed"))
             self.steamvr_status_label.setStyleSheet("color: red; font-weight: bold;")
-        if sync_error:
-            self.display_message("Driver Update", sync_error)
+        if sync_result["error"]:
+            self.display_message("Driver Update", sync_result["error"])
+        elif sync_result["updated"]:
+            self.display_message(
+                "Driver Update",
+                tr("Updated installed components:") + "\n\n" + "\n".join(sync_result["updated"]),
+                icon=QMessageBox.Information,
+            )
         if self.install_state:
-            self.install_button = QPushButton("Uninstall Drivers", self)
+            self.install_button = QPushButton(self)
             self.install_button.setStyleSheet("")
         else:
-            self.install_button = QPushButton("Install Drivers", self)
+            self.install_button = QPushButton(self)
             self.install_button.setStyleSheet(
                 "QPushButton { background-color: blue; color: white; }"
             )
         self.install_button.clicked.connect(self.install_function)
         layout.addWidget(self.install_button)
 
-        self.toggle_button = QPushButton("Start Tracking", self)
+        self.toggle_button = QPushButton(self)
         self.toggle_button.setStyleSheet(
             "QPushButton { background-color: green; color: white; }"
         )
         self.toggle_button.clicked.connect(self.toggle_camera)
         layout.addWidget(self.toggle_button)
 
-        self.show_frame_button = QPushButton("Show Frame", self)
+        self.show_frame_button = QPushButton(self)
         self.show_frame_button.clicked.connect(self.toggle_video_display)
         layout.addWidget(self.show_frame_button)
 
         only_ingame_layout = QHBoxLayout()
-        self.only_ingame_checkbox = QCheckBox("Only Ingame", self)
+        self.only_ingame_checkbox = QCheckBox(self)
         self.only_ingame_checkbox.clicked.connect(lambda: self.toggle_only_in_game(self.only_ingame_checkbox.isChecked()))
         self.only_ingame_checkbox.setChecked(g.config["Setting"]["only_ingame"])
-        self.only_ingame_checkbox.setToolTip("Currently this only applies to hotkeys and mouse input and not head movement")
+        self.only_ingame_checkbox.setToolTip(tr("Currently this only applies to hotkeys and mouse input and not head movement"))
         self.only_ingame_game_input = QLineEdit(self)
-        self.only_ingame_game_input.setPlaceholderText("window title / process name / VRChat, VRChat.exe, javaw.exe")
+        self.only_ingame_game_input.setPlaceholderText(tr("window title / process name / VRChat, VRChat.exe, javaw.exe"))
         self.only_ingame_game_input.textChanged.connect(self.update_mouse_only_in_game_name)
         self.only_ingame_game_input.setText(g.config["Setting"]["only_ingame_game"])
         only_ingame_layout.addWidget(self.only_ingame_checkbox)
@@ -253,59 +322,62 @@ class VideoWindow(QMainWindow):
         layout.addWidget(separator_0)
 
         reset_layout = QHBoxLayout()  # Create a QHBoxLayout for new reset buttons
-        self.reset_head = QPushButton("Reset Head", self)
+        self.reset_head = QPushButton(self)
         self.reset_head.clicked.connect(reset_head)
         reset_layout.addWidget(self.reset_head)
-        self.reset_eyes = QPushButton("Reset Eyes", self)
+        self.reset_eyes = QPushButton(self)
         self.reset_eyes.clicked.connect(reset_eye)
         reset_layout.addWidget(self.reset_eyes)
-        self.reset_l_hand = QPushButton("Reset LHand", self)
+        self.reset_l_hand = QPushButton(self)
         self.reset_l_hand.clicked.connect(lambda: reset_hand(True))
         reset_layout.addWidget(self.reset_l_hand)
-        self.reset_r_hand = QPushButton("Reset RHand", self)
+        self.reset_r_hand = QPushButton(self)
         self.reset_r_hand.clicked.connect(lambda: reset_hand(False))
         reset_layout.addWidget(self.reset_r_hand)
         layout.addLayout(reset_layout)
 
         checkbox_layout = QHBoxLayout()
-        self.checkbox1 = QCheckBox("Head", self)
+        self.checkbox1 = QCheckBox(self)
         self.checkbox1.clicked.connect(
             lambda: self.set_tracking_config("Head", self.checkbox1.isChecked())
         )
         checkbox_layout.addWidget(self.checkbox1)
-        self.checkbox2 = QCheckBox("Face", self)
+        self.checkbox2 = QCheckBox(self)
         self.checkbox2.clicked.connect(
             lambda: self.set_tracking_config("Face", self.checkbox2.isChecked())
         )
         checkbox_layout.addWidget(self.checkbox2)
-        self.checkbox3 = QCheckBox("Tongue", self)
+        self.checkbox3 = QCheckBox(self)
         self.checkbox3.clicked.connect(
             lambda: self.set_tracking_config("Tongue", self.checkbox3.isChecked())
         )
         checkbox_layout.addWidget(self.checkbox3)
-        self.checkbox4 = QCheckBox("Hand", self)
+        self.checkbox4 = QCheckBox(self)
         self.checkbox4.clicked.connect(
             lambda: self.set_tracking_config("Hand", self.checkbox4.isChecked())
         )
         checkbox_layout.addWidget(self.checkbox4)
-        self.checkbox5 = QCheckBox("Pose", self)
-        self.checkbox5.clicked.connect(
-            lambda: self.set_tracking_config("Pose", self.checkbox5.isChecked())
-        )
-        checkbox_layout.addWidget(self.checkbox5)
         layout.addLayout(checkbox_layout)
 
         checkbox_layout_1 = QHBoxLayout()
-        self.checkbox6 = QCheckBox("Hand Down", self)
+        self.checkbox6 = QCheckBox(self)
         self.checkbox6.clicked.connect(
             lambda: self.toggle_hand_down(self.checkbox6.isChecked())
         )
         checkbox_layout_1.addWidget(self.checkbox6)
-        self.checkbox7 = QCheckBox("Finger Action", self)
+        self.checkbox7 = QCheckBox(self)
         self.checkbox7.clicked.connect(
             lambda: self.toggle_finger_action(self.checkbox7.isChecked())
         )
         checkbox_layout_1.addWidget(self.checkbox7)
+        self.hand_return_time_label = QLabel(self)
+        checkbox_layout_1.addWidget(self.hand_return_time_label)
+        self.hand_return_time_input = QLineEdit(self)
+        hand_return_time_validator = QDoubleValidator(0.0, 60.0, 2)
+        self.hand_return_time_input.setValidator(hand_return_time_validator)
+        self.hand_return_time_input.setFixedWidth(60)
+        self.hand_return_time_input.editingFinished.connect(self.update_hand_return_time)
+        checkbox_layout_1.addWidget(self.hand_return_time_input)
         layout.addLayout(checkbox_layout_1)
 
         slider_layout = QHBoxLayout()
@@ -347,11 +419,11 @@ class VideoWindow(QMainWindow):
         # layout.addLayout(label_layout)
 
         controller_checkbox_layout = QHBoxLayout()
-        self.controller_checkbox1 = QCheckBox("Left Controller", self)
+        self.controller_checkbox1 = QCheckBox(self)
         self.controller_checkbox1.clicked.connect(
             lambda: self.set_tracking_config("LeftController", self.controller_checkbox1.isChecked())
         )
-        self.controller_checkbox2 = QCheckBox("Right Controller", self)
+        self.controller_checkbox2 = QCheckBox(self)
         self.controller_checkbox2.clicked.connect(
             lambda: self.set_tracking_config("RightController", self.controller_checkbox2.isChecked())
         )
@@ -398,7 +470,7 @@ class VideoWindow(QMainWindow):
         separator_2.setFrameShadow(QFrame.Sunken)  # Give it a sunken shadow effect
         layout.addWidget(separator_2)
         mouse_layout = QHBoxLayout()
-        self.mouse_checkbox = QCheckBox("Mouse", self)
+        self.mouse_checkbox = QCheckBox(self)
         self.mouse_checkbox.clicked.connect(lambda: self.toggle_mouse(self.mouse_checkbox.isChecked()))
         self.mouse_checkbox.setChecked(g.config["Mouse"]["enable"])
 
@@ -434,29 +506,108 @@ class VideoWindow(QMainWindow):
         layout.addWidget(separator_3)
 
         config_layout = QHBoxLayout()
-        self.reset_hotkey_button = QPushButton("Reset Hotkey", self)
+        self.reset_hotkey_button = QPushButton(self)
         self.reset_hotkey_button.clicked.connect(self.reset_hotkeys)
         config_layout.addWidget(self.reset_hotkey_button)
-        self.stop_hotkey_button = QPushButton("Stop Hotkey", self)
+        self.stop_hotkey_button = QPushButton(self)
         self.stop_hotkey_button.clicked.connect(stop_hotkeys)
         config_layout.addWidget(self.stop_hotkey_button)
-        self.set_face_button = QPushButton("Set Face", self)
+        self.set_face_button = QPushButton(self)
         self.set_face_button.clicked.connect(self.face_dialog)
         config_layout.addWidget(self.set_face_button)
-        self.update_config_button = QPushButton("Update Config", self)
-        self.update_config_button.clicked.connect(lambda:(g.update_configs(),self.update_checkboxes(), self.update_sliders(), self.update_model_provider_selection()))
+        self.update_config_button = QPushButton(self)
+        self.update_config_button.clicked.connect(self.reload_configs)
         config_layout.addWidget(self.update_config_button)
-        self.save_config_button = QPushButton("Save Config", self)
+        self.save_config_button = QPushButton(self)
         self.save_config_button.clicked.connect(g.save_configs)
         config_layout.addWidget(self.save_config_button)
         layout.addLayout(config_layout)
 
         self.update_checkboxes()
         self.update_sliders()
+        self.update_hand_return_time_input()
         self.update_model_provider_selection()
-
         self.video_thread = None
         self.controller_thread = None
+        self.retranslate_ui()
+
+    def populate_language_list(self):
+        for code, label in LANGUAGE_OPTIONS:
+            self.language_selection.addItem(tr(label), code)
+        language = g.config["Setting"].get("language", LANGUAGE_SYSTEM)
+        index = self.language_selection.findData(language)
+        self.language_selection.setCurrentIndex(index if index >= 0 else 0)
+
+    def update_language_selection(self):
+        language = g.config["Setting"].get("language", LANGUAGE_SYSTEM)
+        index = self.language_selection.findData(language)
+        if index >= 0:
+            self.language_selection.blockSignals(True)
+            self.language_selection.setCurrentIndex(index)
+            self.language_selection.blockSignals(False)
+
+    def update_language(self):
+        language = self.language_selection.currentData() or LANGUAGE_SYSTEM
+        g.config["Setting"]["language"] = language
+        install_language(QApplication.instance(), language)
+        self.retranslate_ui()
+
+    def reload_configs(self):
+        g.update_configs()
+        install_language(QApplication.instance(), g.config["Setting"].get("language", LANGUAGE_SYSTEM))
+        self.update_checkboxes()
+        self.update_sliders()
+        self.update_hand_return_time_input()
+        self.update_model_provider_selection()
+        self.update_priority_selection()
+        self.update_language_selection()
+        self.retranslate_ui()
+
+    def retranslate_ui(self):
+        version = g.config["Version"]
+        self.setWindowTitle(tr("ExVR {version} - Experience Virtual Reality").format(version=version))
+        self.language_label.setText(tr("Language"))
+        for index, (_, label) in enumerate(LANGUAGE_OPTIONS):
+            self.language_selection.setItemText(index, tr(label))
+        self.flip_x_checkbox.setText(tr("Flip X"))
+        self.flip_y_checkbox.setText(tr("Flip Y"))
+        self.ip_camera_url_input.setPlaceholderText(tr("Enter IP camera URL"))
+        self.camera_performance_label.setText(tr("Performance"))
+        self.camera_aspect_label.setText(tr("Aspect"))
+        for index, (label, _) in enumerate(CAMERA_PERFORMANCE_PRESETS):
+            self.camera_performance_selection.setItemText(index, tr(label))
+        for index, (_, label) in enumerate(PROCESS_PRIORITY_OPTIONS):
+            self.priority_selection.setItemText(index, tr(label))
+        self.priority_label.setText(tr("Priority"))
+        self.model_provider_label.setText(tr("Model Provider"))
+        self.steamvr_status_label.setText(tr("SteamVR Installed") if self.steamvr_installed else tr("SteamVR Not Installed"))
+        self.install_button.setText(tr("Uninstall Drivers") if self.install_state else tr("Install Drivers"))
+        tracking_active = self.video_thread is not None and self.video_thread.isRunning()
+        self.toggle_button.setText(tr("Stop Tracking") if tracking_active else tr("Start Tracking"))
+        show_frame_active = self.video_thread is not None and self.video_thread.show_image
+        self.show_frame_button.setText(tr("Hide Frame") if show_frame_active else tr("Show Frame"))
+        self.only_ingame_checkbox.setText(tr("Only Ingame"))
+        self.only_ingame_checkbox.setToolTip(tr("Currently this only applies to hotkeys and mouse input and not head movement"))
+        self.only_ingame_game_input.setPlaceholderText(tr("window title / process name / VRChat, VRChat.exe, javaw.exe"))
+        self.reset_head.setText(tr("Reset Head"))
+        self.reset_eyes.setText(tr("Reset Eyes"))
+        self.reset_l_hand.setText(tr("Reset LHand"))
+        self.reset_r_hand.setText(tr("Reset RHand"))
+        self.checkbox1.setText(tr("Head"))
+        self.checkbox2.setText(tr("Face"))
+        self.checkbox3.setText(tr("Tongue"))
+        self.checkbox4.setText(tr("Hand"))
+        self.checkbox6.setText(tr("Hand Down"))
+        self.checkbox7.setText(tr("Finger Action"))
+        self.hand_return_time_label.setText(tr("Hand Return Time (s)"))
+        self.controller_checkbox1.setText(tr("Left Controller"))
+        self.controller_checkbox2.setText(tr("Right Controller"))
+        self.mouse_checkbox.setText(tr("Mouse"))
+        self.reset_hotkey_button.setText(tr("Reset Hotkey"))
+        self.stop_hotkey_button.setText(tr("Stop Hotkey"))
+        self.set_face_button.setText(tr("Set Face"))
+        self.update_config_button.setText(tr("Update Config"))
+        self.save_config_button.setText(tr("Save Config"))
 
     def save_data(self):
         data=deepcopy(g.default_data)
@@ -477,7 +628,7 @@ class VideoWindow(QMainWindow):
 
     def face_dialog(self):
         self.dialog = QDialog(self)
-        self.dialog.setWindowTitle("Face Setting")
+        self.dialog.setWindowTitle(tr("Face Setting"))
         self.dialog.resize(self.width, self.height)  # Set a fixed size for the dialog
 
         layout = QVBoxLayout(self.dialog)
@@ -491,12 +642,12 @@ class VideoWindow(QMainWindow):
         form_layout = QGridLayout(form_widget)  # Use a grid layout for better alignment
 
         # Add header labels for the form
-        form_layout.addWidget(QLabel("BlendShape"), 0, 0)
-        form_layout.addWidget(QLabel("Value"), 0, 1)
-        form_layout.addWidget(QLabel("Shifting"), 0, 2)
-        form_layout.addWidget(QLabel("Weight"), 0, 3)
-        form_layout.addWidget(QLabel("Max"), 0, 4)
-        form_layout.addWidget(QLabel("Enabled"), 0, 5)
+        form_layout.addWidget(QLabel(tr("BlendShape")), 0, 0)
+        form_layout.addWidget(QLabel(tr("Value")), 0, 1)
+        form_layout.addWidget(QLabel(tr("Shifting")), 0, 2)
+        form_layout.addWidget(QLabel(tr("Weight")), 0, 3)
+        form_layout.addWidget(QLabel(tr("Max")), 0, 4)
+        form_layout.addWidget(QLabel(tr("Enabled")), 0, 5)
 
         # Store QLineEdit and QCheckBox references
         self.lineEdits = {}
@@ -535,9 +686,9 @@ class VideoWindow(QMainWindow):
         layout.addWidget(scroll_area)  # Add the scroll area to the dialog layout
 
         # Add a Save Config button
-        self.save_config_button = QPushButton("Save Config", self.dialog)
-        self.save_config_button.clicked.connect(self.save_data)
-        layout.addWidget(self.save_config_button)
+        self.face_save_config_button = QPushButton(tr("Save Config"), self.dialog)
+        self.face_save_config_button.clicked.connect(self.save_data)
+        layout.addWidget(self.face_save_config_button)
 
         self.dialog.exec_()
 
@@ -560,7 +711,6 @@ class VideoWindow(QMainWindow):
         self.checkbox2.setChecked(g.config["Tracking"]["Face"]["enable"])
         self.checkbox3.setChecked(g.config["Tracking"]["Tongue"]["enable"])
         self.checkbox4.setChecked(g.config["Tracking"]["Hand"]["enable"])
-        self.checkbox5.setChecked(g.config["Tracking"]["Pose"]["enable"])
         self.checkbox6.setChecked(g.config["Tracking"]["Hand"]["enable_hand_down"])
         self.checkbox7.setChecked(g.config["Tracking"]["Hand"]["enable_finger_action"])
         self.controller_checkbox1.setChecked(g.config["Tracking"]["LeftController"]["enable"])
@@ -653,6 +803,12 @@ class VideoWindow(QMainWindow):
         if key == "RightController":
             g.controller.right_hand.force_enable = value
 
+    def on_controller_connection_changed(self, hand, connected):
+        checkbox = self.controller_checkbox1 if hand == "Left" else self.controller_checkbox2
+        checkbox.blockSignals(True)
+        checkbox.setChecked(connected)
+        checkbox.blockSignals(False)
+
     def toggle_mouse(self, value):
         g.config["Mouse"]["enable"] = value
 
@@ -667,6 +823,19 @@ class VideoWindow(QMainWindow):
 
     def toggle_finger_action(self, value):
         g.config["Tracking"]["Hand"]["enable_finger_action"] = value
+
+    def update_hand_return_time(self):
+        text = self.hand_return_time_input.text().strip()
+        if not text:
+            self.update_hand_return_time_input()
+            return
+        value = max(0.0, min(60.0, float(text)))
+        g.config["Tracking"]["Hand"]["hand_return_time"] = value
+        self.hand_return_time_input.setText(f"{value:g}")
+
+    def update_hand_return_time_input(self):
+        value = g.config["Tracking"]["Hand"].get("hand_return_time", 0.5)
+        self.hand_return_time_input.setText(f"{float(value):g}")
 
     def copy_changed_file(self, source, destination):
         if not os.path.exists(source):
@@ -691,9 +860,51 @@ class VideoWindow(QMainWindow):
                 changed = self.copy_changed_file(source, destination) or changed
         return changed
 
+    def file_matches(self, source, destination):
+        return (
+            os.path.exists(source)
+            and os.path.exists(destination)
+            and filecmp.cmp(source, destination, shallow=False)
+        )
+
+    def copy_missing_files_and_changed_dlls(self, source_root, destination_root):
+        if not os.path.exists(source_root):
+            return False
+        changed = False
+        for dir_path, _, filenames in os.walk(source_root):
+            rel_dir = os.path.relpath(dir_path, source_root)
+            target_dir = destination_root if rel_dir == "." else os.path.join(destination_root, rel_dir)
+            for filename in filenames:
+                source = os.path.join(dir_path, filename)
+                destination = os.path.join(target_dir, filename)
+                is_dll = filename.lower().endswith(".dll")
+                if not os.path.exists(destination):
+                    os.makedirs(os.path.dirname(destination), exist_ok=True)
+                    shutil.copy2(source, destination)
+                    changed = True
+                elif is_dll and not filecmp.cmp(source, destination, shallow=False):
+                    shutil.copy2(source, destination)
+                    changed = True
+        return changed
+
+    def driver_files_complete(self, source_root, destination_root):
+        if not os.path.isdir(source_root) or not os.path.isdir(destination_root):
+            return False
+        for dir_path, _, filenames in os.walk(source_root):
+            rel_dir = os.path.relpath(dir_path, source_root)
+            target_dir = destination_root if rel_dir == "." else os.path.join(destination_root, rel_dir)
+            for filename in filenames:
+                source = os.path.join(dir_path, filename)
+                destination = os.path.join(target_dir, filename)
+                if not os.path.exists(destination):
+                    return False
+                if filename.lower().endswith(".dll") and not filecmp.cmp(source, destination, shallow=False):
+                    return False
+        return True
+
     def sync_installed_components(self, steamvr_driver_path, vrcfacetracking_path):
         if steamvr_driver_path is None:
-            return None
+            return {"updated": [], "error": None}
 
         app_root = os.path.dirname(os.path.abspath(__file__))
         updated = []
@@ -701,7 +912,7 @@ class VideoWindow(QMainWindow):
             for driver in ["vmt", "vrto3d"]:
                 source = os.path.join(app_root, "drivers", driver)
                 destination = os.path.join(steamvr_driver_path, driver)
-                if os.path.exists(destination) and self.copy_changed_tree(source, destination):
+                if self.copy_missing_files_and_changed_dlls(source, destination):
                     updated.append(driver)
 
             if vrcfacetracking_path is not None:
@@ -710,11 +921,14 @@ class VideoWindow(QMainWindow):
                 if os.path.exists(dll_destination) and self.copy_changed_file(dll_source, dll_destination):
                     updated.append("VRCFT-MediapipePro.dll")
         except (PermissionError, OSError) as exc:
-            return f"Could not update installed drivers. Close SteamVR/VRCFaceTracking and reopen ExVR.\n\n{exc}"
+            return {
+                "updated": updated,
+                "error": tr("Could not update installed drivers. Close SteamVR/VRCFaceTracking and reopen ExVR.") + f"\n\n{exc}",
+            }
 
         if updated:
             print("Updated installed components:", ", ".join(updated))
-        return None
+        return {"updated": updated, "error": None}
 
     def install_checking(self):
         # Open registry key to get Steam installation path
@@ -743,12 +957,19 @@ class VideoWindow(QMainWindow):
                 vrcfacetracking_path, "VRCFT-MediapipePro.dll"
             )
 
-            # Check all required paths
-            required_paths = [vrcfacetracking_module_path] + [
-                os.path.join(steamvr_driver_path, driver)
+            app_root = os.path.dirname(os.path.abspath(__file__))
+            drivers_complete = all(
+                self.driver_files_complete(
+                    os.path.join(app_root, "drivers", driver),
+                    os.path.join(steamvr_driver_path, driver)
+                )
                 for driver in ["vmt", "vrto3d"]
-            ]
-            if all(os.path.exists(path) for path in required_paths):
+            )
+            vrcfacetracking_complete = self.file_matches(
+                os.path.join(app_root, "drivers", "VRCFT-MediapipePro.dll"),
+                vrcfacetracking_module_path
+            )
+            if drivers_complete and vrcfacetracking_complete:
                 return True, steamvr_driver_path, vrcfacetracking_path, check_steamvr_path
             else:
                 return False, steamvr_driver_path, vrcfacetracking_path, check_steamvr_path
@@ -756,8 +977,18 @@ class VideoWindow(QMainWindow):
             print(f"Error accessing registry or file system: {e}")
             return False, None, None, None
 
+    def populate_priority_list(self):
+        for priority_key, label in PROCESS_PRIORITY_OPTIONS:
+            self.priority_selection.addItem(tr(label), priority_key)
+        self.update_priority_selection()
+
+    def update_priority_selection(self):
+        priority_key = g.config["Setting"]["priority"]
+        index = self.priority_selection.findData(priority_key)
+        self.priority_selection.setCurrentIndex(index if index >= 0 else 0)
+
     def set_process_priority(self):
-        priority_key = self.priority_selection.currentText()
+        priority_key = self.priority_selection.currentData()
         print(priority_key)
         # Define a mapping of priority indexes to their corresponding priority classes
         priority_classes = {
@@ -791,89 +1022,104 @@ class VideoWindow(QMainWindow):
             g.config["Model"]["provider"] = provider
             print(f"Model provider updated to: {provider}")
 
-    def display_message(self,title,message,style=""):
+    def display_message(self,title,message,style="",icon=QMessageBox.Critical):
         msg_box = QMessageBox()
-        msg_box.setIcon(QMessageBox.Critical)
-        msg_box.setText(message)
-        msg_box.setWindowTitle(title)
+        msg_box.setIcon(icon)
+        msg_box.setText(tr(message))
+        msg_box.setWindowTitle(tr(title))
         msg_box.setStyleSheet(style)
         msg_box.exec_()
         return
 
     def install_function(self):
-        self.install_state, steamvr_driver_path, vrcfacetracking_path, check_steamvr_path = (
-            self.install_checking()
-        )
-        if check_steamvr_path is not None:
-            self.steamvr_status_label.setText("SteamVR Installed")
-            self.steamvr_status_label.setStyleSheet("color: green; font-weight: bold;")
-        else:
-            self.steamvr_status_label.setText("SteamVR Not Installed")
-            self.steamvr_status_label.setStyleSheet("color: red; font-weight: bold;")
-        if self.install_state:
-            # Uninstall process
-            dll_path = os.path.join(vrcfacetracking_path, "VRCFT-MediapipePro.dll")
+        try:
+            self.install_state, steamvr_driver_path, vrcfacetracking_path, check_steamvr_path = (
+                self.install_checking()
+            )
+            self.steamvr_installed = check_steamvr_path is not None
+            if self.steamvr_installed:
+                self.steamvr_status_label.setText(tr("SteamVR Installed"))
+                self.steamvr_status_label.setStyleSheet("color: green; font-weight: bold;")
+            else:
+                self.steamvr_status_label.setText(tr("SteamVR Not Installed"))
+                self.steamvr_status_label.setStyleSheet("color: red; font-weight: bold;")
 
-            error_occurred = False
-            drivers_to_remove = ["vmt", "vrto3d"]
-            for driver in drivers_to_remove:
-                dir_path = os.path.join(steamvr_driver_path, driver)
+            if steamvr_driver_path is None or check_steamvr_path is None:
+                self.display_message("Error", "SteamVR is not installed or could not be found.")
+                return
+
+            if self.install_state:
+                # Uninstall process
+                dll_path = os.path.join(vrcfacetracking_path, "VRCFT-MediapipePro.dll")
+
+                error_occurred = False
+                drivers_to_remove = ["vmt", "vrto3d"]
+                for driver in drivers_to_remove:
+                    dir_path = os.path.join(steamvr_driver_path, driver)
+                    try:
+                        shutil.rmtree(dir_path)
+                    except FileNotFoundError:
+                        pass
+                    except Exception:
+                        error_occurred = True
+                    if os.path.exists(dir_path):
+                        error_occurred = True
+                if error_occurred:
+                    self.display_message("Error", "SteamVR is running, Please close SteamVR and try again.")
+                    return
                 try:
-                    shutil.rmtree(dir_path)
+                    os.remove(dll_path)
                 except FileNotFoundError:
                     pass
-                except Exception as e:
-                    error_occurred = True
-                if os.path.exists(dir_path):
-                    error_occurred = True
-            if error_occurred:
-                self.display_message("Error", "SteamVR is running, Please close SteamVR and try again.")
-                return
-            try:
-                os.remove(dll_path)
-            except PermissionError:
-                self.display_message("Error", "VRCFT is running, please close VRCFT and try again.")
-                return
-            self.install_button.setText("Install Drivers")
-            self.install_button.setStyleSheet("QPushButton { background-color: blue; color: white; }")
-        else:
-            # Install process
-            app_root = os.path.dirname(os.path.abspath(__file__))
-            for driver in ["vmt", "vrto3d"]:
-                source = os.path.join(app_root, "drivers", driver)
-                destination = os.path.join(steamvr_driver_path, driver)
-                if not os.path.exists(destination):
-                    shutil.copytree(source, destination)
-                else:
-                    self.copy_changed_tree(source, destination)
-            dll_source = os.path.join(app_root, "drivers", "VRCFT-MediapipePro.dll")
-            dll_destination = os.path.join(
-                vrcfacetracking_path, "VRCFT-MediapipePro.dll"
-            )
-            if not os.path.exists(dll_destination):
-                os.makedirs(os.path.dirname(dll_destination), exist_ok=True)
-                shutil.copy(dll_source, dll_destination)
+                except PermissionError:
+                    self.display_message("Error", "VRCFT is running, please close VRCFT and try again.")
+                    return
+                self.install_state = False
+                self.install_button.setText(tr("Install Drivers"))
+                self.install_button.setStyleSheet("QPushButton { background-color: blue; color: white; }")
             else:
-                self.copy_changed_file(dll_source, dll_destination)
-            self.install_button.setText("Uninstall Drivers")
-            self.install_button.setStyleSheet("")
+                # Install process
+                app_root = os.path.dirname(os.path.abspath(__file__))
+                for driver in ["vmt", "vrto3d"]:
+                    source = os.path.join(app_root, "drivers", driver)
+                    destination = os.path.join(steamvr_driver_path, driver)
+                    if not os.path.exists(destination):
+                        shutil.copytree(source, destination)
+                    else:
+                        self.copy_changed_tree(source, destination)
+                dll_source = os.path.join(app_root, "drivers", "VRCFT-MediapipePro.dll")
+                dll_destination = os.path.join(
+                    vrcfacetracking_path, "VRCFT-MediapipePro.dll"
+                )
+                if not os.path.exists(dll_destination):
+                    os.makedirs(os.path.dirname(dll_destination), exist_ok=True)
+                    shutil.copy(dll_source, dll_destination)
+                else:
+                    self.copy_changed_file(dll_source, dll_destination)
+                self.install_state = True
+                self.install_button.setText(tr("Uninstall Drivers"))
+                self.install_button.setStyleSheet("")
+        except (PermissionError, OSError) as exc:
+            self.display_message(
+                "Error",
+                tr("Could not install/update drivers. Close SteamVR/VRCFaceTracking and try again.") + "\n\n" + str(exc),
+            )
 
     def toggle_camera(self):
         self.update_checkboxes()
         self.update_sliders()
-        self.update_camera_resolution()
-        self.update_camera_fps()
+        self.update_camera_performance()
         self.update_model_provider()
         if self.video_thread and self.video_thread.isRunning():
             stop_hotkeys()
-            self.toggle_button.setText("Start Tracking")
+            self.toggle_button.setText(tr("Start Tracking"))
             self.toggle_button.setStyleSheet(
                 "QPushButton { background-color: green; color: white; }"
             )
             self.thread_stopped()
         else:
             apply_hotkeys()
-            self.toggle_button.setText("Stop Tracking")
+            self.toggle_button.setText(tr("Stop Tracking"))
             self.toggle_button.setStyleSheet(
                 "QPushButton { background-color: red; color: white; }"
             )
@@ -884,27 +1130,29 @@ class VideoWindow(QMainWindow):
                 if ip_camera_url != ""
                 else self.get_camera_source(selected_camera_name)
             )
+            self.update_camera_performance()
             self.video_thread = VideoCaptureThread(source,g.config["Setting"]["camera_width"],g.config["Setting"]["camera_height"],g.config["Setting"]["camera_fps"])
             self.video_thread.frame_ready.connect(self.update_frame)
             self.video_thread.start()
 
             # controller
             self.controller_thread = ControllerApp()
+            self.controller_thread.controller_connection_changed.connect(self.on_controller_connection_changed)
             self.controller_thread.start()
 
 
-        self.show_frame_button.setText("Show Frame")
+        self.show_frame_button.setText(tr("Show Frame"))
 
     def toggle_video_display(self):
         if self.video_thread:
             if self.video_thread.show_image:
                 self.video_thread.show_image = False
-                self.show_frame_button.setText("Show Frame")
+                self.show_frame_button.setText(tr("Show Frame"))
             else:
                 self.video_thread.show_image = True
-                self.show_frame_button.setText("Hide Frame")
+                self.show_frame_button.setText(tr("Hide Frame"))
         else:
-            self.show_frame_button.setText("Show Frame")
+            self.show_frame_button.setText(tr("Show Frame"))
         self.image_label.setPixmap(QPixmap())
 
     def get_camera_source(self, selected_camera_name):
@@ -947,60 +1195,55 @@ class VideoWindow(QMainWindow):
         for device in dshow_devices + msmf_devices:
             self.camera_selection.addItem(device.name)
 
-    def populate_resolution_list(self):
-        resolutions = [
-            (160, 90),
-            (160, 120),
-            (320, 180),
-            (320, 240),
-            (640, 360),
-            (640, 480),
-            (800, 450),
-            (800, 600),
-            (1280, 720),
-            (1920, 1080),
-            (2560, 1440),
-            (3840, 2160)
-        ]
-        for width, height in resolutions:
-            gcd = np.gcd(width, height)
-            aspect_ratio = f"{width // gcd}:{height // gcd}"
-            self.camera_resolution_selection.addItem(f"{width} x {height} ({aspect_ratio})", (width, height))
+    def populate_camera_performance_list(self):
+        for index, (label, _) in enumerate(CAMERA_PERFORMANCE_PRESETS, start=1):
+            self.camera_performance_selection.addItem(label, index)
+        preset_index = self.resolve_camera_performance_index()
+        self.camera_performance_selection.setCurrentIndex(preset_index - 1)
+        self.update_camera_performance()
+
+    def populate_camera_aspect_list(self):
+        self.camera_aspect_selection.addItems(["16:9", "4:3"])
+        configured_aspect = g.config["Setting"].get("camera_aspect", "4:3")
+        index = self.camera_aspect_selection.findText(configured_aspect)
+        self.camera_aspect_selection.setCurrentIndex(index if index >= 0 else 0)
+
+    def resolve_camera_performance_index(self):
+        configured_index = g.config["Setting"].get("camera_performance")
+        if configured_index is not None:
+            try:
+                configured_index = int(configured_index)
+                if 1 <= configured_index <= len(CAMERA_PERFORMANCE_PRESETS):
+                    return configured_index
+            except (TypeError, ValueError):
+                pass
+
         config_width = int(g.config["Setting"]["camera_width"])
         config_height = int(g.config["Setting"]["camera_height"])
-        config_resolution = (config_width, config_height)
-        if config_resolution in resolutions:
-            index = resolutions.index(config_resolution)
-            self.camera_resolution_selection.setCurrentIndex(index)
-        else:
-            self.camera_resolution_selection.setCurrentIndex(0)
+        for index, (_, resolutions) in enumerate(CAMERA_PERFORMANCE_PRESETS, start=1):
+            if (config_width, config_height) in resolutions.values():
+                return index
+        return 3
 
-    def populate_fps_list(self):
-        fps_list = [30,60]
-        for fps in fps_list:
-            self.camera_fps_selection.addItem(f"{fps} FPS")
-        config_fps = int(g.config["Setting"]["camera_fps"])
-        if config_fps in fps_list:
-            index = fps_list.index(config_fps)
-            self.camera_fps_selection.setCurrentIndex(index)
-        else:
-            self.camera_fps_selection.setCurrentIndex(0)
+    def resolve_camera_aspect(self):
+        selected_aspect = g.config["Setting"].get("camera_aspect", "4:3")
+        if selected_aspect in ("4:3", "16:9"):
+            return selected_aspect
+        return "4:3"
 
-    def update_camera_resolution(self):
-        # Get the currently selected resolution
-        current_resolution = self.camera_resolution_selection.currentData()
-        if current_resolution:
-            width, height = current_resolution
+    def update_camera_performance(self, camera_aspect=None):
+        g.config["Setting"]["camera_aspect"] = self.camera_aspect_selection.currentText()
+        current_performance = self.camera_performance_selection.currentData()
+        if current_performance:
+            index = current_performance
+            aspect = camera_aspect or self.resolve_camera_aspect()
+            _, resolutions = CAMERA_PERFORMANCE_PRESETS[index - 1]
+            width, height = resolutions[aspect]
+            g.config["Setting"]["camera_performance"] = index
             g.config["Setting"]["camera_width"] = width
             g.config["Setting"]["camera_height"] = height
-            print(f"Resolution updated to: {width} x {height}")
-
-    def update_camera_fps(self):
-        # Get the currently selected resolution
-        current_fps = self.camera_fps_selection.currentData()
-        if current_fps:
-            g.config["Setting"]["camera_fps"] = current_fps
-            print(f"FPS updated to: {current_fps}")
+            g.config["Setting"]["camera_fps"] = CAMERA_TARGET_FPS
+            print(f"Camera performance updated to: {width}x{height} / {CAMERA_TARGET_FPS} FPS ({aspect})")
 
     def update_camera_ip(self, value):
         g.config["Setting"]["camera_ip"] = value 
@@ -1022,6 +1265,7 @@ class VideoWindow(QMainWindow):
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
+    install_language(app, g.config["Setting"].get("language", LANGUAGE_SYSTEM))
     window = VideoWindow()
     window.show()
     sys.exit(app.exec_())
