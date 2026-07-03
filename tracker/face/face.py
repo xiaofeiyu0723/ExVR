@@ -59,14 +59,15 @@ def is_hand_in_face():
     target_indices = [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20]
 
     for hand in g.hand_landmarks:
-        hand_points = [(h.x, h.y) for i, h in enumerate(hand.landmark) if
-                       i in target_indices and min_x <= h.x <= max_x and min_y <= h.y <= max_y]
+        hand_points = [(h.x, h.y) for i, h in enumerate(hand.landmark) if i in target_indices]
         if hand_points:
-            hand_min_x = min([p[0] for p in hand_points])
-            hand_max_x = max([p[0] for p in hand_points])
-            hand_min_y = min([p[1] for p in hand_points])
-            hand_max_y = max([p[1] for p in hand_points])
-            blocked_area += (hand_max_x - hand_min_x) * (hand_max_y - hand_min_y)
+            hand_min_x = min(p[0] for p in hand_points)
+            hand_max_x = max(p[0] for p in hand_points)
+            hand_min_y = min(p[1] for p in hand_points)
+            hand_max_y = max(p[1] for p in hand_points)
+            overlap_w = max(0.0, min(max_x, hand_max_x) - max(min_x, hand_min_x))
+            overlap_h = max(0.0, min(max_y, hand_max_y) - max(min_y, hand_min_y))
+            blocked_area += overlap_w * overlap_h
 
     if blocked_area > 0:
         normalized_area = blocked_area / face_area

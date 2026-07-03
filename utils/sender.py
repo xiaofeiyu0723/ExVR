@@ -59,6 +59,22 @@ def calculate_endpoint(start_point, length, euler_angles):
     endpoint = np.array(start_point) + rotated_vector
     return endpoint
 
+
+_VMT_WRIST_BONE_POSITION = {
+    True: np.asarray([-0.03403769, 0.03650266, 0.16472160], dtype=float),
+    False: np.asarray([0.03403769, 0.03650266, 0.16472160], dtype=float),
+}
+
+def apply_vmt_wrist_alignment(position, quat, is_left_hand):
+    hand_config = g.config["Tracking"]["Hand"]
+    controller_position = np.asarray(position, dtype=float)
+    controller_rotation = R.from_quat(quat)
+    if hand_config.get("vmt_align_wrist_bone", False):
+        wrist_position = _VMT_WRIST_BONE_POSITION[is_left_hand]
+        controller_position = controller_position - controller_rotation.apply(wrist_position)
+
+    return tuple(controller_position), quat
+
 def handling_hand_data(data, default_data):
     if g.config["Tracking"]["LeftController"]["enable"]:
         left_hand_type="Controller"
@@ -110,11 +126,11 @@ def handling_hand_data(data, default_data):
     quat_r = R.from_euler("xyz", [yaw_r, pitch_r, roll_r], degrees=True).as_quat()
     matrix_r=R.from_euler("xyz", [yaw_r, pitch_r, roll_r], degrees=True).as_matrix()
 
-    wrist_position_l = (x_l, y_l, z_l)
+    wrist_position_l, quat_l = apply_vmt_wrist_alignment((x_l, y_l, z_l), quat_l, True)
     g.controller.left_hand.position = wrist_position_l
     g.controller.left_hand.rotation = quat_l
 
-    wrist_position_r = (x_r, y_r, z_r)
+    wrist_position_r, quat_r = apply_vmt_wrist_alignment((x_r, y_r, z_r), quat_r, False)
     g.controller.right_hand.position = wrist_position_r
     g.controller.right_hand.rotation = quat_r
 

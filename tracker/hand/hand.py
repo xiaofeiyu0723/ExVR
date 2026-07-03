@@ -21,6 +21,7 @@ class HandDepthPredictor:
         monomials = np.prod(values[:, None, :] ** self.powers[None, :, :], axis=2)
         return monomials @ self.coef + self.intercept
 
+
 def draw_hand_landmarks(rgb_image):
     MARGIN = 10  # pixels
     FONT_SIZE = 1
@@ -79,6 +80,42 @@ def calc_angle(vec1, vec2):
         cross = np.linalg.norm(np.cross(vec1, vec2))
         dot = np.dot(vec1, vec2)
         return np.degrees(np.abs(np.arctan2(cross, dot)))
+
+
+def _vrchat_palm_anchor_image(image_hand_pose):
+    internal = _vrchat_internal_hand_pose(image_hand_pose)
+    return internal[0] + 0.5 * (internal[5] - internal[0])
+
+
+def _vrchat_head_anchor_image():
+    if g.face_landmarks and len(g.face_landmarks[0]) > 356:
+        face = g.face_landmarks[0]
+        x = 0.5 * (face[127].x + face[356].x) - 0.5
+        y = 0.5 - 0.5 * (face[127].y + face[356].y)
+        return np.asarray([x, y], dtype=np.float32)
+    return np.zeros(2, dtype=np.float32)
+
+
+def _soft_limit_depth(value, center=-0.25, scale=0.28):
+    return center + scale * np.tanh((value - center) / scale)
+
+
+def get_fitted_hand_distance(image_hand_pose):
+    keypoints = [5, 9, 13]
+    data = image_hand_pose - image_hand_pose[0]
+    data = np.asarray(data[keypoints].flatten()).reshape(1, -1)
+    pred_distance = g.hand_regression_model.predict(data)
+    hand_distance = pred_distance[0]
+
+    head_depth = np.round(g.data["HeadImagePosition"][2]["v"], 2)
+    distance_scalar = np.clip(head_depth, None, -1e-8)
+    hand_distance = hand_distance / distance_scalar
+
+    hand_distance += g.config["Tracking"]["Hand"]["z_shifting"]
+    hand_distance *= g.config["Tracking"]["Hand"]["z_scalar"]
+    mapped_distance = np.interp(hand_distance, [-2, 2], [-1.2, 1])
+    return float(_soft_limit_depth(mapped_distance))
+
 
 FINGER_NAMES = ("thumb", "index", "middle", "ring", "pinky")
 _VRC_EPSILON = np.float32(9.999999747378752e-06)
@@ -321,38 +358,13 @@ def hand_pred_handling(detection_result):
             hand_pose = get_hand_pose(world_landmarks)
             image_landmarks = hand_landmarks.landmark
             image_hand_pose = get_hand_pose(image_landmarks, False)
-            # hand_position = [g.data["HeadImagePosition"][0]["v"], g.data["HeadImagePosition"][1]["v"],
-            #                  g.data["HeadImagePosition"][2]["v"]] - image_hand_pose[2]
-            hand_position = [g.data["HeadImagePosition"][0]["v"], g.data["HeadImagePosition"][1]["v"],
-                             g.data["HeadImagePosition"][2]["v"]] - image_hand_pose[9]
+            hand_anchor = _vrchat_palm_anchor_image(image_hand_pose)
+            head_anchor = _vrchat_head_anchor_image()
+            hand_delta = hand_anchor[:2] - head_anchor
+            hand_position = np.asarray([-hand_delta[0], hand_delta[1], 0.0], dtype=np.float32)
             hand_position[:2] *= [g.config["Tracking"]["Hand"]["x_scalar"], g.config["Tracking"]["Hand"]["y_scalar"]]
-            # hand_distance_temp=np.linalg.norm(np.array(image_hand_pose[1][:2]) - np.array(image_hand_pose[2][:2]))
-            # import keyboard
-            # import pickle
-            # if keyboard.is_pressed('a'):
-            #     filename = f'./depth_dataset/image_hand_pose_{hand_name}_{index}.pkl'
-            #     with open(filename, 'wb') as f:
-            #         pickle.dump(image_hand_pose, f)
-            #     print(f"image_hand_pose {filename}")
-            #     index += 1
 
-            keypoints = [5, 9, 13]
-            data = image_hand_pose - image_hand_pose[0]
-            data = data[keypoints].flatten()
-            data = np.array(data)
-            data = data.reshape(1, -1)  # Reshape to 2D array
-            pred_distance = g.hand_regression_model.predict(data)
-            hand_distance_temp=pred_distance[0]
-
-            rounded_value = np.round(g.data["HeadImagePosition"][2]["v"], 2)
-            clipped_value = np.clip(rounded_value, None, -1e-8)
-            distance_scalar = clipped_value
-
-            hand_distance = hand_distance_temp/distance_scalar
-
-            hand_distance += g.config["Tracking"]["Hand"]["z_shifting"]
-            hand_distance *= g.config["Tracking"]["Hand"]["z_scalar"]
-            hand_distance = np.interp(hand_distance, [-2, 2], [-1.2, 1])
+            hand_distance = get_fitted_hand_distance(image_hand_pose)
             # print(hand_distance)
             if g.config["Tracking"]["Hand"]["only_front"]:
                 hand_distance = np.clip(hand_distance, -0.8, 0.0)
@@ -399,11 +411,10 @@ def hand_pred_handling(detection_result):
                         g.latest_data[73] = wrist_rot[0]
                         g.latest_data[74] = wrist_rot[1]
                         g.latest_data[75] = wrist_rot[2]
-                    if position_change_flag:
-                        if not g.config["Tracking"]["Pose"]["enable"]:
-                            g.latest_data[70] = hand_position[0]
-                            g.latest_data[71] = hand_position[1]
-                        g.latest_data[72] = hand_position[2]
+                    if not g.config["Tracking"]["Pose"]["enable"]:
+                        g.latest_data[70] = hand_position[0]
+                        g.latest_data[71] = hand_position[1]
+                    g.latest_data[72] = hand_position[2]
 
                     g.latest_data[82] = finger_0
                     g.latest_data[83] = finger_1
@@ -420,11 +431,10 @@ def hand_pred_handling(detection_result):
                         g.data["LeftHandRotation"][0]["v"] = wrist_rot[0]
                         g.data["LeftHandRotation"][1]["v"] = wrist_rot[1]
                         g.data["LeftHandRotation"][2]["v"] = wrist_rot[2]
-                    if position_change_flag:
-                        if not g.config["Tracking"]["Pose"]["enable"]:
-                            g.data["LeftHandPosition"][0]["v"] = hand_position[0]
-                            g.data["LeftHandPosition"][1]["v"] = hand_position[1]
-                        g.data["LeftHandPosition"][2]["v"] = hand_position[2]
+                    if not g.config["Tracking"]["Pose"]["enable"]:
+                        g.data["LeftHandPosition"][0]["v"] = hand_position[0]
+                        g.data["LeftHandPosition"][1]["v"] = hand_position[1]
+                    g.data["LeftHandPosition"][2]["v"] = hand_position[2]
 
                     g.data["LeftHandFinger"][0]["v"] = finger_0
                     g.data["LeftHandFinger"][1]["v"] = finger_1
@@ -443,11 +453,10 @@ def hand_pred_handling(detection_result):
                         g.latest_data[79] = wrist_rot[0]
                         g.latest_data[80] = wrist_rot[1]
                         g.latest_data[81] = wrist_rot[2]
-                    if position_change_flag:
-                        if not g.config["Tracking"]["Pose"]["enable"]:
-                            g.latest_data[76] = hand_position[0]
-                            g.latest_data[77] = hand_position[1]
-                        g.latest_data[78] = hand_position[2]
+                    if not g.config["Tracking"]["Pose"]["enable"]:
+                        g.latest_data[76] = hand_position[0]
+                        g.latest_data[77] = hand_position[1]
+                    g.latest_data[78] = hand_position[2]
 
                     g.latest_data[87] = finger_0
                     g.latest_data[88] = finger_1
@@ -464,11 +473,10 @@ def hand_pred_handling(detection_result):
                         g.data["RightHandRotation"][0]["v"] = wrist_rot[0]
                         g.data["RightHandRotation"][1]["v"] = wrist_rot[1]
                         g.data["RightHandRotation"][2]["v"] = wrist_rot[2]
-                    if position_change_flag:
-                        if not g.config["Tracking"]["Pose"]["enable"]:
-                            g.data["RightHandPosition"][0]["v"] = hand_position[0]
-                            g.data["RightHandPosition"][1]["v"] = hand_position[1]
-                        g.data["RightHandPosition"][2]["v"] = hand_position[2]
+                    if not g.config["Tracking"]["Pose"]["enable"]:
+                        g.data["RightHandPosition"][0]["v"] = hand_position[0]
+                        g.data["RightHandPosition"][1]["v"] = hand_position[1]
+                    g.data["RightHandPosition"][2]["v"] = hand_position[2]
 
                     g.data["RightHandFinger"][0]["v"] = finger_0
                     g.data["RightHandFinger"][1]["v"] = finger_1
@@ -548,6 +556,6 @@ def initialize_hand():
 
 
 def initialize_hand_depth():
-    feature_model = joblib.load('./models/hand_feature_model.pkl')
-    hand_regression_model = joblib.load('./models/hand_regression_model.pkl')
+    feature_model = joblib.load("./models/hand_feature_model.pkl")
+    hand_regression_model = joblib.load("./models/hand_regression_model.pkl")
     return None, HandDepthPredictor(feature_model, hand_regression_model)
