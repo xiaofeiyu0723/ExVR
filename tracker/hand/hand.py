@@ -400,10 +400,15 @@ def hand_pred_handling(detection_result):
                 finger_0, finger_1, finger_2, finger_3, finger_4 = finger_curl["thumb"],finger_curl["index"],finger_curl["middle"],finger_curl["ring"],finger_curl["pinky"]
                 splay_0, splay_1, splay_2, splay_3, splay_4 = finger_splay["thumb"],finger_splay["index"],finger_splay["middle"],finger_splay["ring"],finger_splay["pinky"]
                 if g.config["Tracking"]["Hand"]["enable_finger_action"]:
+                    is_left_hand = hand_name == "Left"
                     if finger_1 < g.config["Tracking"]["Hand"]["trigger_threshold"]:
-                        g.controller.send_trigger(True if hand_name=="Left" else False, 0, 1)
+                        g.controller.send_trigger(is_left_hand, 0, 1)
                     else:
-                        g.controller.send_trigger(True if hand_name=="Left" else False, 0, 0)
+                        g.controller.send_trigger(is_left_hand, 0, 0)
+                    if finger_2 < g.config["Tracking"]["Hand"]["trigger_threshold"]:
+                        g.controller.send_trigger(is_left_hand, 2, 1)
+                    else:
+                        g.controller.send_trigger(is_left_hand, 2, 0)
 
             else:
                 finger_0, finger_1, finger_2, finger_3, finger_4 = 1.0, 1.0, 1.0, 1.0, 1.0
