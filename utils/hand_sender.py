@@ -32,6 +32,8 @@ class GloveControllerSender:
         self.right_controller = self.create_transform(4, 6)
         self.last_left_hand = self.create_transform(1, 5)
         self.last_right_hand = self.create_transform(2, 6)
+        self.partial_handoff_frames = {True: 0, False: 0}
+        self.partial_handoff_hold_frames = 4
         self.vmt_init()
 
     def create_transform(self, device_index: int, enable_type: int):
@@ -147,6 +149,15 @@ class GloveControllerSender:
         self.send_joystick(is_left_hand, 1, 0.0, 0.0, use_controller=True)
         self.send_joystick_click(is_left_hand, 1, 0, use_controller=True)
 
+    def partial_handoff_owns_controller(self, is_left_hand):
+        target = self.get_target(is_left_hand, use_controller=True)
+        return self.partial_handoff_frames[is_left_hand] > 0 and not target.enable and not target.force_enable
+
+    def cancel_partial_handoff(self, is_left_hand):
+        if self.partial_handoff_owns_controller(is_left_hand):
+            self.disable_hand(self.get_target(is_left_hand, use_controller=True))
+        self.partial_handoff_frames[is_left_hand] = 0
+
     def handoff_full_hand_to_partial_disconnect(self, is_left_hand, source: Transform):
         partial_target = self.get_target(is_left_hand, use_controller=True)
         if partial_target.enable or partial_target.force_enable:
@@ -155,7 +166,20 @@ class GloveControllerSender:
         self.copy_transform_data(partial_target, source)
         self.send_hand(partial_target)
         self.send_finger(partial_target)
-        self.disable_hand(partial_target)
+        self.partial_handoff_frames[is_left_hand] = self.partial_handoff_hold_frames
+
+    def update_partial_handoff(self, is_left_hand):
+        if not self.partial_handoff_owns_controller(is_left_hand):
+            self.partial_handoff_frames[is_left_hand] = 0
+            return False
+
+        partial_target = self.get_target(is_left_hand, use_controller=True)
+        self.send_hand(partial_target)
+        self.send_finger(partial_target)
+        self.partial_handoff_frames[is_left_hand] -= 1
+        if self.partial_handoff_frames[is_left_hand] <= 0:
+            self.disable_hand(partial_target)
+        return True
 
     def vmt_init(self):
         self.client.send_message(
@@ -177,6 +201,7 @@ class GloveControllerSender:
                     target.change_flag = False
         else:
             if not use_controller:
+                self.cancel_partial_handoff(is_left_hand)
                 self.copy_transform_data(self.get_last_hand(is_left_hand), target)
                 target.change_flag = True
             self.send_hand(target)
@@ -187,5 +212,7 @@ class GloveControllerSender:
         right_hand_disable = g.config["Tracking"]["Hand"]["enable_hand_down"] or self.right_controller.enable
         self.update_target(True, self.left_hand, disable_when_down=left_hand_disable)
         self.update_target(False, self.right_hand, disable_when_down=right_hand_disable)
-        self.update_target(True, self.left_controller, use_controller=True)
-        self.update_target(False, self.right_controller, use_controller=True)
+        if not self.update_partial_handoff(True):
+            self.update_target(True, self.left_controller, use_controller=True)
+        if not self.update_partial_handoff(False):
+            self.update_target(False, self.right_controller, use_controller=True)
