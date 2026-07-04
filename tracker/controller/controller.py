@@ -242,15 +242,17 @@ class ControllerApp(QThread):
         key = f"{hand}Controller"
         if key not in g.config["Tracking"]:
             return
-        target = g.controller.left_hand if hand == "Left" else g.controller.right_hand
+        target = g.controller.left_controller if hand == "Left" else g.controller.right_controller
         changed = (
             g.config["Tracking"][key]["enable"] != connected
             or target.force_enable != connected
         )
         g.config["Tracking"][key]["enable"] = connected
+        target.enable = connected
         target.force_enable = connected
         if not connected:
             self.release_controller_inputs(hand)
+            g.controller.disable_hand(target)
         if changed:
             self.controller_connection_changed.emit(hand, connected)
             print(f"{hand} controller {'connected' if connected else 'disconnected'}")
@@ -275,13 +277,7 @@ class ControllerApp(QThread):
         previous["joystickClicked"] = False
         previous["buttons"] = {btn: False for btn in previous["buttons"]}
         previous["fingers"] = [1, 1, 1, 1, 1]
-        g.controller.send_trigger(is_left, 0, 0)
-        g.controller.send_trigger(is_left, 2, 0)
-        g.controller.send_button(is_left, 0, 0)
-        g.controller.send_button(is_left, 1, 0)
-        g.controller.send_button(is_left, 3, 0)
-        g.controller.send_joystick(is_left, 1, 0, 0)
-        g.controller.send_joystick_click(is_left, 1, 0)
+        g.controller.release_controller_inputs(is_left)
 
     def update_controller_data(self, hand_name, hand_position, wrist_rot, finger_states):
         if g.config["Smoothing"]["enable"]:
@@ -327,25 +323,25 @@ class ControllerApp(QThread):
             g.data["Position"][2]["s"] = g.default_data["Position"][2]["s"]
 
         if controller.joystick != prev_state["joystick"]:
-            g.controller.send_joystick(is_left, 1, controller.joystick[0], -controller.joystick[1])
+            g.controller.send_joystick(is_left, 1, controller.joystick[0], -controller.joystick[1], use_controller=True)
             prev_state["joystick"] = controller.joystick
         # Check joystick click state
         if controller.joystickClicked != prev_state["joystickClicked"]:
-            g.controller.send_joystick_click(is_left, 1, 1 if controller.joystickClicked else 0)
+            g.controller.send_joystick_click(is_left, 1, 1 if controller.joystickClicked else 0, use_controller=True)
             prev_state["joystickClicked"] = controller.joystickClicked
         # Check button states
         for btn, state in controller.buttons.items():
             if state != prev_state["buttons"][btn]:
                 if btn == "trigger":
-                    g.controller.send_trigger(is_left, 0, 1 if state else 0)
+                    g.controller.send_trigger(is_left, 0, 1 if state else 0, use_controller=True)
                 elif btn == "grab":
-                    g.controller.send_trigger(is_left, 2, 1 if state else 0)
+                    g.controller.send_trigger(is_left, 2, 1 if state else 0, use_controller=True)
                 elif btn == "system":
-                    g.controller.send_button(is_left, 0, 1 if state else 0)
+                    g.controller.send_button(is_left, 0, 1 if state else 0, use_controller=True)
                 elif btn == "button0":
-                    g.controller.send_button(is_left, 1, 1 if state else 0)
+                    g.controller.send_button(is_left, 1, 1 if state else 0, use_controller=True)
                 elif btn == "button1":
-                    g.controller.send_button(is_left, 3, 1 if state else 0)
+                    g.controller.send_button(is_left, 3, 1 if state else 0, use_controller=True)
                 # Update previous state
                 prev_state["buttons"][btn] = state
 

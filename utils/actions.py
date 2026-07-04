@@ -101,7 +101,12 @@ controller_enablement_timer = {True: None, False: None}
 def _controller_tracking_key(value):
     return "LeftController" if value else "RightController"
 
+def _use_controller_target(value):
+    return g.config["Tracking"][_controller_tracking_key(value)]["enable"]
+
 def _controller_transform(value):
+    if _use_controller_target(value):
+        return g.controller.left_controller if value else g.controller.right_controller
     return g.controller.left_hand if value else g.controller.right_hand
 
 def _controller_needs_temporary_enable(value):
@@ -136,18 +141,18 @@ def grab(value, index):
     # print(value, grab_status[value])
     if grab_status[value]:
         _temporarily_enable_controller(value)
-        g.controller.send_trigger(value, index, 1.0)
+        g.controller.send_trigger(value, index, 1.0, use_controller=_use_controller_target(value))
     else:
-        g.controller.send_trigger(value, index, 0.0)
+        g.controller.send_trigger(value, index, 0.0, use_controller=_use_controller_target(value))
         _schedule_controller_disable(value)
 
 
 def trigger_press(value, index):
     _temporarily_enable_controller(value)
-    g.controller.send_trigger(value, index, 1.0)
+    g.controller.send_trigger(value, index, 1.0, use_controller=_use_controller_target(value))
 
 def trigger_release(value, index):
-    g.controller.send_trigger(value, index, 0.0)
+    g.controller.send_trigger(value, index, 0.0, use_controller=_use_controller_target(value))
     _schedule_controller_disable(value)
 
 
@@ -162,7 +167,7 @@ def joystick_up(value, index):
     x = round(joystick_value * math.cos(angle), 1)
     y = round(joystick_value * math.sin(angle), 1)
     joystick_status = (x, y)
-    g.controller.send_joystick(value, index, joystick_status[0], joystick_status[1])
+    g.controller.send_joystick(value, index, joystick_status[0], joystick_status[1], use_controller=_use_controller_target(value))
 
 def joystick_down(value, index):
     global joystick_status, joystick_step, angle, joystick_value
@@ -172,12 +177,12 @@ def joystick_down(value, index):
     y = round(joystick_value * math.sin(angle), 1)
     joystick_status = (x, y)
     # print(joystick_status)
-    g.controller.send_joystick(value, index, joystick_status[0], joystick_status[1])
+    g.controller.send_joystick(value, index, joystick_status[0], joystick_status[1], use_controller=_use_controller_target(value))
 
 
 def joystick_middle(value, index):
     global joystick_status,joystick_value
-    g.controller.send_joystick(value, index, 0.0, 0.0)
+    g.controller.send_joystick(value, index, 0.0, 0.0, use_controller=_use_controller_target(value))
     joystick_status = (0.0, joystick_value)
     _schedule_controller_disable(value)
     # print(joystick_status)
@@ -189,7 +194,7 @@ def joystick_middle_delay(value, index):
 
     def joystick_middle():
         global joystick_middle_timer, joystick_status
-        g.controller.send_joystick(value, index, 0.0, 0.0)
+        g.controller.send_joystick(value, index, 0.0, 0.0, use_controller=_use_controller_target(value))
         joystick_status = (0.0, joystick_value)
         _schedule_controller_disable(value)
         # print(joystick_status)

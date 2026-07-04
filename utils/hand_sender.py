@@ -17,6 +17,8 @@ class Transform:
     enable: bool
     force_enable: bool
     change_flag: bool
+    device_index: int
+    enable_type: int
 
 # GloveControllerSender equivalent in Python
 class GloveControllerSender:
@@ -24,14 +26,46 @@ class GloveControllerSender:
         # Initialize OSC client
         self.client = udp_client.SimpleUDPClient(osc_ip, osc_port)
 
-        self.left_hand = Transform((0, 0, 0), (0, 0, 0, 1), (1.0, 1.0, 1.0, 1.0, 1.0), (0.0, 0.0, 0.0, 0.0, 0.0),False,False,False,True)
-        self.right_hand = Transform((0, 0, 0), (0, 0, 0, 1), (1.0, 1.0, 1.0, 1.0, 1.0), (0.0, 0.0, 0.0, 0.0, 0.0),False,False,False,True)
+        self.left_hand = self.create_transform(1, 5)
+        self.right_hand = self.create_transform(2, 6)
+        self.left_controller = self.create_transform(3, 5)
+        self.right_controller = self.create_transform(4, 6)
+        self.last_left_hand = self.create_transform(1, 5)
+        self.last_right_hand = self.create_transform(2, 6)
         self.vmt_init()
 
-    def send_hand(self, is_left_hand, target: Transform):
+    def create_transform(self, device_index: int, enable_type: int):
+        return Transform(
+            (0, 0, 0),
+            (0, 0, 0, 1),
+            (1.0, 1.0, 1.0, 1.0, 1.0),
+            (0.0, 0.0, 0.0, 0.0, 0.0),
+            False,
+            False,
+            False,
+            False,
+            device_index,
+            enable_type,
+        )
+
+    def get_target(self, is_left_hand, use_controller=False):
+        if use_controller:
+            return self.left_controller if is_left_hand else self.right_controller
+        return self.left_hand if is_left_hand else self.right_hand
+
+    def get_last_hand(self, is_left_hand):
+        return self.last_left_hand if is_left_hand else self.last_right_hand
+
+    def copy_transform_data(self, target: Transform, source: Transform):
+        target.position = source.position
+        target.rotation = source.rotation
+        target.finger = source.finger
+        target.splay = source.splay
+
+    def send_hand(self, target: Transform):
         message = [
-            1 if is_left_hand else 2,  # lefthand ? 1 : 2
-            5 if is_left_hand else 6,  # enable
+            target.device_index,
+            target.enable_type,
             0.0,  # timeoffset
             target.position[0],
             target.position[1],
@@ -49,15 +83,15 @@ class GloveControllerSender:
         #     self.client.send_message("/VMT/Joint/Driver", message)
         self.client.send_message("/VMT/Joint/Driver", message)
 
-    def disable_hand(self,is_left_hand):
-        message = [1 if is_left_hand else 2, 0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+    def disable_hand(self, target: Transform):
+        message = [target.device_index, 0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
         self.client.send_message("/VMT/Raw/Driver", message)
 
-    def send_finger(self, is_left_hand, target: Transform):
+    def send_finger(self, target: Transform):
         for i, value in enumerate(target.finger):
             index = i + 1
             message_0 = [
-                1 if is_left_hand else 2,  # lefthand ? 1 : 2
+                target.device_index,
                 int(index),
                 float(value),
                 0,
@@ -68,22 +102,25 @@ class GloveControllerSender:
             index = i + 1
             self.client.send_message(
                 "/VMT/Skeleton/Splay",
-                [1 if is_left_hand else 2, int(index), float(value)],
+                [target.device_index, int(index), float(value)],
             )
-        message_1 = [1 if is_left_hand else 2, 0.0]  # lefthand ? 1 : 2
+        message_1 = [target.device_index, 0.0]
         self.client.send_message("/VMT/Skeleton/Apply", message_1)
 
-    def send_button(self,is_left_hand, index,status):
-        message = [1 if is_left_hand else 2, int(index), 0.0, int(status)]
+    def send_button(self, is_left_hand, index, status, use_controller=False):
+        target = self.get_target(is_left_hand, use_controller)
+        message = [target.device_index, int(index), 0.0, int(status)]
         self.client.send_message("/VMT/Input/Button", message)
 
-    def send_trigger(self, is_left_hand, index, status=0.0):
-        message = [1 if is_left_hand else 2, int(index), 0.0, float(status)]
+    def send_trigger(self, is_left_hand, index, status=0.0, use_controller=False):
+        target = self.get_target(is_left_hand, use_controller)
+        message = [target.device_index, int(index), 0.0, float(status)]
         self.client.send_message("/VMT/Input/Trigger", message)
 
-    def send_joystick(self, is_left_hand, index, status_0=0.0, status_1=0.0):
+    def send_joystick(self, is_left_hand, index, status_0=0.0, status_1=0.0, use_controller=False):
+        target = self.get_target(is_left_hand, use_controller)
         message = [
-            1 if is_left_hand else 2,  # lefthand ? 1 : 2
+            target.device_index,
             int(index),
             0.0,
             float(status_0),
@@ -91,14 +128,34 @@ class GloveControllerSender:
         ]
         self.client.send_message("/VMT/Input/Joystick", message)
 
-    def send_joystick_click(self,is_left_hand, index, status):
+    def send_joystick_click(self, is_left_hand, index, status, use_controller=False):
+        target = self.get_target(is_left_hand, use_controller)
         message = [
-            1 if is_left_hand else 2,  # lefthand ? 1 : 2
+            target.device_index,
             int(index),
             0.0,
             int(status)
         ]
         self.client.send_message("/VMT/Input/Joystick/Click", message)
+
+    def release_controller_inputs(self, is_left_hand):
+        self.send_trigger(is_left_hand, 0, 0, use_controller=True)
+        self.send_trigger(is_left_hand, 2, 0, use_controller=True)
+        self.send_button(is_left_hand, 0, 0, use_controller=True)
+        self.send_button(is_left_hand, 1, 0, use_controller=True)
+        self.send_button(is_left_hand, 3, 0, use_controller=True)
+        self.send_joystick(is_left_hand, 1, 0.0, 0.0, use_controller=True)
+        self.send_joystick_click(is_left_hand, 1, 0, use_controller=True)
+
+    def handoff_full_hand_to_partial_disconnect(self, is_left_hand, source: Transform):
+        partial_target = self.get_target(is_left_hand, use_controller=True)
+        if partial_target.enable or partial_target.force_enable:
+            return
+
+        self.copy_transform_data(partial_target, source)
+        self.send_hand(partial_target)
+        self.send_finger(partial_target)
+        self.disable_hand(partial_target)
 
     def vmt_init(self):
         self.client.send_message(
@@ -106,19 +163,29 @@ class GloveControllerSender:
             [1.0, 0.0, 0.0, 1.0, 0.0, 1.0, 0.0, -0.76, 0.0, 0.0, 1.0, 1.0],
         )
 
-    def update(self):
-        if not self.left_hand.enable and g.config["Tracking"]["Hand"]["enable_hand_down"] and not self.left_hand.force_enable:
-            g.controller.send_trigger(True, 0, 0)
-            g.controller.send_trigger(True, 2, 0)
-            self.disable_hand(True)
+    def update_target(self, is_left_hand, target: Transform, use_controller=False, disable_when_down=True):
+        if not target.enable and disable_when_down and not target.force_enable:
+            if use_controller:
+                self.release_controller_inputs(is_left_hand)
+                self.disable_hand(target)
+            else:
+                self.send_trigger(is_left_hand, 0, 0)
+                self.send_trigger(is_left_hand, 2, 0)
+                self.disable_hand(target)
+                if target.change_flag:
+                    self.handoff_full_hand_to_partial_disconnect(is_left_hand, self.get_last_hand(is_left_hand))
+                    target.change_flag = False
         else:
-            self.send_hand(True, self.left_hand)
-            self.send_finger(True, self.left_hand)
+            if not use_controller:
+                self.copy_transform_data(self.get_last_hand(is_left_hand), target)
+                target.change_flag = True
+            self.send_hand(target)
+            self.send_finger(target)
 
-        if not self.right_hand.enable and g.config["Tracking"]["Hand"]["enable_hand_down"] and not self.right_hand.force_enable:
-            g.controller.send_trigger(False, 0, 0)
-            g.controller.send_trigger(False, 2, 0)
-            self.disable_hand(False)
-        else:
-            self.send_hand(False, self.right_hand)
-            self.send_finger(False, self.right_hand)
+    def update(self):
+        left_hand_disable = g.config["Tracking"]["Hand"]["enable_hand_down"] or self.left_controller.enable
+        right_hand_disable = g.config["Tracking"]["Hand"]["enable_hand_down"] or self.right_controller.enable
+        self.update_target(True, self.left_hand, disable_when_down=left_hand_disable)
+        self.update_target(False, self.right_hand, disable_when_down=right_hand_disable)
+        self.update_target(True, self.left_controller, use_controller=True)
+        self.update_target(False, self.right_controller, use_controller=True)

@@ -75,93 +75,67 @@ def apply_vmt_wrist_alignment(position, quat, is_left_hand):
 
     return tuple(controller_position), quat
 
+def _apply_controller_endpoint(data, hand_name, yaw, pitch, roll):
+    config = g.config["Tracking"][f"{hand_name}Controller"]
+    position = calculate_endpoint(
+        [config["base_x"], config["base_y"], config["base_z"]],
+        config["length"],
+        [yaw - 40, pitch, roll],
+    )
+    for index, value in enumerate(position):
+        data[f"{hand_name}ControllerPosition"][index]["v"] = value
+
+
+def _update_hand_target(data, default_data, hand_name, source_type, target, is_left_hand):
+    yaw = get_value(data[f"{hand_name}{source_type}Rotation"][0], default_data[f"{hand_name}{source_type}Rotation"][0])
+    pitch = get_value(data[f"{hand_name}{source_type}Rotation"][1], default_data[f"{hand_name}{source_type}Rotation"][1])
+    roll = get_value(data[f"{hand_name}{source_type}Rotation"][2], default_data[f"{hand_name}{source_type}Rotation"][2])
+
+    if source_type == "Controller":
+        _apply_controller_endpoint(data, hand_name, yaw, pitch, roll)
+
+    x = get_value(data[f"{hand_name}{source_type}Position"][0], default_data[f"{hand_name}{source_type}Position"][0])
+    y = get_value(data[f"{hand_name}{source_type}Position"][1], default_data[f"{hand_name}{source_type}Position"][1])
+    z = get_value(data[f"{hand_name}{source_type}Position"][2], default_data[f"{hand_name}{source_type}Position"][2])
+    quat = R.from_euler("xyz", [yaw, pitch, roll], degrees=True).as_quat()
+
+    position, quat = apply_vmt_wrist_alignment((x, y, z), quat, is_left_hand)
+    target.position = position
+    target.rotation = quat
+    target.finger = tuple(
+        get_value(value, default)
+        for value, default in zip(
+            data[f"{hand_name}{source_type}Finger"],
+            default_data[f"{hand_name}{source_type}Finger"],
+        )
+    )
+
+    splay_key = f"{hand_name}{source_type}Splay"
+    if source_type == "Hand" and splay_key in data:
+        target.splay = tuple(
+            get_value(value, default)
+            for value, default in zip(data[splay_key], default_data[splay_key])
+        )
+    else:
+        target.splay = (0.0, 0.0, 0.0, 0.0, 0.0)
+
+
 def handling_hand_data(data, default_data):
-    if g.config["Tracking"]["LeftController"]["enable"]:
-        left_hand_type="Controller"
-    else:
-        left_hand_type = "Hand"
-    if g.config["Tracking"]["RightController"]["enable"]:
-        right_hand_type="Controller"
-    else:
-        right_hand_type="Hand"
+    _update_hand_target(data, default_data, "Left", "Hand", g.controller.left_hand, True)
+    _update_hand_target(data, default_data, "Right", "Hand", g.controller.right_hand, False)
 
-    # Process left hand data
-    yaw_l = get_value(data[f"Left{left_hand_type}Rotation"][0], default_data[f"Left{left_hand_type}Rotation"][0])
-    pitch_l = get_value(
-        data[f"Left{left_hand_type}Rotation"][1], default_data[f"Left{left_hand_type}Rotation"][1]
-    )
-    roll_l = get_value(data[f"Left{left_hand_type}Rotation"][2], default_data[f"Left{left_hand_type}Rotation"][2])
-    if g.config["Tracking"]["LeftController"]["enable"]:
-        base_x_l=g.config["Tracking"]["LeftController"]["base_x"]
-        base_y_l=g.config["Tracking"]["LeftController"]["base_y"]
-        base_z_l=g.config["Tracking"]["LeftController"]["base_z"]
-        length_l=g.config["Tracking"]["LeftController"]["length"]
-        data[f"Left{left_hand_type}Position"][0]["v"],data[f"Left{left_hand_type}Position"][1]["v"],data[f"Left{left_hand_type}Position"][2]["v"] = calculate_endpoint([base_x_l,base_y_l,base_z_l], length_l, [yaw_l-40,pitch_l,roll_l])
+    g.controller.left_controller.enable = g.config["Tracking"]["LeftController"]["enable"]
+    g.controller.right_controller.enable = g.config["Tracking"]["RightController"]["enable"]
 
-    x_l = get_value(data[f"Left{left_hand_type}Position"][0], default_data[f"Left{left_hand_type}Position"][0])
-    y_l = get_value(data[f"Left{left_hand_type}Position"][1], default_data[f"Left{left_hand_type}Position"][1])
-    z_l = get_value(data[f"Left{left_hand_type}Position"][2], default_data[f"Left{left_hand_type}Position"][2])
-    quat_l = R.from_euler("xyz", [yaw_l, pitch_l, roll_l], degrees=True).as_quat()
-    matrix_l=R.from_euler("xyz", [yaw_l, pitch_l, roll_l], degrees=True).as_matrix()
-    # Process right hand data
-    yaw_r = get_value(
-        data[f"Right{right_hand_type}Rotation"][0], default_data[f"Right{right_hand_type}Rotation"][0]
-    )
-    pitch_r = get_value(
-        data[f"Right{right_hand_type}Rotation"][1], default_data[f"Right{right_hand_type}Rotation"][1]
-    )
-    roll_r = get_value(
-        data[f"Right{right_hand_type}Rotation"][2], default_data[f"Right{right_hand_type}Rotation"][2]
-    )
-    if g.config["Tracking"]["RightController"]["enable"]:
-        base_x_r=g.config["Tracking"]["RightController"]["base_x"]
-        base_y_r=g.config["Tracking"]["RightController"]["base_y"]
-        base_z_r=g.config["Tracking"]["RightController"]["base_z"]
-        length_r=g.config["Tracking"]["RightController"]["length"]
-        data[f"Right{right_hand_type}Position"][0]["v"],data[f"Right{right_hand_type}Position"][1]["v"],data[f"Right{right_hand_type}Position"][2]["v"] = calculate_endpoint([base_x_r,base_y_r,base_z_r], length_r, [yaw_r-40,pitch_r,roll_r])
+    if g.controller.left_controller.enable:
+        g.controller.left_hand.enable = False
+    if g.controller.right_controller.enable:
+        g.controller.right_hand.enable = False
 
-    x_r = get_value(data[f"Right{right_hand_type}Position"][0], default_data[f"Right{right_hand_type}Position"][0])
-    y_r = get_value(data[f"Right{right_hand_type}Position"][1], default_data[f"Right{right_hand_type}Position"][1])
-    z_r = get_value(data[f"Right{right_hand_type}Position"][2], default_data[f"Right{right_hand_type}Position"][2])
-    quat_r = R.from_euler("xyz", [yaw_r, pitch_r, roll_r], degrees=True).as_quat()
-    matrix_r=R.from_euler("xyz", [yaw_r, pitch_r, roll_r], degrees=True).as_matrix()
-
-    wrist_position_l, quat_l = apply_vmt_wrist_alignment((x_l, y_l, z_l), quat_l, True)
-    g.controller.left_hand.position = wrist_position_l
-    g.controller.left_hand.rotation = quat_l
-
-    wrist_position_r, quat_r = apply_vmt_wrist_alignment((x_r, y_r, z_r), quat_r, False)
-    g.controller.right_hand.position = wrist_position_r
-    g.controller.right_hand.rotation = quat_r
-
-    finger_l = tuple(
-        get_value(v, v_d)
-        for v, v_d in zip(data[f"Left{left_hand_type}Finger"], default_data[f"Left{left_hand_type}Finger"])
-    )
-    finger_r = tuple(
-        get_value(v, v_d)
-        for v, v_d in zip(data[f"Right{right_hand_type}Finger"], default_data[f"Right{right_hand_type}Finger"])
-    )
-    if left_hand_type == "Hand" and "LeftHandSplay" in data:
-        splay_l = tuple(
-            get_value(v, v_d)
-            for v, v_d in zip(data["LeftHandSplay"], default_data["LeftHandSplay"])
-        )
-    else:
-        splay_l = (0.0, 0.0, 0.0, 0.0, 0.0)
-    if right_hand_type == "Hand" and "RightHandSplay" in data:
-        splay_r = tuple(
-            get_value(v, v_d)
-            for v, v_d in zip(data["RightHandSplay"], default_data["RightHandSplay"])
-        )
-    else:
-        splay_r = (0.0, 0.0, 0.0, 0.0, 0.0)
-    # print(f"Right{right_hand_type}Finger",finger_r)
-
-    g.controller.left_hand.finger = finger_l
-    g.controller.right_hand.finger = finger_r
-    g.controller.left_hand.splay = splay_l
-    g.controller.right_hand.splay = splay_r
+    if g.controller.left_controller.enable or g.controller.left_controller.force_enable:
+        _update_hand_target(data, default_data, "Left", "Controller", g.controller.left_controller, True)
+    if g.controller.right_controller.enable or g.controller.right_controller.force_enable:
+        _update_hand_target(data, default_data, "Right", "Controller", g.controller.right_controller, False)
 
 prev_x=None
 prev_y=None

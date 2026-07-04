@@ -799,9 +799,17 @@ class VideoWindow(QMainWindow):
         if key in g.config["Tracking"]:
             g.config["Tracking"][key]["enable"] = value
         if key == "LeftController":
-            g.controller.left_hand.force_enable = value
+            g.controller.left_controller.enable = value
+            g.controller.left_controller.force_enable = value
+            if not value:
+                g.controller.release_controller_inputs(True)
+                g.controller.disable_hand(g.controller.left_controller)
         if key == "RightController":
-            g.controller.right_hand.force_enable = value
+            g.controller.right_controller.enable = value
+            g.controller.right_controller.force_enable = value
+            if not value:
+                g.controller.release_controller_inputs(False)
+                g.controller.disable_hand(g.controller.right_controller)
 
     def on_controller_connection_changed(self, hand, connected):
         checkbox = self.controller_checkbox1 if hand == "Left" else self.controller_checkbox2
