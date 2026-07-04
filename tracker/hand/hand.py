@@ -217,8 +217,29 @@ def _splay_from_landmarks(internal, curl):
     return np.asarray(values, dtype=np.float32)
 
 
-def finger_handling(normalized_pose, score=1.0):
-    internal = _vrchat_internal_hand_pose(normalized_pose)
+def _curl_from_landmarks(hand_pose):
+    finger_curl = {}
+    for name in FINGER_NAMES:
+        cfg = g.config["Tracking"]["Finger"]
+        base_start, base_end = cfg[f"{name}_base"]
+        tip_start, tip_end = cfg[f"{name}_tip"]
+        min_val = cfg[f"{name}_min"]
+        max_val = cfg[f"{name}_max"]
+        base_vec = hand_pose[base_end] - hand_pose[base_start]
+        tip_vec = hand_pose[tip_end] - hand_pose[tip_start]
+        if np.linalg.norm(base_vec) < 1e-6 or np.linalg.norm(tip_vec) < 1e-6:
+            raw_angle = 0.0
+        else:
+            raw_angle = calc_angle(base_vec, tip_vec)
+        clamped = np.clip(raw_angle, min_val, max_val)
+        range_val = max_val - min_val
+        norm_value = 1 - (clamped - min_val) / range_val
+        norm_value = np.clip(norm_value, 0.0, 1.0)
+        finger_curl[name] = round(float(norm_value), 1)
+    return finger_curl
+
+
+def _curl_for_splay(internal, score):
     score = _f32(score)
     alpha = _clamp01(_f32(score - _VRC_CONFIDENCE_MIN) * _f32(5.0))
 
@@ -246,11 +267,16 @@ def finger_handling(normalized_pose, score=1.0):
     )
 
     curl = np.asarray([_neutral_blend(v, _VRC_C8_NEUTRAL, alpha) for v in raw_curl], dtype=np.float32)
-    curl = _expand_curl_endpoints(curl)
-    splay = _splay_from_landmarks(internal, curl)
+    return _expand_curl_endpoints(curl)
+
+
+def finger_handling(hand_pose, normalized_pose, score=1.0):
+    curl_dict = _curl_from_landmarks(hand_pose)
+    internal = _vrchat_internal_hand_pose(normalized_pose)
+    splay = _splay_from_landmarks(internal, _curl_for_splay(internal, score))
 
     return (
-        {name: float(np.clip(value, 0.0, 1.0)) for name, value in zip(FINGER_NAMES, curl)},
+        curl_dict,
         {name: float(value) for name, value in zip(FINGER_NAMES, splay)},
     )
 
@@ -313,9 +339,10 @@ def hand_is_changed(key, hand_name, hand_landmarks, change_points, change_thresh
 
 hand_detection_counts = {"Left":0,"Right":0}
 hand_last_valid_time = {"Left":0.0,"Right":0.0}
+hand_swap_counts = {"Left":0,"Right":0}
 prev_distance_scalar = None
 def hand_pred_handling(detection_result):
-    global hand_detection_counts, hand_last_valid_time, prev_distance_scalar
+    global hand_detection_counts, hand_last_valid_time, hand_swap_counts, prev_distance_scalar
     now = time.monotonic()
     hand_seen_this_frame = {"Left": False, "Right": False}
 
@@ -396,7 +423,13 @@ def hand_pred_handling(detection_result):
 
             rotation_change_flag,_,_ = hand_is_changed("rotation",hand_name,hand_landmarks,g.config["Tracking"]["Hand"]["rotation_change_points"],g.config["Tracking"]["Hand"]["rotation_change_threshold"])
             if swap_flag and g.config["Tracking"]["Hand"]["enable_swap_strategy"]:
+                hand_swap_counts[hand_name] += 1
+                swap_reset_threshold = g.config["Tracking"]["Hand"].get("hand_swap_reset_threshold", 6)
+                if hand_swap_counts[hand_name] >= swap_reset_threshold:
+                    prev_hands.get("position", {}).pop(hand_name, None)
+                    hand_swap_counts[hand_name] = 0
                 continue
+            hand_swap_counts[hand_name] = 0
             z = hand_pose[0] - hand_pose[17]
             x = np.cross(hand_pose[1] - hand_pose[0], z)
             y = np.cross(z, x)
@@ -408,7 +441,7 @@ def hand_pred_handling(detection_result):
             wrist_rot = R.from_matrix(wrist_matrix).as_euler("xyz", degrees=True)
             if g.config["Tracking"]["Finger"]["enable"]:
                 hand_score = hand.classification[0].score
-                finger_curl, finger_splay = finger_handling(image_hand_pose, hand_score)
+                finger_curl, finger_splay = finger_handling(hand_pose, image_hand_pose, hand_score)
                 finger_0, finger_1, finger_2, finger_3, finger_4 = finger_curl["thumb"],finger_curl["index"],finger_curl["middle"],finger_curl["ring"],finger_curl["pinky"]
                 splay_0, splay_1, splay_2, splay_3, splay_4 = finger_splay["thumb"],finger_splay["index"],finger_splay["middle"],finger_splay["ring"],finger_splay["pinky"]
                 if g.config["Tracking"]["Hand"]["enable_finger_action"]:

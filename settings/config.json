@@ -1,5 +1,5 @@
 {
-    "Version": "0.8.1.1",
+    "Version": "0.8.2.5",
     "Setting": {
         "priority": "ABOVE_NORMAL_PRIORITY_CLASS",
         "language": "system",
@@ -99,6 +99,7 @@
             "hand_detection_lower_threshold": 10,
             "enable_swap_strategy": true,
             "hand_swap_threshold": 0.1,
+            "hand_swap_reset_threshold": 6,
             "position_change_points": [
                 0,
                 1,
@@ -144,7 +145,7 @@
                 12
             ],
             "middle_min": 70,
-            "middle_max": 120,
+            "middle_max": 115,
             "ring_base": [
                 0,
                 13
