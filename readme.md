@@ -7,7 +7,7 @@ This is a project for PC users who want to experience VR without a headset.
 
 ## Usage
 
-TODO
+https://exvr-doc.github.io/#/en/home
 
 ## Hotkeys
 
