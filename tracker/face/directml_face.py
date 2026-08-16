@@ -566,6 +566,11 @@ class DirectMLFaceLandmarker:
         self.min_presence_confidence = min_presence_confidence
         self.min_tracking_confidence = min_tracking_confidence
         self.prev_rect: Rect | None = None
+        # 全图检测退避：连续丢失时检测间隔 1→2→4→…→10 帧，检测成功即复位。
+        # 丢失期间每帧跑 128x128 检测器既烧 CPU 又无意义（大角度时检测器
+        # 灵敏度不足，恢复只能等姿态回正），退避后恢复延迟最多 ~0.33s。
+        self._detect_interval = 1
+        self._detect_cooldown = 0
 
     @property
     def providers(self) -> tuple[list[str], list[str], list[str]]:
@@ -612,6 +617,17 @@ class DirectMLFaceLandmarker:
             return None
         return _transform_rect(_rect_from_detection(detections[0], image_w, image_h), image_w, image_h, 1.5)
 
+    def _landmark_for_rect(self, image_rgb: np.ndarray, rect: Rect) -> tuple[np.ndarray, float]:
+        """Run the landmark model on the rect crop; returns (raw landmarks, presence)."""
+        crop = _crop_rect(image_rgb, rect, 256)
+        raw, presence_raw, _extra = run_ort(
+            self.landmark,
+            None,
+            {self.landmark_input: _preprocess_nhwc(crop)},
+            priority=ORT_PRIORITY_FACE,
+        )
+        return raw, float(_sigmoid(presence_raw.reshape(-1))[0])
+
     def detect(
         self,
         image_rgb: np.ndarray,
@@ -619,22 +635,35 @@ class DirectMLFaceLandmarker:
         output_transform: bool = True,
     ):
         image_h, image_w = image_rgb.shape[:2]
-        rect = self.prev_rect if self.prev_rect is not None else self._detect_rect(image_rgb)
+        rect = self.prev_rect
         if rect is None:
-            self.prev_rect = None
-            return SimpleNamespace(face_landmarks=[], face_blendshapes=[], facial_transformation_matrixes=[])
+            # 丢失状态：按退避间隔跑全图检测；间隔内直接返回空（省检测器推理）
+            if self._detect_cooldown > 0:
+                self._detect_cooldown -= 1
+                return SimpleNamespace(face_landmarks=[], face_blendshapes=[], facial_transformation_matrixes=[])
+            rect = self._detect_rect(image_rgb)
+            if rect is None:
+                self._detect_interval = min(self._detect_interval * 2, 10)
+                self._detect_cooldown = self._detect_interval - 1
+                return SimpleNamespace(face_landmarks=[], face_blendshapes=[], facial_transformation_matrixes=[])
+            self._detect_interval = 1  # 检测到：退避复位
 
-        crop = _crop_rect(image_rgb, rect, 256)
-        landmarks_raw, presence_raw, _extra = run_ort(
-            self.landmark,
-            None,
-            {self.landmark_input: _preprocess_nhwc(crop)},
-            priority=ORT_PRIORITY_FACE,
-        )
-        presence = float(_sigmoid(presence_raw.reshape(-1))[0])
+        landmarks_raw, presence = self._landmark_for_rect(image_rgb, rect)
         if presence < self.min_presence_confidence:
-            self.prev_rect = None
-            return SimpleNamespace(face_landmarks=[], face_blendshapes=[], facial_transformation_matrixes=[])
+            # 大角度/脸部分出界时，在 1.2x/2.0x 放大 crop 上重试并取 presence
+            # 最高者，仍不达标才判定丢失（失败帧多 1-2 次 landmark 推理）。
+            # 修复：大角度下跟踪 rect 漂移出脸后旧 crop 永远低分 → 数据冻结
+            # 卡住，只有姿态回正+点头让检测器重新抓到才恢复。
+            best = (presence, rect, landmarks_raw)
+            for scale in (1.2, 2.0):
+                trial_rect = _transform_rect(rect, image_w, image_h, scale)
+                trial_raw, trial_val = self._landmark_for_rect(image_rgb, trial_rect)
+                if trial_val > best[0]:
+                    best = (trial_val, trial_rect, trial_raw)
+            presence, rect, landmarks_raw = best
+            if presence < self.min_presence_confidence:
+                self.prev_rect = None
+                return SimpleNamespace(face_landmarks=[], face_blendshapes=[], facial_transformation_matrixes=[])
 
         crop_landmarks = landmarks_raw.reshape(478, 3).astype(np.float32)
         crop_landmarks[:, 0] /= 256.0
