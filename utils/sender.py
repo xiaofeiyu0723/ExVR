@@ -26,15 +26,13 @@ def get_shift(value, value_d):
         return value_d["s"]
 
 def pack_data(data, default_data):
-    packed_data = b""
+    values = []
     for value, value_d in zip(data["BlendShapes"][1:], default_data["BlendShapes"][1:]):
         v = get_value(value, value_d) * value["w"]
         if np.abs(v) > value["max"]:
             v = np.sign(v) * value["max"]
-        packed_data += struct.pack(
-            ">f",  v
-        )
-    return packed_data
+        values.append(v)
+    return struct.pack(f">{len(values)}f", *values)
 
 hmd_data_prev=None
 hmd_data_curr=None
