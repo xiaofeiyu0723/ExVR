@@ -1,3 +1,5 @@
+import sys
+
 import onnxruntime as ort
 
 
@@ -6,9 +8,19 @@ def providers_for(provider: str) -> list[str]:
         return ["CPUExecutionProvider"]
     if provider == "GPU":
         available = ort.get_available_providers()
-        if "DmlExecutionProvider" not in available:
-            raise RuntimeError(f"ONNX Runtime DirectML is not available. Providers: {available}")
-        return ["DmlExecutionProvider", "CPUExecutionProvider"]
+        if "DmlExecutionProvider" in available:
+            return ["DmlExecutionProvider", "CPUExecutionProvider"]
+        if "CUDAExecutionProvider" in available:
+            return ["CUDAExecutionProvider", "CPUExecutionProvider"]
+        if sys.platform != "win32":
+            # Linux builds ship CPU-only ONNX Runtime; run with CPU instead
+            # of failing to start tracking.
+            print(
+                "WARNING: GPU provider requested but neither DirectML nor CUDA "
+                f"is available ({available}). Falling back to CPUExecutionProvider."
+            )
+            return ["CPUExecutionProvider"]
+        raise RuntimeError(f"ONNX Runtime DirectML is not available. Providers: {available}")
     raise ValueError(f"Unsupported model provider: {provider}")
 
 

@@ -1,0 +1,27 @@
+# Linux (x86_64) dependencies for ExVR.
+# Windows-only packages from requirements.txt (pyuac, pywin32, pygrabber,
+# onnxruntime-directml, keyboard) are intentionally absent:
+#   - pyuac / pywin32: UAC and winreg are isolated behind sys.platform checks
+#   - pygrabber: not imported anywhere; camera enumeration uses cv2_enumerate_cameras
+#   - onnxruntime-directml: DirectML is Windows-specific; plain onnxruntime
+#     provides CPUExecutionProvider (CUDA if a CUDA build is installed)
+#   - keyboard: the keyboard library requires root on Linux (euid gate +
+#     dumpkeys); Linux hotkeys use pynput instead
+numpy==2.1.3
+scipy==1.14.1
+# headless: the regular opencv-python wheel bundles its own Qt (cv2/qt), which
+# conflicts with PyQt5's Qt in the same process ("QObject::moveToThread" /
+# xcb plugin abort). ExVR renders through PyQt5 and never uses cv2 GUI.
+opencv-python-headless==4.10.0.84
+pynput==1.7.7
+python-osc==1.9.0
+PyQt5==5.15.11
+cv2_enumerate_cameras==1.1.17
+websockets==10.4
+Flask==3.1.0
+Werkzeug==3.1.3
+screeninfo==0.8.1
+joblib==1.5.0
+scikit-learn==1.4.2
+psutil==7.0.0
+onnxruntime==1.20.0

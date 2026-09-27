@@ -31,6 +31,8 @@ MANIFEST
 #  before PyInstaller builds the exe, so as to inject date/other infos into it.
 *.manifest
 *.spec
+!main.spec
+!main-linux.spec
 
 # Installer logs
 pip-log.txt
@@ -209,3 +211,6 @@ __marimo__/
 # This project
 /build/
 /dist/
+
+# Linux build output
+dist-linux64/
