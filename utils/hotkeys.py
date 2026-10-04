@@ -100,7 +100,7 @@ def apply_hotkeys():
                 else:
                     keyboard.add_hotkey(key, hook(actions[action]))
             elif "left_fingers" in action or "right_fingers" in action:
-                keyboard.add_hotkey(key, lambda a=action: set_fingers(a))
+                keyboard.add_hotkey(key, hook(lambda a=action: set_fingers(a)))
         if mouse_button and action:
             if action in actions:
                 if mouse_button not in mouse_actions:
