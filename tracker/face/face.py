@@ -75,6 +75,10 @@ def is_hand_in_face():
     return 0.0
 
 def face_pred_handling(detection_result, output_image, timestamp_ms, tongue_model):
+    if not detection_result.face_landmarks:
+        g.face_landmarks = None
+        g.hand_position_reference = None
+        return
     # For each face detected
     for idx in range(len(detection_result.face_landmarks)):
         g.face_landmarks = detection_result.face_landmarks
@@ -86,6 +90,21 @@ def face_pred_handling(detection_result, output_image, timestamp_ms, tongue_mode
         head_image_position_x = detection_result.face_landmarks[0][4].x
         head_image_position_y = detection_result.face_landmarks[0][4].y
         head_image_position_z = detection_result.face_landmarks[0][4].z
+
+        face = detection_result.face_landmarks[0]
+        reference = (
+            0.5 * (face[127].x + face[356].x) - 0.5,
+            0.5 - 0.5 * (face[127].y + face[356].y),
+            head_image_position_z,
+            timestamp_ms,
+        )
+        valid_position_reference = (
+            np.all(np.isfinite((*reference, head_image_position_x, head_image_position_y)))
+            and head_image_position_z < 0
+            and coverage_ratio <= g.config["Tracking"]["Face"]["position_block_threshold"]
+        )
+        # Publish one snapshot so the hand worker cannot mix anchors and timestamps.
+        g.hand_position_reference = reference if valid_position_reference else None
 
         has_blendshapes = bool(detection_result.face_blendshapes)
         has_transform = bool(detection_result.facial_transformation_matrixes)
@@ -183,7 +202,7 @@ def face_pred_handling(detection_result, output_image, timestamp_ms, tongue_mode
                     g.latest_data[67] = head_rotation[0]
                     g.latest_data[68] = head_rotation[1]
                     g.latest_data[69] = head_rotation[2]
-            if not coverage_ratio > g.config["Tracking"]["Face"]["position_block_threshold"]:
+            if valid_position_reference:
                 g.latest_data[114] = head_image_position_x
                 g.latest_data[115] = head_image_position_y
                 g.latest_data[116] = head_image_position_z
@@ -219,7 +238,7 @@ def face_pred_handling(detection_result, output_image, timestamp_ms, tongue_mode
                     g.data["Rotation"][0]["v"] = head_rotation[0]
                     g.data["Rotation"][1]["v"] = head_rotation[1]
                     g.data["Rotation"][2]["v"] = head_rotation[2]
-            if not coverage_ratio > g.config["Tracking"]["Face"]["position_block_threshold"]:
+            if valid_position_reference:
                 g.data["HeadImagePosition"][0]["v"] = head_image_position_x
                 g.data["HeadImagePosition"][1]["v"] = head_image_position_y
                 g.data["HeadImagePosition"][2]["v"] = head_image_position_z

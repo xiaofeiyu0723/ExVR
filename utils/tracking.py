@@ -65,6 +65,7 @@ class Tracker:
     def __init__(self):
         self.is_running = True
         self.image = None
+        g.hand_position_reference = None
 
         provider = g.config["Model"]["provider"]
         hand_model_complexity = g.config["Model"]["Hand"]["model_complexity"]
@@ -146,7 +147,8 @@ class Tracker:
         if g.config["Tracking"]["Hand"]["enable"]:
             self.hand_worker.submit(frame)
         if (
-            g.config["Tracking"]["Head"]["enable"]
+            g.config["Tracking"]["Hand"]["enable"]
+            or g.config["Tracking"]["Head"]["enable"]
             or g.config["Tracking"]["Face"]["enable"]
             or g.config["Tracking"]["Tongue"]["enable"]
         ):
@@ -156,6 +158,7 @@ class Tracker:
         self.is_running = False
         self.hand_worker.close()
         self.face_worker.close()
+        g.hand_position_reference = None
         g.stop_event.set()
         if self.smoothing_thread:
             self.smoothing_thread.join()

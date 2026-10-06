@@ -18,6 +18,8 @@ hotkey_config = setup_hotkeys()
 smoothing_config = setup_smoothing()
 gesture_config = setup_gestures()
 face_landmarks=None
+# (anchor_x, anchor_y, raw_depth, capture_timestamp_ms), published by the face worker.
+hand_position_reference=None
 hand_landmarks=None
 handedness=None
 

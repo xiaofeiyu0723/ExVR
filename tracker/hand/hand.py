@@ -89,29 +89,38 @@ def _vrchat_palm_anchor_image(image_hand_pose):
     return internal[0] + 0.5 * (internal[5] - internal[0])
 
 
-def _vrchat_head_anchor_image():
-    if g.face_landmarks and len(g.face_landmarks[0]) > 356:
-        face = g.face_landmarks[0]
-        x = 0.5 * (face[127].x + face[356].x) - 0.5
-        y = 0.5 - 0.5 * (face[127].y + face[356].y)
-        return np.asarray([x, y], dtype=np.float32)
-    return np.zeros(2, dtype=np.float32)
+HAND_REFERENCE_MAX_AGE_MS = 500
+
+
+def _hand_position_reference():
+    reference = g.hand_position_reference
+    if reference is None or not np.all(np.isfinite(reference)):
+        return None
+    x, y, raw_depth, timestamp_ms = reference
+    now_ms = (cv2.getTickCount() - g.start_time) * 1000 / cv2.getTickFrequency()
+    if not 0 <= now_ms - timestamp_ms <= HAND_REFERENCE_MAX_AGE_MS or raw_depth >= 0:
+        return None
+    return np.asarray([x, y], dtype=np.float32), raw_depth
 
 
 def _soft_limit_depth(value, center=-0.25, scale=0.28):
     return center + scale * np.tanh((value - center) / scale)
 
 
-def get_fitted_hand_distance(image_hand_pose):
+def get_fitted_hand_distance(image_hand_pose, head_depth):
+    # Use the depth captured with the accepted anchor, not independently updated
+    # HeadImagePosition state. Keep the existing rounding and scale mapping.
+    head_depth = np.round(head_depth, 2)
+    if not np.isfinite(head_depth) or head_depth >= 0:
+        return None
     keypoints = [5, 9, 13]
     data = image_hand_pose - image_hand_pose[0]
     data = np.asarray(data[keypoints].flatten()).reshape(1, -1)
     pred_distance = g.hand_regression_model.predict(data)
     hand_distance = pred_distance[0]
-
-    head_depth = np.round(g.data["HeadImagePosition"][2]["v"], 2)
-    distance_scalar = np.clip(head_depth, None, -1e-8)
-    hand_distance = hand_distance / distance_scalar
+    if not np.isfinite(hand_distance):
+        return None
+    hand_distance = hand_distance / head_depth
 
     hand_distance += g.config["Tracking"]["Hand"]["z_shifting"]
     hand_distance *= g.config["Tracking"]["Hand"]["z_scalar"]
@@ -345,6 +354,7 @@ def hand_pred_handling(detection_result):
     global hand_detection_counts, hand_last_valid_time, hand_swap_counts, prev_distance_scalar
     now = time.monotonic()
     hand_seen_this_frame = {"Left": False, "Right": False}
+    position_reference = _hand_position_reference()
 
     g.hand_landmarks = detection_result.multi_hand_landmarks
     g.handedness = detection_result.multi_handedness
@@ -399,16 +409,22 @@ def hand_pred_handling(detection_result):
                     continue
 
             world_landmarks = hand_world_landmarks.landmark
+            if position_reference is None:
+                # Treat missing/stale reference data as tracking loss. The existing
+                # hand_return_time and auto-reset settings handle the held pose.
+                continue
+            head_anchor, head_depth = position_reference
             hand_pose = get_hand_pose(world_landmarks)
             image_landmarks = hand_landmarks.landmark
             image_hand_pose = get_hand_pose(image_landmarks, False)
             hand_anchor = _vrchat_palm_anchor_image(image_hand_pose)
-            head_anchor = _vrchat_head_anchor_image()
             hand_delta = hand_anchor[:2] - head_anchor
             hand_position = np.asarray([-hand_delta[0], hand_delta[1], 0.0], dtype=np.float32)
             hand_position[:2] *= [g.config["Tracking"]["Hand"]["x_scalar"], g.config["Tracking"]["Hand"]["y_scalar"]]
 
-            hand_distance = get_fitted_hand_distance(image_hand_pose)
+            hand_distance = get_fitted_hand_distance(image_hand_pose, head_depth)
+            if hand_distance is None:
+                continue
             # print(hand_distance)
             if g.config["Tracking"]["Hand"]["only_front"]:
                 hand_distance = np.clip(hand_distance, -0.8, 0.0)
